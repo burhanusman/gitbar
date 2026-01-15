@@ -37,32 +37,116 @@ struct GitStatusView: View {
     // MARK: - Header View
 
     private var headerView: some View {
-        HStack(alignment: .center, spacing: 8) {
-            Image(systemName: "arrow.triangle.branch")
-                .foregroundColor(.secondary)
-
-            Text(viewModel.gitStatus?.currentBranch ?? "Loading...")
-                .font(.headline)
-                .fontWeight(.semibold)
-
-            if let aheadBehind = viewModel.aheadBehindText {
-                Text(aheadBehind)
-                    .font(.subheadline)
-                    .foregroundColor(.blue)
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(Color.blue.opacity(0.1))
-                    .cornerRadius(4)
-            }
-
-            Spacer()
-
-            Button(action: { viewModel.refresh() }) {
-                Image(systemName: "arrow.clockwise")
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .center, spacing: 8) {
+                Image(systemName: "arrow.triangle.branch")
                     .foregroundColor(.secondary)
+
+                Text(viewModel.gitStatus?.currentBranch ?? "Loading...")
+                    .font(.headline)
+                    .fontWeight(.semibold)
+
+                if let aheadBehind = viewModel.aheadBehindText {
+                    Text(aheadBehind)
+                        .font(.subheadline)
+                        .foregroundColor(.blue)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Color.blue.opacity(0.1))
+                        .cornerRadius(4)
+                }
+
+                Spacer()
+
+                Button(action: { viewModel.refresh() }) {
+                    Image(systemName: "arrow.clockwise")
+                        .foregroundColor(.secondary)
+                }
+                .buttonStyle(.plain)
+                .help("Refresh status")
             }
-            .buttonStyle(.plain)
-            .help("Refresh status")
+
+            // Push/Pull buttons
+            HStack(spacing: 8) {
+                // Pull button
+                Button(action: { viewModel.pull() }) {
+                    HStack(spacing: 4) {
+                        if viewModel.isPulling {
+                            ProgressView()
+                                .scaleEffect(0.6)
+                        } else {
+                            Image(systemName: "arrow.down.circle")
+                        }
+                        Text(viewModel.isPulling ? "Pulling..." : "Pull")
+                    }
+                }
+                .buttonStyle(.bordered)
+                .disabled(!viewModel.canPull)
+                .help("Pull changes from remote")
+
+                // Push button
+                Button(action: { viewModel.push() }) {
+                    HStack(spacing: 4) {
+                        if viewModel.isPushing {
+                            ProgressView()
+                                .scaleEffect(0.6)
+                        } else {
+                            Image(systemName: "arrow.up.circle")
+                        }
+                        Text(viewModel.isPushing ? "Pushing..." : "Push")
+                    }
+                }
+                .buttonStyle(.bordered)
+                .disabled(!viewModel.canPush)
+                .help("Push commits to remote")
+
+                Spacer()
+
+                // Sync result feedback
+                if let result = viewModel.syncResult {
+                    syncFeedback(result)
+                }
+            }
+        }
+    }
+
+    // MARK: - Sync Feedback
+
+    private func syncFeedback(_ result: GitStatusViewModel.SyncResult) -> some View {
+        HStack(spacing: 4) {
+            switch result {
+            case .pushSuccess:
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundColor(.green)
+                Text("Pushed!")
+                    .font(.caption)
+                    .foregroundColor(.green)
+            case .pullSuccess:
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundColor(.green)
+                Text("Pulled!")
+                    .font(.caption)
+                    .foregroundColor(.green)
+            case .failure(let error):
+                Image(systemName: "xmark.circle.fill")
+                    .foregroundColor(.red)
+                Text(error.localizedDescription)
+                    .font(.caption)
+                    .foregroundColor(.red)
+                    .lineLimit(1)
+            }
+        }
+        .onAppear {
+            // Auto-dismiss success feedback after 3 seconds
+            if case .pushSuccess = result {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                    viewModel.clearSyncResult()
+                }
+            } else if case .pullSuccess = result {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                    viewModel.clearSyncResult()
+                }
+            }
         }
     }
 

@@ -194,6 +194,18 @@ actor GitService {
         _ = try await runGitCommand(["commit", "-m", message], at: repoPath)
     }
 
+    /// Pushes commits to the remote repository
+    func push(at repoPath: String) async throws {
+        try validateGitRepository(at: repoPath)
+        _ = try await runGitCommand(["push"], at: repoPath)
+    }
+
+    /// Pulls changes from the remote repository
+    func pull(at repoPath: String) async throws {
+        try validateGitRepository(at: repoPath)
+        _ = try await runGitCommand(["pull"], at: repoPath)
+    }
+
     // MARK: - Private Methods
 
     /// Validates that the path is a Git repository, throws if not

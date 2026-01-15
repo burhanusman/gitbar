@@ -10,9 +10,18 @@ class GitStatusViewModel: ObservableObject {
     @Published var commitMessage = ""
     @Published var isCommitting = false
     @Published var commitResult: CommitResult?
+    @Published var isPushing = false
+    @Published var isPulling = false
+    @Published var syncResult: SyncResult?
 
     enum CommitResult {
         case success
+        case failure(Error)
+    }
+
+    enum SyncResult {
+        case pushSuccess
+        case pullSuccess
         case failure(Error)
     }
 
@@ -82,6 +91,18 @@ class GitStatusViewModel: ObservableObject {
         !stagedFiles.isEmpty && !commitMessage.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !isCommitting
     }
 
+    /// Whether the push button should be enabled (ahead of remote)
+    var canPush: Bool {
+        guard let aheadBehind = gitStatus?.aheadBehind else { return false }
+        return aheadBehind.ahead > 0 && !isPushing && !isPulling
+    }
+
+    /// Whether the pull button should be enabled (behind remote)
+    var canPull: Bool {
+        guard let aheadBehind = gitStatus?.aheadBehind else { return false }
+        return aheadBehind.behind > 0 && !isPushing && !isPulling
+    }
+
     /// Commits staged changes with the current commit message
     func commit() {
         guard let path = projectPath else { return }
@@ -107,6 +128,51 @@ class GitStatusViewModel: ObservableObject {
     /// Clears the commit result feedback
     func clearCommitResult() {
         commitResult = nil
+    }
+
+    /// Clears the sync result feedback
+    func clearSyncResult() {
+        syncResult = nil
+    }
+
+    /// Pushes commits to remote
+    func push() {
+        guard let path = projectPath else { return }
+        guard canPush else { return }
+
+        isPushing = true
+        syncResult = nil
+
+        Task {
+            do {
+                try await gitService.push(at: path)
+                self.syncResult = .pushSuccess
+                refresh()
+            } catch {
+                self.syncResult = .failure(error)
+            }
+            self.isPushing = false
+        }
+    }
+
+    /// Pulls changes from remote
+    func pull() {
+        guard let path = projectPath else { return }
+        guard canPull else { return }
+
+        isPulling = true
+        syncResult = nil
+
+        Task {
+            do {
+                try await gitService.pull(at: path)
+                self.syncResult = .pullSuccess
+                refresh()
+            } catch {
+                self.syncResult = .failure(error)
+            }
+            self.isPulling = false
+        }
     }
 
     /// Stages a file and refreshes the status
