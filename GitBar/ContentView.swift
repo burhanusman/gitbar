@@ -2,25 +2,56 @@ import SwiftUI
 
 struct ContentView: View {
     @StateObject private var projectListViewModel = ProjectListViewModel()
+    @State private var showSettings = false
 
     var body: some View {
-        NavigationSplitView {
-            ProjectListView(viewModel: projectListViewModel)
-                .navigationSplitViewColumnWidth(min: 150, ideal: 180, max: 220)
-        } detail: {
-            if let selectedProject = projectListViewModel.selectedProject {
-                GitStatusView(project: selectedProject)
-            } else {
-                VStack {
-                    Image(systemName: "folder")
-                        .font(.largeTitle)
-                        .foregroundColor(.secondary)
-                    Text("Select a project")
-                        .foregroundColor(.secondary)
+        VStack(spacing: 0) {
+            // Header with settings gear
+            headerView
+
+            Divider()
+
+            // Main content
+            NavigationSplitView {
+                ProjectListView(viewModel: projectListViewModel)
+                    .navigationSplitViewColumnWidth(min: 150, ideal: 180, max: 220)
+            } detail: {
+                if let selectedProject = projectListViewModel.selectedProject {
+                    GitStatusView(project: selectedProject)
+                } else {
+                    VStack {
+                        Image(systemName: "folder")
+                            .font(.largeTitle)
+                            .foregroundColor(.secondary)
+                        Text("Select a project")
+                            .foregroundColor(.secondary)
+                    }
                 }
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .popover(isPresented: $showSettings) {
+            SettingsView()
+        }
+    }
+
+    private var headerView: some View {
+        HStack {
+            Text("GitBar")
+                .font(.headline)
+                .fontWeight(.semibold)
+
+            Spacer()
+
+            Button(action: { showSettings.toggle() }) {
+                Image(systemName: "gearshape")
+                    .foregroundColor(.secondary)
+            }
+            .buttonStyle(.plain)
+            .help("Settings")
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
     }
 }
 
