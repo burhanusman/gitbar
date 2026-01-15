@@ -15,6 +15,8 @@
 		A100000C229A0001000A0001 /* ProjectListViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000D229A0001000A0001 /* ProjectListViewModel.swift */; };
 		A100000E229A0001000A0001 /* ProjectListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000F229A0001000A0001 /* ProjectListView.swift */; };
 		A1000010229A0001000A0002 /* GitService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000011229A0001000A0002 /* GitService.swift */; };
+		A1000012229A0001000A0003 /* GitStatusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000013229A0001000A0003 /* GitStatusView.swift */; };
+		A1000014229A0001000A0004 /* GitStatusViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000015229A0001000A0004 /* GitStatusViewModel.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -28,6 +30,8 @@
 		A100000D229A0001000A0001 /* ProjectListViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectListViewModel.swift; sourceTree = "<group>"; };
 		A100000F229A0001000A0001 /* ProjectListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectListView.swift; sourceTree = "<group>"; };
 		A1000011229A0001000A0002 /* GitService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitService.swift; sourceTree = "<group>"; };
+		A1000013229A0001000A0003 /* GitStatusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitStatusView.swift; sourceTree = "<group>"; };
+		A1000015229A0001000A0004 /* GitStatusViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitStatusViewModel.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -77,6 +81,7 @@
 			isa = PBXGroup;
 			children = (
 				A100000F229A0001000A0001 /* ProjectListView.swift */,
+				A1000013229A0001000A0003 /* GitStatusView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -93,6 +98,7 @@
 			isa = PBXGroup;
 			children = (
 				A100000D229A0001000A0001 /* ProjectListViewModel.swift */,
+				A1000015229A0001000A0004 /* GitStatusViewModel.swift */,
 			);
 			path = ViewModels;
 			sourceTree = "<group>";
@@ -189,6 +195,8 @@
 				A100000A229A0001000A0001 /* Project.swift in Sources */,
 				A100000C229A0001000A0001 /* ProjectListViewModel.swift in Sources */,
 				A100000E229A0001000A0001 /* ProjectListView.swift in Sources */,
+				A1000012229A0001000A0003 /* GitStatusView.swift in Sources */,
+				A1000014229A0001000A0004 /* GitStatusViewModel.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
