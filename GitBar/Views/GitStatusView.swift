@@ -124,7 +124,10 @@ struct GitStatusView: View {
                     FileGroupView(
                         title: "Staged",
                         files: viewModel.stagedFiles,
-                        titleColor: .green
+                        titleColor: .green,
+                        isStaged: true,
+                        onStage: nil,
+                        onUnstage: { filePath in viewModel.unstageFile(filePath) }
                     )
                 }
 
@@ -133,7 +136,10 @@ struct GitStatusView: View {
                     FileGroupView(
                         title: "Modified",
                         files: viewModel.modifiedFiles,
-                        titleColor: .orange
+                        titleColor: .orange,
+                        isStaged: false,
+                        onStage: { filePath in viewModel.stageFile(filePath) },
+                        onUnstage: nil
                     )
                 }
 
@@ -142,7 +148,10 @@ struct GitStatusView: View {
                     FileGroupView(
                         title: "Untracked",
                         files: viewModel.untrackedFiles,
-                        titleColor: .secondary
+                        titleColor: .secondary,
+                        isStaged: false,
+                        onStage: { filePath in viewModel.stageFile(filePath) },
+                        onUnstage: nil
                     )
                 }
             }
@@ -157,6 +166,9 @@ struct FileGroupView: View {
     let title: String
     let files: [GitFileChange]
     let titleColor: Color
+    let isStaged: Bool
+    let onStage: ((String) -> Void)?
+    let onUnstage: ((String) -> Void)?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -172,7 +184,12 @@ struct FileGroupView: View {
             }
 
             ForEach(files, id: \.path) { file in
-                FileRowView(file: file)
+                FileRowView(
+                    file: file,
+                    isStaged: isStaged,
+                    onStage: onStage,
+                    onUnstage: onUnstage
+                )
             }
         }
     }
@@ -183,6 +200,9 @@ struct FileGroupView: View {
 /// A single file change row
 struct FileRowView: View {
     let file: GitFileChange
+    let isStaged: Bool
+    let onStage: ((String) -> Void)?
+    let onUnstage: ((String) -> Void)?
 
     var body: some View {
         HStack(spacing: 8) {
@@ -200,6 +220,25 @@ struct FileRowView: View {
                 .truncationMode(.middle)
 
             Spacer()
+
+            // Stage/Unstage button
+            if isStaged {
+                // Unstage button for staged files
+                Button(action: { onUnstage?(file.path) }) {
+                    Image(systemName: "minus.circle")
+                        .foregroundColor(.red)
+                }
+                .buttonStyle(.plain)
+                .help("Unstage file")
+            } else {
+                // Stage button for unstaged/untracked files
+                Button(action: { onStage?(file.path) }) {
+                    Image(systemName: "plus.circle")
+                        .foregroundColor(.green)
+                }
+                .buttonStyle(.plain)
+                .help("Stage file")
+            }
         }
         .padding(.vertical, 2)
         .padding(.horizontal, 8)

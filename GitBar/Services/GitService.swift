@@ -176,6 +176,18 @@ actor GitService {
         return fileManager.fileExists(atPath: gitDir, isDirectory: &isDirectory) && isDirectory.boolValue
     }
 
+    /// Stages a file using git add
+    func stageFile(_ filePath: String, at repoPath: String) async throws {
+        try validateGitRepository(at: repoPath)
+        _ = try await runGitCommand(["add", filePath], at: repoPath)
+    }
+
+    /// Unstages a file using git restore --staged
+    func unstageFile(_ filePath: String, at repoPath: String) async throws {
+        try validateGitRepository(at: repoPath)
+        _ = try await runGitCommand(["restore", "--staged", filePath], at: repoPath)
+    }
+
     // MARK: - Private Methods
 
     /// Validates that the path is a Git repository, throws if not

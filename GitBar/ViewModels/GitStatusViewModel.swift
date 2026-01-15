@@ -68,4 +68,30 @@ class GitStatusViewModel: ObservableObject {
     var hasChanges: Bool {
         gitStatus?.hasUncommittedChanges ?? false
     }
+
+    /// Stages a file and refreshes the status
+    func stageFile(_ filePath: String) {
+        guard let path = projectPath else { return }
+        Task {
+            do {
+                try await gitService.stageFile(filePath, at: path)
+                refresh()
+            } catch {
+                self.error = error
+            }
+        }
+    }
+
+    /// Unstages a file and refreshes the status
+    func unstageFile(_ filePath: String) {
+        guard let path = projectPath else { return }
+        Task {
+            do {
+                try await gitService.unstageFile(filePath, at: path)
+                refresh()
+            } catch {
+                self.error = error
+            }
+        }
+    }
 }
