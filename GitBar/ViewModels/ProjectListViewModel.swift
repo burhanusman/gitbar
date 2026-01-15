@@ -6,9 +6,14 @@ import Combine
 class ProjectListViewModel: ObservableObject {
     @Published var projects: [Project] = []
     @Published var selectedProject: Project?
+    @Published var isAutoRefreshEnabled = true
 
     private let discoveryService: ClaudeProjectDiscoveryService
     private let gitService: GitService
+    private var autoRefreshTask: Task<Void, Never>?
+
+    /// Refresh interval for all project indicators (60 seconds)
+    private let autoRefreshInterval: TimeInterval = 60
 
     init(discoveryService: ClaudeProjectDiscoveryService = ClaudeProjectDiscoveryService(),
          gitService: GitService = GitService()) {
@@ -55,5 +60,39 @@ class ProjectListViewModel: ObservableObject {
                 projects[index].hasUncommittedChanges = await checkForUncommittedChanges(at: projects[index].path)
             }
         }
+    }
+
+    // MARK: - Auto-Refresh
+
+    /// Starts the auto-refresh timer for all project indicators
+    func startAutoRefresh() {
+        stopAutoRefresh()
+        guard isAutoRefreshEnabled else { return }
+
+        autoRefreshTask = Task {
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: UInt64(autoRefreshInterval * 1_000_000_000))
+                guard !Task.isCancelled, isAutoRefreshEnabled else { break }
+                await refreshStatusSilently()
+            }
+        }
+    }
+
+    /// Stops the auto-refresh timer
+    func stopAutoRefresh() {
+        autoRefreshTask?.cancel()
+        autoRefreshTask = nil
+    }
+
+    /// Refreshes status for all projects without disrupting user interaction
+    private func refreshStatusSilently() async {
+        for index in projects.indices {
+            guard !Task.isCancelled else { break }
+            projects[index].hasUncommittedChanges = await checkForUncommittedChanges(at: projects[index].path)
+        }
+    }
+
+    deinit {
+        autoRefreshTask?.cancel()
     }
 }

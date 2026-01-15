@@ -22,6 +22,10 @@ struct ProjectListView: View {
         .frame(minWidth: 150)
         .onAppear {
             viewModel.loadProjects()
+            viewModel.startAutoRefresh()
+        }
+        .onDisappear {
+            viewModel.stopAutoRefresh()
         }
     }
 }

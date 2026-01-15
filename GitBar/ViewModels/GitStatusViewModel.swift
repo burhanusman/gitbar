@@ -13,6 +13,7 @@ class GitStatusViewModel: ObservableObject {
     @Published var isPushing = false
     @Published var isPulling = false
     @Published var syncResult: SyncResult?
+    @Published var isAutoRefreshEnabled = true
 
     enum CommitResult {
         case success
@@ -27,6 +28,10 @@ class GitStatusViewModel: ObservableObject {
 
     private let gitService = GitService()
     private var projectPath: String?
+    private var autoRefreshTask: Task<Void, Never>?
+
+    /// Refresh interval for active project status (30 seconds)
+    private let autoRefreshInterval: TimeInterval = 30
 
     /// Loads the Git status for the given project path
     func loadStatus(for path: String) {
@@ -199,5 +204,42 @@ class GitStatusViewModel: ObservableObject {
                 self.error = error
             }
         }
+    }
+
+    // MARK: - Auto-Refresh
+
+    /// Starts the auto-refresh timer for the active project
+    func startAutoRefresh() {
+        stopAutoRefresh()
+        guard isAutoRefreshEnabled else { return }
+
+        autoRefreshTask = Task {
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: UInt64(autoRefreshInterval * 1_000_000_000))
+                guard !Task.isCancelled, isAutoRefreshEnabled else { break }
+                await refreshSilently()
+            }
+        }
+    }
+
+    /// Stops the auto-refresh timer
+    func stopAutoRefresh() {
+        autoRefreshTask?.cancel()
+        autoRefreshTask = nil
+    }
+
+    /// Refreshes status without showing loading indicator (for auto-refresh)
+    private func refreshSilently() async {
+        guard let path = projectPath else { return }
+        do {
+            let status = try await gitService.getStatus(at: path)
+            self.gitStatus = status
+        } catch {
+            // Silently ignore errors during auto-refresh to avoid disrupting the user
+        }
+    }
+
+    deinit {
+        autoRefreshTask?.cancel()
     }
 }

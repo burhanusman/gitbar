@@ -28,9 +28,14 @@ struct GitStatusView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .onAppear {
             viewModel.loadStatus(for: project.path)
+            viewModel.startAutoRefresh()
+        }
+        .onDisappear {
+            viewModel.stopAutoRefresh()
         }
         .onChange(of: project.path) { newPath in
             viewModel.loadStatus(for: newPath)
+            viewModel.startAutoRefresh()
         }
     }
 
