@@ -188,6 +188,12 @@ actor GitService {
         _ = try await runGitCommand(["restore", "--staged", filePath], at: repoPath)
     }
 
+    /// Commits staged changes with the given message
+    func commit(message: String, at repoPath: String) async throws {
+        try validateGitRepository(at: repoPath)
+        _ = try await runGitCommand(["commit", "-m", message], at: repoPath)
+    }
+
     // MARK: - Private Methods
 
     /// Validates that the path is a Git repository, throws if not

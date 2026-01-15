@@ -154,6 +154,73 @@ struct GitStatusView: View {
                         onUnstage: nil
                     )
                 }
+
+                // Commit section (inline below file list)
+                commitSection
+            }
+        }
+    }
+
+    // MARK: - Commit Section
+
+    private var commitSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Divider()
+                .padding(.vertical, 4)
+
+            // Commit message text field
+            TextField("Commit message", text: $viewModel.commitMessage)
+                .textFieldStyle(.roundedBorder)
+                .font(.system(.body, design: .default))
+
+            // Commit button and feedback
+            HStack {
+                Button(action: { viewModel.commit() }) {
+                    HStack(spacing: 4) {
+                        if viewModel.isCommitting {
+                            ProgressView()
+                                .scaleEffect(0.7)
+                        }
+                        Text(viewModel.isCommitting ? "Committing..." : "Commit")
+                    }
+                }
+                .disabled(!viewModel.canCommit)
+                .buttonStyle(.borderedProminent)
+
+                Spacer()
+
+                // Success/error feedback
+                if let result = viewModel.commitResult {
+                    commitFeedback(result)
+                }
+            }
+        }
+    }
+
+    private func commitFeedback(_ result: GitStatusViewModel.CommitResult) -> some View {
+        HStack(spacing: 4) {
+            switch result {
+            case .success:
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundColor(.green)
+                Text("Committed!")
+                    .font(.caption)
+                    .foregroundColor(.green)
+            case .failure(let error):
+                Image(systemName: "xmark.circle.fill")
+                    .foregroundColor(.red)
+                Text(error.localizedDescription)
+                    .font(.caption)
+                    .foregroundColor(.red)
+                    .lineLimit(1)
+            }
+        }
+        .onAppear {
+            // Auto-dismiss success feedback after 3 seconds
+            if case .success = result {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                    viewModel.clearCommitResult()
+                }
             }
         }
     }

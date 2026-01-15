@@ -7,6 +7,14 @@ class GitStatusViewModel: ObservableObject {
     @Published var gitStatus: GitStatus?
     @Published var isLoading = false
     @Published var error: Error?
+    @Published var commitMessage = ""
+    @Published var isCommitting = false
+    @Published var commitResult: CommitResult?
+
+    enum CommitResult {
+        case success
+        case failure(Error)
+    }
 
     private let gitService = GitService()
     private var projectPath: String?
@@ -67,6 +75,38 @@ class GitStatusViewModel: ObservableObject {
     /// Whether there are any changes to display
     var hasChanges: Bool {
         gitStatus?.hasUncommittedChanges ?? false
+    }
+
+    /// Whether the commit button should be enabled
+    var canCommit: Bool {
+        !stagedFiles.isEmpty && !commitMessage.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !isCommitting
+    }
+
+    /// Commits staged changes with the current commit message
+    func commit() {
+        guard let path = projectPath else { return }
+        let message = commitMessage.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !message.isEmpty, !stagedFiles.isEmpty else { return }
+
+        isCommitting = true
+        commitResult = nil
+
+        Task {
+            do {
+                try await gitService.commit(message: message, at: path)
+                self.commitMessage = ""
+                self.commitResult = .success
+                refresh()
+            } catch {
+                self.commitResult = .failure(error)
+            }
+            self.isCommitting = false
+        }
+    }
+
+    /// Clears the commit result feedback
+    func clearCommitResult() {
+        commitResult = nil
     }
 
     /// Stages a file and refreshes the status
