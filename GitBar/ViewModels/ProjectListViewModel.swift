@@ -8,22 +8,30 @@ class ProjectListViewModel: ObservableObject {
     @Published var selectedProject: Project?
 
     private let discoveryService: ClaudeProjectDiscoveryService
-    private let fileManager: FileManager
+    private let gitService: GitService
 
     init(discoveryService: ClaudeProjectDiscoveryService = ClaudeProjectDiscoveryService(),
-         fileManager: FileManager = .default) {
+         gitService: GitService = GitService()) {
         self.discoveryService = discoveryService
-        self.fileManager = fileManager
+        self.gitService = gitService
     }
 
     /// Loads projects and checks their git status
     func loadProjects() {
         let discoveredProjects = discoveryService.discoverProjects()
-        projects = discoveredProjects.map { claudeProject in
-            let hasChanges = checkForUncommittedChanges(at: claudeProject.path)
-            return Project(from: claudeProject, hasUncommittedChanges: hasChanges)
+
+        Task {
+            var loadedProjects: [Project] = []
+
+            for claudeProject in discoveredProjects {
+                let hasChanges = await checkForUncommittedChanges(at: claudeProject.path)
+                loadedProjects.append(Project(from: claudeProject, hasUncommittedChanges: hasChanges))
+            }
+
+            projects = loadedProjects.sorted {
+                $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending
+            }
         }
-        .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
     }
 
     /// Selects a project
@@ -31,25 +39,10 @@ class ProjectListViewModel: ObservableObject {
         selectedProject = project
     }
 
-    /// Checks if a Git repository has uncommitted changes
-    private func checkForUncommittedChanges(at path: String) -> Bool {
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/git")
-        process.arguments = ["-C", path, "status", "--porcelain"]
-
-        let pipe = Pipe()
-        process.standardOutput = pipe
-        process.standardError = FileHandle.nullDevice
-
+    /// Checks if a Git repository has uncommitted changes using GitService
+    private func checkForUncommittedChanges(at path: String) async -> Bool {
         do {
-            try process.run()
-            process.waitUntilExit()
-
-            let data = pipe.fileHandleForReading.readDataToEndOfFile()
-            let output = String(data: data, encoding: .utf8) ?? ""
-
-            // If there's any output, there are uncommitted changes
-            return !output.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            return try await gitService.hasUncommittedChanges(at: path)
         } catch {
             return false
         }
@@ -57,8 +50,10 @@ class ProjectListViewModel: ObservableObject {
 
     /// Refreshes the git status for all projects
     func refreshStatus() {
-        for index in projects.indices {
-            projects[index].hasUncommittedChanges = checkForUncommittedChanges(at: projects[index].path)
+        Task {
+            for index in projects.indices {
+                projects[index].hasUncommittedChanges = await checkForUncommittedChanges(at: projects[index].path)
+            }
         }
     }
 }

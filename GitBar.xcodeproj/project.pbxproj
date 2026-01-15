@@ -14,6 +14,7 @@
 		A100000A229A0001000A0001 /* Project.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000B229A0001000A0001 /* Project.swift */; };
 		A100000C229A0001000A0001 /* ProjectListViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000D229A0001000A0001 /* ProjectListViewModel.swift */; };
 		A100000E229A0001000A0001 /* ProjectListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000F229A0001000A0001 /* ProjectListView.swift */; };
+		A1000010229A0001000A0002 /* GitService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000011229A0001000A0002 /* GitService.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -26,6 +27,7 @@
 		A100000B229A0001000A0001 /* Project.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Project.swift; sourceTree = "<group>"; };
 		A100000D229A0001000A0001 /* ProjectListViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectListViewModel.swift; sourceTree = "<group>"; };
 		A100000F229A0001000A0001 /* ProjectListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectListView.swift; sourceTree = "<group>"; };
+		A1000011229A0001000A0002 /* GitService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitService.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -99,6 +101,7 @@
 			isa = PBXGroup;
 			children = (
 				A1000009229A0001000A0001 /* ClaudeProjectDiscoveryService.swift */,
+				A1000011229A0001000A0002 /* GitService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -182,6 +185,7 @@
 				A1000003229A0001000A0001 /* ContentView.swift in Sources */,
 				A1000001229A0001000A0001 /* GitBarApp.swift in Sources */,
 				A1000007229A0001000A0001 /* ClaudeProjectDiscoveryService.swift in Sources */,
+				A1000010229A0001000A0002 /* GitService.swift in Sources */,
 				A100000A229A0001000A0001 /* Project.swift in Sources */,
 				A100000C229A0001000A0001 /* ProjectListViewModel.swift in Sources */,
 				A100000E229A0001000A0001 /* ProjectListView.swift in Sources */,
