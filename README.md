@@ -1,8 +1,33 @@
 # GitBar
 
-A macOS menubar app that displays git status for Claude Code and Codex projects.
+<div align="center">
+  <img src="GitBar/Assets.xcassets/AppIcon.appiconset/icon_256x256.png" width="256" alt="GitBar Icon">
 
-![GitBar Icon](GitBar/Assets.xcassets/AppIcon.appiconset/icon_256x256.png)
+  <p><strong>Git repository status at a glance. Lives in your menu bar.</strong></p>
+
+  [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+  [![macOS](https://img.shields.io/badge/macOS-13.0+-blue.svg)](https://www.apple.com/macos)
+  [![Swift](https://img.shields.io/badge/Swift-5.9+-orange.svg)](https://swift.org)
+
+  [**Website**](https://gitbar.app) • [**Download**](https://github.com/burhanusman/gitbar/releases/latest) • [**Documentation**](#documentation)
+</div>
+
+## Overview
+
+GitBar lives in your macOS menubar and provides instant visibility into the git status of your development projects. Whether you're working with Claude Code, Codex, or any git repository, GitBar keeps you informed about uncommitted changes, branch status, and sync state with your remote repositories.
+
+## Screenshots
+
+<!-- TODO: Add screenshots/GIF showing:
+- Menubar icon with git status
+- Project list with multiple repositories
+- Settings panel
+- Auto-update functionality
+Record with Kap (https://getkap.co/) or LICEcap (https://www.cockos.com/licecap/)
+-->
+
+![GitBar Demo](docs/images/demo.gif)
+*Coming soon: animated demo*
 
 ## Features
 
@@ -93,30 +118,11 @@ xcodebuild -project GitBar.xcodeproj -scheme GitBar build
 - macOS 13.0 (Ventura) or later
 - Git installed on your system
 
-## Contributing to Homebrew
+## Contributing
 
-To update the Homebrew cask formula after a new release:
+While GitBar is not actively seeking contributions at this time, bug reports and feature requests are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for details on the process for submitting pull requests and reporting issues.
 
-1. Fork the [homebrew-cask](https://github.com/Homebrew/homebrew-cask) repository
-2. Update `Casks/g/gitbar.rb` with the new version and SHA256:
-
-```bash
-# Calculate SHA256 of the DMG
-shasum -a 256 GitBar-v1.0.0.dmg
-
-# Update the cask formula
-version "1.0.0"
-sha256 "your-calculated-sha256-hash"
-```
-
-3. Test the formula locally:
-
-```bash
-brew install --cask gitbar
-brew uninstall --cask gitbar
-```
-
-4. Submit a pull request to homebrew-cask
+By participating in this project, you agree to abide by our [Code of Conduct](CODE_OF_CONDUCT.md)
 
 ## Documentation
 
