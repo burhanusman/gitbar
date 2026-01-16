@@ -14,7 +14,7 @@ struct ContentView: View {
             // Main content
             NavigationSplitView {
                 ProjectListView(viewModel: projectListViewModel)
-                    .navigationSplitViewColumnWidth(min: 150, ideal: 180, max: 220)
+                    .navigationSplitViewColumnWidth(min: 180, ideal: 220, max: 260)
             } detail: {
                 if let selectedProject = projectListViewModel.selectedProject {
                     GitStatusView(project: selectedProject)
@@ -32,6 +32,9 @@ struct ContentView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .sheet(isPresented: $showSettings) {
             SettingsView()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .openSettings)) { _ in
+            showSettings = true
         }
     }
 

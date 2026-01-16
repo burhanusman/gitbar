@@ -22,6 +22,7 @@
 		A100001A229A0001000A0007 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100001B229A0001000A0007 /* SettingsView.swift */; };
 		A100001C229A0001000A0008 /* Color+Hex.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100001D229A0001000A0008 /* Color+Hex.swift */; };
 		A100001E229A0001000A0009 /* SparkleUpdateService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100001F229A0001000A0009 /* SparkleUpdateService.swift */; };
+		A1000022229A0001000A000A /* EventMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000021229A0001000A000A /* EventMonitor.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -42,6 +43,7 @@
 		A100001B229A0001000A0007 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		A100001D229A0001000A0008 /* Color+Hex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Color+Hex.swift"; sourceTree = "<group>"; };
 		A100001F229A0001000A0009 /* SparkleUpdateService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SparkleUpdateService.swift; sourceTree = "<group>"; };
+		A1000021229A0001000A000A /* EventMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventMonitor.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -123,6 +125,7 @@
 				A1000011229A0001000A0002 /* GitService.swift */,
 				A1000017229A0001000A0005 /* SettingsService.swift */,
 				A100001F229A0001000A0009 /* SparkleUpdateService.swift */,
+				A1000021229A0001000A000A /* EventMonitor.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -225,6 +228,7 @@
 				A100001A229A0001000A0007 /* SettingsView.swift in Sources */,
 				A100001C229A0001000A0008 /* Color+Hex.swift in Sources */,
 				A100001E229A0001000A0009 /* SparkleUpdateService.swift in Sources */,
+				A1000022229A0001000A000A /* EventMonitor.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

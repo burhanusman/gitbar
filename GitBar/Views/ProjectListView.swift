@@ -1,53 +1,99 @@
 import SwiftUI
+import AppKit
 
 /// Sidebar view displaying the list of projects
 struct ProjectListView: View {
     @ObservedObject var viewModel: ProjectListViewModel
 
     var body: some View {
-        ScrollView {
-            LazyVStack(alignment: .leading, spacing: 8) {
-                ForEach($viewModel.sections) { section in
-                    DisclosureGroup(isExpanded: section.isExpanded) {
-                        VStack(spacing: 8) {
-                            if section.wrappedValue.projects.isEmpty {
-                                Text("No repos found")
-                                    .font(.system(size: 11))
-                                    .foregroundColor(.secondary)
-                                    .padding(.horizontal, 12)
-                                    .padding(.vertical, 6)
-                            } else {
-                                ForEach(section.wrappedValue.projects) { project in
-                                    ProjectRow(
-                                        project: project,
-                                        isSelected: viewModel.selectedProject?.id == project.id
-                                    )
-                                    .onTapGesture {
-                                        viewModel.selectProject(project)
+        VStack(spacing: 0) {
+            HStack {
+                Text("Projects")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundColor(.secondary)
+
+                Spacer()
+
+                Button(action: addFolderSource) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "plus")
+                            .font(.system(size: 11, weight: .semibold))
+                        Text("Add")
+                            .font(.system(size: 11, weight: .medium))
+                    }
+                    .foregroundColor(.secondary)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 6)
+                    .background(Color(hex: "#1a1a1a"))
+                    .cornerRadius(6)
+                }
+                .buttonStyle(.plain)
+                .help("Add folder source")
+            }
+            .padding(.horizontal, 8)
+            .padding(.top, 8)
+
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: 8) {
+                    ForEach($viewModel.sections) { section in
+                        DisclosureGroup(isExpanded: section.isExpanded) {
+                            VStack(spacing: 8) {
+                                if section.wrappedValue.projects.isEmpty {
+                                    Text("No repos found")
+                                        .font(.system(size: 11))
+                                        .foregroundColor(.secondary)
+                                        .padding(.horizontal, 12)
+                                        .padding(.vertical, 6)
+                                } else {
+                                    ForEach(section.wrappedValue.projects) { project in
+                                        ProjectRow(
+                                            project: project,
+                                            isSelected: viewModel.selectedProject?.id == project.id
+                                        )
+                                        .onTapGesture {
+                                            viewModel.selectProject(project)
+                                        }
                                     }
                                 }
                             }
-                        }
-                        .padding(.leading, 8)
-                        .padding(.top, 4)
-                    } label: {
-                        Text(section.wrappedValue.title)
-                            .font(.system(size: 11, weight: .medium))
-                            .foregroundColor(.secondary)
+                            .padding(.leading, 8)
+                            .padding(.top, 4)
+                        } label: {
+                            HStack(spacing: 4) {
+                                Text(section.wrappedValue.title)
+                                    .font(.system(size: 11, weight: .medium))
+                                    .foregroundColor(.secondary)
+                                Spacer()
+                            }
                             .padding(.horizontal, 12)
                             .padding(.vertical, 6)
+                            .contentShape(Rectangle())
+                        }
                     }
                 }
+                .padding(.vertical, 8)
             }
-            .padding(.vertical, 8)
+            .frame(minWidth: 150)
+            .onAppear {
+                viewModel.loadProjects()
+                viewModel.startAutoRefresh()
+            }
+            .onDisappear {
+                viewModel.stopAutoRefresh()
+            }
         }
-        .frame(minWidth: 150)
-        .onAppear {
-            viewModel.loadProjects()
-            viewModel.startAutoRefresh()
-        }
-        .onDisappear {
-            viewModel.stopAutoRefresh()
+    }
+
+    private func addFolderSource() {
+        let panel = NSOpenPanel()
+        panel.canChooseFiles = false
+        panel.canChooseDirectories = true
+        panel.allowsMultipleSelection = false
+        panel.prompt = "Add"
+        panel.message = "Choose a folder to scan for git repositories."
+
+        if panel.runModal() == .OK, let url = panel.url {
+            SettingsService.shared.addRepoFolder(url.path)
         }
     }
 }

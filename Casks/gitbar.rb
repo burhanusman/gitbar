@@ -17,9 +17,9 @@ cask "gitbar" do
   app "GitBar.app"
 
   zap trash: [
-    "~/Library/Application Support/com.yourcompany.GitBar",
-    "~/Library/Caches/com.yourcompany.GitBar",
-    "~/Library/Preferences/com.yourcompany.GitBar.plist",
+    "~/Library/Application Support/com.gitbar.app",
+    "~/Library/Caches/com.gitbar.app",
+    "~/Library/Preferences/com.gitbar.app.plist",
   ]
 
   caveats <<~EOS

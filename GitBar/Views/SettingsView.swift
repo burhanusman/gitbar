@@ -17,11 +17,16 @@ struct SettingsView: View {
                 Spacer()
 
                 Button(action: { dismiss() }) {
-                    Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 16))
-                        .foregroundColor(.secondary)
+                    Text("Done")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundColor(.primary)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background(Color(hex: "#2a2a2a"))
+                        .cornerRadius(6)
                 }
                 .buttonStyle(.plain)
+                .keyboardShortcut(.cancelAction)
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 16)
@@ -52,6 +57,97 @@ struct SettingsView: View {
                             .toggleStyle(.switch)
                             .padding(.horizontal, 20)
                             .padding(.vertical, 12)
+                        }
+                        .background(Color(hex: "#1a1a1a"))
+                    }
+
+                    // Folders Section
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("FOLDERS")
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundColor(.secondary)
+                            .padding(.horizontal, 20)
+                            .padding(.top, 20)
+
+                        VStack(spacing: 0) {
+                            HStack {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Folder sources")
+                                        .font(.system(size: 13))
+                                    Text("Scan these folders for git repositories")
+                                        .font(.system(size: 11))
+                                        .foregroundColor(.secondary)
+                                }
+
+                                Spacer()
+
+                                Button(action: addFolder) {
+                                    HStack(spacing: 6) {
+                                        Image(systemName: "plus")
+                                            .font(.system(size: 11, weight: .semibold))
+                                        Text("Add Folder")
+                                            .font(.system(size: 13))
+                                    }
+                                    .foregroundColor(.primary)
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 6)
+                                    .background(Color(hex: "#2a2a2a"))
+                                    .cornerRadius(6)
+                                }
+                                .buttonStyle(.plain)
+                            }
+                            .padding(.horizontal, 20)
+                            .padding(.vertical, 12)
+
+                            if viewModel.repoFolders.isEmpty {
+                                Divider()
+                                    .padding(.leading, 20)
+
+                                Text("No folders added")
+                                    .font(.system(size: 11))
+                                    .foregroundColor(.secondary)
+                                    .padding(.horizontal, 20)
+                                    .padding(.vertical, 12)
+                            } else {
+                                Divider()
+                                    .padding(.leading, 20)
+
+                                VStack(spacing: 0) {
+                                    ForEach(viewModel.repoFolders, id: \.self) { folderPath in
+                                        HStack(spacing: 12) {
+                                            VStack(alignment: .leading, spacing: 2) {
+                                                Text(URL(fileURLWithPath: folderPath).lastPathComponent)
+                                                    .font(.system(size: 13))
+                                                    .lineLimit(1)
+                                                    .truncationMode(.middle)
+
+                                                Text(folderPath)
+                                                    .font(.system(size: 11))
+                                                    .foregroundColor(.secondary)
+                                                    .lineLimit(1)
+                                                    .truncationMode(.middle)
+                                            }
+
+                                            Spacer()
+
+                                            Button(action: { viewModel.removeRepoFolder(folderPath) }) {
+                                                Image(systemName: "minus.circle")
+                                                    .font(.system(size: 14))
+                                                    .foregroundColor(Color(hex: "#FF453A"))
+                                            }
+                                            .buttonStyle(.plain)
+                                            .help("Remove folder")
+                                        }
+                                        .padding(.horizontal, 20)
+                                        .padding(.vertical, 10)
+
+                                        if folderPath != viewModel.repoFolders.last {
+                                            Divider()
+                                                .padding(.leading, 20)
+                                        }
+                                    }
+                                }
+                            }
                         }
                         .background(Color(hex: "#1a1a1a"))
                     }
@@ -167,7 +263,7 @@ struct SettingsView: View {
                 }
             }
         }
-        .frame(width: 400, height: 300)
+        .frame(width: 420, height: 420)
         .background(Color(hex: "#0d0d0d"))
     }
 
@@ -175,6 +271,19 @@ struct SettingsView: View {
         let formatter = RelativeDateTimeFormatter()
         formatter.unitsStyle = .full
         return formatter.localizedString(for: date, relativeTo: Date())
+    }
+
+    private func addFolder() {
+        let panel = NSOpenPanel()
+        panel.canChooseFiles = false
+        panel.canChooseDirectories = true
+        panel.allowsMultipleSelection = false
+        panel.prompt = "Add"
+        panel.message = "Choose a folder to scan for git repositories."
+
+        if panel.runModal() == .OK, let url = panel.url {
+            viewModel.addRepoFolder(url.path)
+        }
     }
 }
 
