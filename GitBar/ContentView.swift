@@ -38,20 +38,20 @@ struct ContentView: View {
     private var headerView: some View {
         HStack {
             Text("GitBar")
-                .font(.headline)
-                .fontWeight(.semibold)
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundColor(.primary)
 
             Spacer()
 
             Button(action: { showSettings.toggle() }) {
                 Image(systemName: "gearshape")
+                    .font(.system(size: 14))
                     .foregroundColor(.secondary)
             }
             .buttonStyle(.plain)
             .help("Settings")
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
+        .padding(16)
     }
 }
 

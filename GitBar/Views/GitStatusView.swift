@@ -11,7 +11,7 @@ struct GitStatusView: View {
             headerView
 
             Divider()
-                .padding(.vertical, 8)
+                .padding(.vertical, 12)
 
             // File changes or empty state
             if viewModel.isLoading {
@@ -24,7 +24,7 @@ struct GitStatusView: View {
                 changesListView
             }
         }
-        .padding()
+        .padding(16)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .onAppear {
             viewModel.loadStatus(for: project.path)
@@ -42,29 +42,82 @@ struct GitStatusView: View {
     // MARK: - Header View
 
     private var headerView: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .center, spacing: 8) {
                 Image(systemName: "arrow.triangle.branch")
+                    .font(.system(size: 13))
                     .foregroundColor(.secondary)
 
-                Text(viewModel.gitStatus?.currentBranch ?? "Loading...")
-                    .font(.headline)
-                    .fontWeight(.semibold)
+                Menu {
+                    if viewModel.branches.isEmpty {
+                        Text("No local branches")
+                            .foregroundColor(.secondary)
+                    } else {
+                        ForEach(viewModel.branches, id: \.self) { branch in
+                            Button(action: { viewModel.checkoutBranch(branch) }) {
+                                if branch == viewModel.gitStatus?.currentBranch {
+                                    Label(branch, systemImage: "checkmark")
+                                } else {
+                                    Text(branch)
+                                }
+                            }
+                            .disabled(viewModel.isSwitchingBranch)
+                        }
+                    }
+                } label: {
+                    HStack(spacing: 6) {
+                        Text(branchLabel)
+                            .font(.system(size: 15, weight: .semibold))
+
+                        Image(systemName: "chevron.down")
+                            .font(.system(size: 10))
+                            .foregroundColor(.secondary)
+
+                        if viewModel.isSwitchingBranch {
+                            ProgressView()
+                                .scaleEffect(0.6)
+                        }
+                    }
+                }
+                .menuStyle(BorderlessButtonMenuStyle())
+                .help("Switch branch")
 
                 if let aheadBehind = viewModel.aheadBehindText {
                     Text(aheadBehind)
-                        .font(.subheadline)
-                        .foregroundColor(.blue)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(Color.blue.opacity(0.1))
-                        .cornerRadius(4)
+                        .font(.system(size: 11))
+                        .foregroundColor(Color(hex: "#0A84FF"))
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(Color(hex: "#0A84FF").opacity(0.15))
+                        .cornerRadius(6)
                 }
 
                 Spacer()
 
+                if viewModel.worktrees.count > 1 {
+                    Menu {
+                        ForEach(viewModel.worktrees) { worktree in
+                            Button(action: { viewModel.switchToWorktree(at: worktree.path) }) {
+                                if worktree.path == viewModel.activePath {
+                                    Label(worktreeLabel(for: worktree), systemImage: "checkmark")
+                                } else {
+                                    Text(worktreeLabel(for: worktree))
+                                }
+                            }
+                            .disabled(worktree.path == viewModel.activePath)
+                        }
+                    } label: {
+                        Image(systemName: "square.stack.3d.up")
+                            .font(.system(size: 14))
+                            .foregroundColor(.secondary)
+                    }
+                    .menuStyle(BorderlessButtonMenuStyle())
+                    .help("Switch worktree")
+                }
+
                 Button(action: { viewModel.refresh() }) {
                     Image(systemName: "arrow.clockwise")
+                        .font(.system(size: 14))
                         .foregroundColor(.secondary)
                 }
                 .buttonStyle(.plain)
@@ -75,33 +128,45 @@ struct GitStatusView: View {
             HStack(spacing: 8) {
                 // Pull button
                 Button(action: { viewModel.pull() }) {
-                    HStack(spacing: 4) {
+                    HStack(spacing: 6) {
                         if viewModel.isPulling {
                             ProgressView()
                                 .scaleEffect(0.6)
                         } else {
                             Image(systemName: "arrow.down.circle")
+                                .font(.system(size: 13))
                         }
                         Text(viewModel.isPulling ? "Pulling..." : "Pull")
+                            .font(.system(size: 13))
                     }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(.borderless)
+                .background(Color(hex: "#2a2a2a"))
+                .cornerRadius(6)
                 .disabled(!viewModel.canPull)
                 .help("Pull changes from remote")
 
                 // Push button
                 Button(action: { viewModel.push() }) {
-                    HStack(spacing: 4) {
+                    HStack(spacing: 6) {
                         if viewModel.isPushing {
                             ProgressView()
                                 .scaleEffect(0.6)
                         } else {
                             Image(systemName: "arrow.up.circle")
+                                .font(.system(size: 13))
                         }
                         Text(viewModel.isPushing ? "Pushing..." : "Push")
+                            .font(.system(size: 13))
                     }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(.borderless)
+                .background(Color(hex: "#2a2a2a"))
+                .cornerRadius(6)
                 .disabled(!viewModel.canPush)
                 .help("Push commits to remote")
 
@@ -115,29 +180,45 @@ struct GitStatusView: View {
         }
     }
 
+    private var branchLabel: String {
+        if viewModel.gitStatus == nil {
+            return "Loading..."
+        }
+        return viewModel.gitStatus?.currentBranch ?? "Detached HEAD"
+    }
+
+    private func worktreeLabel(for worktree: GitWorktree) -> String {
+        let name = URL(fileURLWithPath: worktree.path).lastPathComponent
+        let branch = worktree.branch ?? (worktree.isDetached ? "detached" : "unknown")
+        return "\(name) · \(branch)"
+    }
+
     // MARK: - Sync Feedback
 
     private func syncFeedback(_ result: GitStatusViewModel.SyncResult) -> some View {
-        HStack(spacing: 4) {
+        HStack(spacing: 6) {
             switch result {
             case .pushSuccess:
                 Image(systemName: "checkmark.circle.fill")
-                    .foregroundColor(.green)
+                    .font(.system(size: 12))
+                    .foregroundColor(Color(hex: "#30D158"))
                 Text("Pushed!")
-                    .font(.caption)
-                    .foregroundColor(.green)
+                    .font(.system(size: 11))
+                    .foregroundColor(Color(hex: "#30D158"))
             case .pullSuccess:
                 Image(systemName: "checkmark.circle.fill")
-                    .foregroundColor(.green)
+                    .font(.system(size: 12))
+                    .foregroundColor(Color(hex: "#30D158"))
                 Text("Pulled!")
-                    .font(.caption)
-                    .foregroundColor(.green)
+                    .font(.system(size: 11))
+                    .foregroundColor(Color(hex: "#30D158"))
             case .failure(let error):
                 Image(systemName: "xmark.circle.fill")
-                    .foregroundColor(.red)
+                    .font(.system(size: 12))
+                    .foregroundColor(Color(hex: "#FF453A"))
                 Text(error.localizedDescription)
-                    .font(.caption)
-                    .foregroundColor(.red)
+                    .font(.system(size: 11))
+                    .foregroundColor(Color(hex: "#FF453A"))
                     .lineLimit(1)
             }
         }
@@ -163,26 +244,27 @@ struct GitStatusView: View {
             ProgressView()
                 .scaleEffect(0.8)
             Text("Loading...")
+                .font(.system(size: 13))
                 .foregroundColor(.secondary)
             Spacer()
         }
-        .padding(.vertical, 20)
+        .padding(.vertical, 30)
     }
 
     // MARK: - Error View
 
     private func errorView(error: Error) -> some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 12) {
             Image(systemName: "exclamationmark.triangle")
-                .font(.title2)
-                .foregroundColor(.red)
+                .font(.system(size: 28))
+                .foregroundColor(Color(hex: "#FF453A"))
             Text(error.localizedDescription)
-                .font(.caption)
+                .font(.system(size: 11))
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 20)
+        .padding(.vertical, 30)
     }
 
     // MARK: - Empty State View
@@ -190,17 +272,17 @@ struct GitStatusView: View {
     private var emptyStateView: some View {
         VStack(spacing: 12) {
             Image(systemName: "checkmark.circle")
-                .font(.title)
-                .foregroundColor(.green)
+                .font(.system(size: 32))
+                .foregroundColor(Color(hex: "#30D158"))
             Text("Working tree clean")
-                .font(.subheadline)
-                .foregroundColor(.secondary)
+                .font(.system(size: 13))
+                .foregroundColor(.primary)
             Text("No uncommitted changes")
-                .font(.caption)
+                .font(.system(size: 11))
                 .foregroundColor(.secondary)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 30)
+        .padding(.vertical, 40)
     }
 
     // MARK: - Changes List View
@@ -253,28 +335,34 @@ struct GitStatusView: View {
     // MARK: - Commit Section
 
     private var commitSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 12) {
             Divider()
-                .padding(.vertical, 4)
+                .padding(.vertical, 8)
 
             // Commit message text field
             TextField("Commit message", text: $viewModel.commitMessage)
                 .textFieldStyle(.roundedBorder)
-                .font(.system(.body, design: .default))
+                .font(.system(size: 13))
 
             // Commit button and feedback
             HStack {
                 Button(action: { viewModel.commit() }) {
-                    HStack(spacing: 4) {
+                    HStack(spacing: 6) {
                         if viewModel.isCommitting {
                             ProgressView()
                                 .scaleEffect(0.7)
                         }
                         Text(viewModel.isCommitting ? "Committing..." : "Commit")
+                            .font(.system(size: 13, weight: .medium))
                     }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
                 }
                 .disabled(!viewModel.canCommit)
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(.borderless)
+                .background(viewModel.canCommit ? Color(hex: "#0A84FF") : Color(hex: "#2a2a2a"))
+                .foregroundColor(viewModel.canCommit ? .white : .secondary)
+                .cornerRadius(6)
 
                 Spacer()
 
@@ -287,20 +375,22 @@ struct GitStatusView: View {
     }
 
     private func commitFeedback(_ result: GitStatusViewModel.CommitResult) -> some View {
-        HStack(spacing: 4) {
+        HStack(spacing: 6) {
             switch result {
             case .success:
                 Image(systemName: "checkmark.circle.fill")
-                    .foregroundColor(.green)
+                    .font(.system(size: 12))
+                    .foregroundColor(Color(hex: "#30D158"))
                 Text("Committed!")
-                    .font(.caption)
-                    .foregroundColor(.green)
+                    .font(.system(size: 11))
+                    .foregroundColor(Color(hex: "#30D158"))
             case .failure(let error):
                 Image(systemName: "xmark.circle.fill")
-                    .foregroundColor(.red)
+                    .font(.system(size: 12))
+                    .foregroundColor(Color(hex: "#FF453A"))
                 Text(error.localizedDescription)
-                    .font(.caption)
-                    .foregroundColor(.red)
+                    .font(.system(size: 11))
+                    .foregroundColor(Color(hex: "#FF453A"))
                     .lineLimit(1)
             }
         }
@@ -327,15 +417,14 @@ struct FileGroupView: View {
     let onUnstage: ((String) -> Void)?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 6) {
                 Text(title)
-                    .font(.subheadline)
-                    .fontWeight(.medium)
+                    .font(.system(size: 13, weight: .medium))
                     .foregroundColor(titleColor)
 
                 Text("(\(files.count))")
-                    .font(.caption)
+                    .font(.system(size: 11))
                     .foregroundColor(.secondary)
             }
 
@@ -359,67 +448,75 @@ struct FileRowView: View {
     let isStaged: Bool
     let onStage: ((String) -> Void)?
     let onUnstage: ((String) -> Void)?
+    @State private var isHovering = false
 
     var body: some View {
         HStack(spacing: 8) {
             // Status indicator
             Text(file.status.rawValue)
-                .font(.system(.caption, design: .monospaced))
+                .font(.system(size: 11, design: .monospaced))
                 .fontWeight(.semibold)
                 .foregroundColor(statusColor)
                 .frame(width: 16)
 
             // File path
             Text(file.path)
-                .font(.system(.caption, design: .monospaced))
+                .font(.system(size: 13, design: .monospaced))
                 .lineLimit(1)
                 .truncationMode(.middle)
 
             Spacer()
 
-            // Stage/Unstage button
-            if isStaged {
-                // Unstage button for staged files
-                Button(action: { onUnstage?(file.path) }) {
-                    Image(systemName: "minus.circle")
-                        .foregroundColor(.red)
+            // Stage/Unstage button (only visible on hover)
+            if isHovering {
+                if isStaged {
+                    // Unstage button for staged files
+                    Button(action: { onUnstage?(file.path) }) {
+                        Image(systemName: "minus.circle.fill")
+                            .font(.system(size: 16))
+                            .foregroundColor(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                    .help("Unstage file")
+                } else {
+                    // Stage button for unstaged/untracked files
+                    Button(action: { onStage?(file.path) }) {
+                        Image(systemName: "plus.circle.fill")
+                            .font(.system(size: 16))
+                            .foregroundColor(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                    .help("Stage file")
                 }
-                .buttonStyle(.plain)
-                .help("Unstage file")
-            } else {
-                // Stage button for unstaged/untracked files
-                Button(action: { onStage?(file.path) }) {
-                    Image(systemName: "plus.circle")
-                        .foregroundColor(.green)
-                }
-                .buttonStyle(.plain)
-                .help("Stage file")
             }
         }
-        .padding(.vertical, 2)
+        .padding(.vertical, 6)
         .padding(.horizontal, 8)
-        .background(Color.primary.opacity(0.03))
-        .cornerRadius(4)
+        .background(isHovering ? Color(hex: "#2a2a2a") : Color(hex: "#1a1a1a").opacity(0.3))
+        .cornerRadius(6)
+        .onHover { hovering in
+            isHovering = hovering
+        }
     }
 
     private var statusColor: Color {
         switch file.status {
         case .modified:
-            return .orange
+            return Color(hex: "#0A84FF")
         case .added:
-            return .green
+            return Color(hex: "#30D158")
         case .deleted:
-            return .red
+            return Color(hex: "#FF453A")
         case .renamed, .copied:
-            return .blue
+            return Color(hex: "#0A84FF")
         case .untracked:
             return .secondary
         case .ignored:
-            return .gray
+            return .secondary
         case .unmerged:
-            return .purple
+            return Color(hex: "#BF5AF2")
         case .typeChanged:
-            return .cyan
+            return Color(hex: "#64D2FF")
         }
     }
 }

@@ -20,6 +20,7 @@
 		A1000016229A0001000A0005 /* SettingsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000017229A0001000A0005 /* SettingsService.swift */; };
 		A1000018229A0001000A0006 /* SettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000019229A0001000A0006 /* SettingsViewModel.swift */; };
 		A100001A229A0001000A0007 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100001B229A0001000A0007 /* SettingsView.swift */; };
+		A100001C229A0001000A0008 /* Color+Hex.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100001D229A0001000A0008 /* Color+Hex.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -38,6 +39,7 @@
 		A1000017229A0001000A0005 /* SettingsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsService.swift; sourceTree = "<group>"; };
 		A1000019229A0001000A0006 /* SettingsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsViewModel.swift; sourceTree = "<group>"; };
 		A100001B229A0001000A0007 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		A100001D229A0001000A0008 /* Color+Hex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Color+Hex.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -68,6 +70,7 @@
 				A10000E4229A0001000A0001 /* Models */,
 				A10000E5229A0001000A0001 /* ViewModels */,
 				A10000E6229A0001000A0001 /* Services */,
+				A10000E8229A0001000A0001 /* Extensions */,
 				A10000E7229A0001000A0001 /* Utils */,
 				A1000006229A0001000A0001 /* Assets.xcassets */,
 				A1000008229A0001000A0001 /* GitBar.entitlements */,
@@ -126,6 +129,14 @@
 			children = (
 			);
 			path = Utils;
+			sourceTree = "<group>";
+		};
+		A10000E8229A0001000A0001 /* Extensions */ = {
+			isa = PBXGroup;
+			children = (
+				A100001D229A0001000A0008 /* Color+Hex.swift */,
+			);
+			path = Extensions;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -209,6 +220,7 @@
 				A1000016229A0001000A0005 /* SettingsService.swift in Sources */,
 				A1000018229A0001000A0006 /* SettingsViewModel.swift in Sources */,
 				A100001A229A0001000A0007 /* SettingsView.swift in Sources */,
+				A100001C229A0001000A0008 /* Color+Hex.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

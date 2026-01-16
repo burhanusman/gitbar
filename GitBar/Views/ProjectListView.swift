@@ -6,18 +6,40 @@ struct ProjectListView: View {
 
     var body: some View {
         ScrollView {
-            LazyVStack(alignment: .leading, spacing: 2) {
-                ForEach(viewModel.projects) { project in
-                    ProjectRow(
-                        project: project,
-                        isSelected: viewModel.selectedProject?.id == project.id
-                    )
-                    .onTapGesture {
-                        viewModel.selectProject(project)
+            LazyVStack(alignment: .leading, spacing: 8) {
+                ForEach($viewModel.sections) { section in
+                    DisclosureGroup(isExpanded: section.isExpanded) {
+                        VStack(spacing: 8) {
+                            if section.wrappedValue.projects.isEmpty {
+                                Text("No repos found")
+                                    .font(.system(size: 11))
+                                    .foregroundColor(.secondary)
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 6)
+                            } else {
+                                ForEach(section.wrappedValue.projects) { project in
+                                    ProjectRow(
+                                        project: project,
+                                        isSelected: viewModel.selectedProject?.id == project.id
+                                    )
+                                    .onTapGesture {
+                                        viewModel.selectProject(project)
+                                    }
+                                }
+                            }
+                        }
+                        .padding(.leading, 8)
+                        .padding(.top, 4)
+                    } label: {
+                        Text(section.wrappedValue.title)
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundColor(.secondary)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 6)
                     }
                 }
             }
-            .padding(.vertical, 4)
+            .padding(.vertical, 8)
         }
         .frame(minWidth: 150)
         .onAppear {
@@ -34,15 +56,18 @@ struct ProjectListView: View {
 struct ProjectRow: View {
     let project: Project
     let isSelected: Bool
+    @State private var isHovering = false
 
     var body: some View {
         HStack(spacing: 8) {
             // Uncommitted changes indicator
             Circle()
-                .fill(project.hasUncommittedChanges ? Color.orange : Color.clear)
-                .frame(width: 8, height: 8)
+                .fill(project.hasUncommittedChanges ? Color(hex: "#0A84FF") : Color.clear)
+                .frame(width: 6, height: 6)
 
             Text(project.name)
+                .font(.system(size: 13))
+                .foregroundColor(isSelected ? .primary : .secondary)
                 .lineLimit(1)
                 .truncationMode(.middle)
 
@@ -50,10 +75,23 @@ struct ProjectRow: View {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
-        .background(isSelected ? Color.accentColor.opacity(0.2) : Color.clear)
+        .background(backgroundColor)
         .cornerRadius(6)
         .padding(.horizontal, 4)
         .contentShape(Rectangle())
+        .onHover { hovering in
+            isHovering = hovering
+        }
+    }
+
+    private var backgroundColor: Color {
+        if isSelected {
+            return Color(hex: "#2a2a2a")
+        } else if isHovering {
+            return Color(hex: "#1a1a1a").opacity(0.5)
+        } else {
+            return Color.clear
+        }
     }
 }
 
