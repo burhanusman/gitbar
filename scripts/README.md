@@ -114,6 +114,51 @@ xcrun notarytool store-credentials "gitbar-notarytool" \
 
 ---
 
+### test-homebrew-cask.sh
+
+Tests Homebrew cask formula locally before submission.
+
+**Usage:**
+```bash
+./scripts/test-homebrew-cask.sh [command]
+```
+
+**Commands:**
+- `audit` - Run Homebrew audit on the cask
+- `style` - Check cask formatting and style
+- `install` - Install GitBar from local cask
+- `uninstall` - Uninstall GitBar
+- `reinstall` - Uninstall then install from local cask
+- `info` - Display cask file contents
+- `sha256` - Calculate SHA256 for DMG file
+- `test` - Run full test suite (audit, install, verify, uninstall)
+- `help` - Show help message
+
+**What it does:**
+1. Validates cask formula syntax
+2. Runs Homebrew audit checks
+3. Tests local installation
+4. Verifies app installation
+5. Calculates DMG checksums
+
+**Output:**
+- Test results and verification status
+- SHA256 checksum for DMG files
+
+**Example:**
+```bash
+# Run full test suite
+./scripts/test-homebrew-cask.sh test
+
+# Calculate SHA256 for DMG
+./scripts/test-homebrew-cask.sh sha256
+
+# Just install for manual testing
+./scripts/test-homebrew-cask.sh install
+```
+
+---
+
 ## Workflow Examples
 
 ### Development Testing
@@ -225,8 +270,24 @@ hdiutil detach /Volumes/dmg.* -force
 rm -f build/rw.*.dmg
 ```
 
+### Homebrew Cask Testing
+
+```bash
+# Test cask formula locally
+./scripts/test-homebrew-cask.sh test
+
+# Calculate SHA256 for GitHub release
+./scripts/test-homebrew-cask.sh sha256
+
+# Manual testing
+./scripts/test-homebrew-cask.sh install
+# ... test the app ...
+./scripts/test-homebrew-cask.sh uninstall
+```
+
 ## See Also
 
 - [BUILD_RELEASE.md](../BUILD_RELEASE.md) - Complete release guide
 - [DMG_DISTRIBUTION.md](../DMG_DISTRIBUTION.md) - DMG creation details
 - [SPARKLE_SETUP.md](../SPARKLE_SETUP.md) - Auto-update setup
+- [HOMEBREW.md](../HOMEBREW.md) - Homebrew distribution guide
