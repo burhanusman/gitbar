@@ -7,6 +7,9 @@ class GitStatusViewModel: ObservableObject {
     @Published var gitStatus: GitStatus?
     @Published var isLoading = false
     @Published var error: Error?
+    @Published var branches: [String] = []
+    @Published var worktrees: [GitWorktree] = []
+    @Published var isSwitchingBranch = false
     @Published var commitMessage = ""
     @Published var isCommitting = false
     @Published var commitResult: CommitResult?
@@ -33,6 +36,10 @@ class GitStatusViewModel: ObservableObject {
     /// Refresh interval for active project status (30 seconds)
     private let autoRefreshInterval: TimeInterval = 30
 
+    var activePath: String? {
+        projectPath
+    }
+
     /// Loads the Git status for the given project path
     func loadStatus(for path: String) {
         projectPath = path
@@ -41,8 +48,18 @@ class GitStatusViewModel: ObservableObject {
 
         Task {
             do {
-                let status = try await gitService.getStatus(at: path)
-                self.gitStatus = status
+                async let status = gitService.getStatus(at: path)
+                async let branches = gitService.getLocalBranches(at: path)
+                async let worktrees = gitService.getWorktrees(at: path)
+
+                let (resolvedStatus, resolvedBranches, resolvedWorktrees) = try await (status, branches, worktrees)
+                self.gitStatus = resolvedStatus
+                self.branches = resolvedBranches.sorted {
+                    $0.localizedCaseInsensitiveCompare($1) == .orderedAscending
+                }
+                self.worktrees = resolvedWorktrees.sorted {
+                    $0.path.localizedStandardCompare($1.path) == .orderedAscending
+                }
                 self.isLoading = false
             } catch {
                 self.error = error
@@ -54,6 +71,42 @@ class GitStatusViewModel: ObservableObject {
     /// Refreshes the Git status for the current project
     func refresh() {
         guard let path = projectPath else { return }
+        loadStatus(for: path)
+    }
+
+    func checkoutBranch(_ branch: String) {
+        guard let path = projectPath else { return }
+        guard branch != gitStatus?.currentBranch else { return }
+        guard !isSwitchingBranch else { return }
+
+        isSwitchingBranch = true
+        error = nil
+
+        Task {
+            do {
+                try await gitService.checkoutBranch(branch, at: path)
+
+                async let status = gitService.getStatus(at: path)
+                async let branches = gitService.getLocalBranches(at: path)
+                async let worktrees = gitService.getWorktrees(at: path)
+
+                let (resolvedStatus, resolvedBranches, resolvedWorktrees) = try await (status, branches, worktrees)
+                self.gitStatus = resolvedStatus
+                self.branches = resolvedBranches.sorted {
+                    $0.localizedCaseInsensitiveCompare($1) == .orderedAscending
+                }
+                self.worktrees = resolvedWorktrees.sorted {
+                    $0.path.localizedStandardCompare($1.path) == .orderedAscending
+                }
+            } catch {
+                self.error = error
+            }
+
+            self.isSwitchingBranch = false
+        }
+    }
+
+    func switchToWorktree(at path: String) {
         loadStatus(for: path)
     }
 

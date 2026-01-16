@@ -1,0 +1,276 @@
+{
+  "name": "GitBar Launch Plan",
+  "description": "Production-ready launch of GitBar: distribution setup (Homebrew + DMG + auto-updates), beautiful marketing website, open-source repository preparation, UI redesign, and launch campaign",
+  "branchName": "feature/launch-prep",
+  "userStories": [
+    {
+      "id": "LAUNCH-001",
+      "title": "UI Redesign - Main Interface",
+      "description": "Redesign the popover interface to be minimalist and polished like codexbar.app. Focus on proper spacing, hierarchy, and dark mode aesthetics.",
+      "acceptanceCriteria": [
+        "Header with app name and settings icon has proper spacing (16px padding)",
+        "Sidebar project list uses consistent spacing (8px between items, 12px padding)",
+        "Selected project has subtle highlight (not jarring color)",
+        "Git status view uses clear visual hierarchy with proper typography",
+        "File list has hover states and consistent icon sizing (16x16px)",
+        "All colors follow a cohesive dark mode palette (grays: #1a1a1a, #2a2a2a, #3a3a3a)",
+        "Typography is consistent (SF Pro Text, sizes: 13px body, 11px secondary, 15px headers)",
+        "Buttons have proper padding and corner radius (6px)"
+      ],
+      "priority": 1,
+      "passes": true,
+      "notes": "Use codexbar.app as visual reference. Avoid bright colors, use subtle grays and accent blue (#0A84FF for interactive elements)",
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "LAUNCH-002",
+      "title": "UI Redesign - Settings Panel",
+      "description": "Create a proper settings panel accessed via gear icon. Move Launch at Login here and add auto-update preferences.",
+      "acceptanceCriteria": [
+        "Settings panel opens as a separate sheet/window (not inline)",
+        "Panel sized at 400x300px with proper padding",
+        "Launch at Login toggle with clear label and description",
+        "Auto-update settings: Check for updates automatically (toggle) + Check now button",
+        "About section showing app version and GitHub link",
+        "Settings persist in UserDefaults",
+        "Panel has clean layout with section headers",
+        "Close button or ESC to dismiss"
+      ],
+      "priority": 2,
+      "passes": true,
+      "notes": "Settings should feel native macOS. Use Form/Section/Toggle SwiftUI components",
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "LAUNCH-003",
+      "title": "Codex Projects Auto-Discovery",
+      "description": "Add support for auto-discovering Codex projects in addition to Claude Code projects. Scan ~/.codex/projects/ directory.",
+      "acceptanceCriteria": [
+        "Scan both ~/.claude/projects/ and ~/.codex/projects/ directories",
+        "Use same JSONL parsing logic to extract cwd from Codex project folders",
+        "Projects from both sources shown in unified sidebar list",
+        "Visual indicator or label showing project source (Claude/Codex badge)",
+        "Gracefully handle if ~/.codex/ doesn't exist",
+        "No duplicate projects if same repo appears in both Claude and Codex"
+      ],
+      "priority": 3,
+      "passes": true,
+      "notes": "Codex uses identical folder structure to Claude Code, so reuse existing logic",
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "LAUNCH-004",
+      "title": "Logo Design",
+      "description": "Design a professional app icon and logo for GitBar. Should work at all sizes (16x16 to 512x512) and match minimalist aesthetic.",
+      "acceptanceCriteria": [
+        "App icon designed in Sketch/Figma with all required sizes (1024x1024 master)",
+        "Icon uses git branch symbol or creative interpretation of git + menu bar",
+        "Works in both light and dark menu bar backgrounds",
+        "Exported to .icns format and added to Assets.xcassets",
+        "Icon follows macOS Big Sur+ design language (rounded square, gradient optional)",
+        "SVG logo variant created for website use",
+        "Menubar icon (16x16, 32x32 @2x) is clear and recognizable"
+      ],
+      "priority": 4,
+      "passes": true,
+      "notes": "Use SF Symbols as starting point. Consider hiring designer on Fiverr if needed (~$50). Otherwise use Figma template.",
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "LAUNCH-005",
+      "title": "Code Signing and Notarization",
+      "description": "Set up proper code signing with Apple Developer certificate and notarization for Gatekeeper approval.",
+      "acceptanceCriteria": [
+        "Developer ID Application certificate installed in Keychain",
+        "Xcode project configured with correct signing team and certificate",
+        "App bundle signed with hardened runtime enabled",
+        "Entitlements file includes necessary permissions (file access, etc)",
+        "Notarization script created using notarytool",
+        "Build script that signs, notarizes, and staples the app",
+        "Verified app opens without warnings on fresh Mac"
+      ],
+      "priority": 5,
+      "passes": false,
+      "notes": "Use xcrun notarytool. Store credentials in Keychain. Document process in BUILD.md"
+    },
+    {
+      "id": "LAUNCH-006",
+      "title": "Sparkle Auto-Update Integration",
+      "description": "Integrate Sparkle 2 framework for automatic app updates. Configure update feed and release workflow.",
+      "acceptanceCriteria": [
+        "Sparkle 2 framework integrated via Swift Package Manager",
+        "SUUpdater configured in app with update interval (check daily)",
+        "Appcast XML file structure defined and hosted on GitHub",
+        "Settings panel includes: Check for updates automatically (toggle) + Check now (button)",
+        "Update includes release notes from GitHub releases",
+        "EdDSA signature generated and verified for updates",
+        "Test update flow from v1.0.0 to v1.0.1 works"
+      ],
+      "priority": 6,
+      "passes": false,
+      "notes": "Host appcast.xml in GitHub releases. Use generate_appcast tool from Sparkle"
+    },
+    {
+      "id": "LAUNCH-007",
+      "title": "DMG Creation and Distribution",
+      "description": "Create a beautiful DMG installer with drag-to-Applications UX. Automate DMG creation in build process.",
+      "acceptanceCriteria": [
+        "DMG created using create-dmg or dmgbuild tool",
+        "DMG shows app icon + Applications folder shortcut",
+        "Custom DMG background image with installation instructions",
+        "DMG is signed and notarized",
+        "DMG filename format: GitBar-v1.0.0.dmg",
+        "Build script generates DMG as part of release process",
+        "DMG tested on clean macOS 13+ installation"
+      ],
+      "priority": 7,
+      "passes": false,
+      "notes": "Use create-dmg: brew install create-dmg. Keep DMG under 10MB"
+    },
+    {
+      "id": "LAUNCH-008",
+      "title": "Homebrew Cask Setup",
+      "description": "Create Homebrew cask formula and submit to homebrew-cask repository for easy installation.",
+      "acceptanceCriteria": [
+        "Cask formula created (gitbar.rb) with correct download URL, SHA256, version",
+        "Formula includes auto-update block pointing to Sparkle appcast",
+        "Caveats added explaining the app is menubar-only (no Dock icon)",
+        "Local testing: brew install --cask gitbar works",
+        "Fork homebrew-cask repo and submit PR with formula",
+        "Document Homebrew installation in README"
+      ],
+      "priority": 8,
+      "passes": false,
+      "notes": "Wait for LAUNCH-007 (DMG). Host DMG on GitHub Releases. Update formula for each release"
+    },
+    {
+      "id": "LAUNCH-009",
+      "title": "Open Source Repository Preparation",
+      "description": "Prepare the GitBar repository for open source release with proper documentation, license, and structure.",
+      "acceptanceCriteria": [
+        "MIT License file added to repository root",
+        "Comprehensive README.md with: description, features, screenshots, installation, usage, building from source",
+        "CONTRIBUTING.md with: code style, PR process, issue templates (not seeking contributions but documenting process)",
+        "CODE_OF_CONDUCT.md (Contributor Covenant)",
+        "BUILD.md with detailed build instructions for developers",
+        "GitHub issue templates for bug reports and feature requests",
+        "Repository description and topics configured (swift, macos, git, menubar-app)",
+        "Social preview image (1280x640) set for GitHub"
+      ],
+      "priority": 9,
+      "passes": false,
+      "notes": "Use standard templates from GitHub. Include gif/screenshots in README (create with Kap or Licecap)"
+    },
+    {
+      "id": "LAUNCH-010",
+      "title": "Marketing Website - Setup and Structure",
+      "description": "Create a separate Next.js website repository for gitbar.app marketing site. Set up Vercel deployment and basic structure.",
+      "acceptanceCriteria": [
+        "New GitHub repository created: gitbar-website",
+        "Next.js 14+ initialized with TypeScript and Tailwind CSS",
+        "Vercel project created and connected to repository",
+        "Custom domain configured (gitbar.app or gitbar.dev - document which to purchase)",
+        "Dark mode only (remove light mode toggle)",
+        "Basic folder structure: app/, components/, public/",
+        "Vercel Analytics integrated",
+        "OG image configured for social sharing",
+        "Site deploys successfully to Vercel"
+      ],
+      "priority": 10,
+      "passes": false,
+      "notes": "Keep it simple. Single page app. Use Next.js App Router. Domain ~$12/year from Namecheap"
+    },
+    {
+      "id": "LAUNCH-011",
+      "title": "Marketing Website - Design and Content",
+      "description": "Build the one-page marketing website inspired by codexbar.app aesthetic. Minimalist, dark, focused on value proposition.",
+      "acceptanceCriteria": [
+        "Hero section: App icon, tagline, primary CTA (Download for macOS)",
+        "Features section: 3-4 key features with icons and descriptions",
+        "Screenshot/demo section showing the app interface",
+        "Installation section: Homebrew one-liner + DMG download button",
+        "Footer: GitHub link, Twitter/X, version number",
+        "Responsive design (mobile friendly)",
+        "Fast page load (<1s, optimized images)",
+        "Download buttons link to latest GitHub release",
+        "All copy is concise and benefit-focused"
+      ],
+      "priority": 11,
+      "passes": false,
+      "notes": "Study codexbar.app closely. Use Inter or SF Pro font. Keep color palette minimal: grays + one accent color"
+    },
+    {
+      "id": "LAUNCH-012",
+      "title": "Release Automation and Versioning",
+      "description": "Create GitHub Actions workflow for automated releases. Tag, build, sign, notarize, create DMG, upload to GitHub Releases, update appcast.",
+      "acceptanceCriteria": [
+        "GitHub Actions workflow (.github/workflows/release.yml)",
+        "Triggered on git tag push (v1.0.0 format)",
+        "Workflow steps: checkout, build with xcodebuild, sign, notarize, create DMG, generate appcast",
+        "Upload DMG to GitHub Release with release notes",
+        "Update appcast.xml in repository",
+        "Secrets configured in GitHub: APPLE_ID, APPLE_APP_SPECIFIC_PASSWORD, signing certificate",
+        "Version number in Xcode matches git tag",
+        "Test workflow with v1.0.0-beta1 tag"
+      ],
+      "priority": 12,
+      "passes": false,
+      "notes": "Use fastlane or custom scripts. Store certificates in GitHub Secrets. Document manual release process as backup"
+    },
+    {
+      "id": "LAUNCH-013",
+      "title": "Launch Assets and Campaign Prep",
+      "description": "Prepare all assets and content for Product Hunt and Twitter/X launch.",
+      "acceptanceCriteria": [
+        "Product Hunt: 3-5 screenshots showing key features, demo GIF (10-15 seconds), product description, tagline",
+        "Twitter/X: Launch thread drafted (3-5 tweets), screenshot/GIF attached, hashtags selected",
+        "Press kit created: logo files (SVG, PNG), screenshots, app description, contact info",
+        "Launch checklist created: timing, accounts to notify, response templates for comments",
+        "Analytics/tracking ready: GitHub stars, website visits, download count",
+        "Community response plan: how to handle feedback, feature requests, bugs"
+      ],
+      "priority": 13,
+      "passes": false,
+      "notes": "Product Hunt: launch on Tuesday/Wednesday for max visibility. Prepare maker account. Draft engaging story about why you built this"
+    },
+    {
+      "id": "LAUNCH-014",
+      "title": "Pre-Launch Testing and Polish",
+      "description": "Comprehensive testing on fresh machines. Fix any critical bugs. Final polish pass on UI and UX.",
+      "acceptanceCriteria": [
+        "Test on clean macOS 13, 14, 15 installations (use VM or borrow device)",
+        "Test first-run experience (no projects, empty states)",
+        "Test all Git operations: stage, unstage, commit, push, pull",
+        "Test with 1, 5, 20+ projects (performance)",
+        "Test auto-updates (simulate update from v1.0.0 to v1.0.1)",
+        "Test Homebrew installation on clean machine",
+        "Fix any visual bugs or layout issues",
+        "Verify all links work (GitHub, website, etc)",
+        "Get 2-3 people to try the app and provide feedback"
+      ],
+      "priority": 14,
+      "passes": false,
+      "notes": "Use Feedback Assistant or TestFlight for beta testing. Document known issues in GitHub Issues"
+    }
+  ],
+  "metadata": {
+    "createdAt": "2026-01-16T06:00:00.000Z",
+    "platform": "macOS + Web",
+    "techStack": [
+      "Swift",
+      "SwiftUI",
+      "Sparkle",
+      "Next.js",
+      "TypeScript",
+      "Tailwind CSS",
+      "GitHub Actions"
+    ],
+    "timeline": "2-3 weeks (14 stories × ~1-2 days each)",
+    "dependencies": [
+      "Apple Developer Account ($99/year)",
+      "Domain name ($12/year)",
+      "Time for design/logo (DIY or ~$50 on Fiverr)"
+    ],
+    "updatedAt": "2026-01-16T01:28:19.500Z"
+  }
+}

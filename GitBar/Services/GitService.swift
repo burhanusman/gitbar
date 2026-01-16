@@ -93,6 +93,23 @@ struct GitStatus: Equatable {
     }
 }
 
+/// Represents a Git worktree entry
+struct GitWorktree: Identifiable, Equatable {
+    let id: String
+    let path: String
+    let branch: String?
+    let head: String?
+    let isDetached: Bool
+
+    init(path: String, branch: String?, head: String?, isDetached: Bool) {
+        self.id = path
+        self.path = path
+        self.branch = branch
+        self.head = head
+        self.isDetached = isDetached
+    }
+}
+
 /// Service for executing Git commands and parsing their output
 actor GitService {
     private let gitPath: String
@@ -169,11 +186,39 @@ actor GitService {
         return parseAheadBehindOutput(output)
     }
 
+    /// Lists local branch names
+    func getLocalBranches(at path: String) async throws -> [String] {
+        try validateGitRepository(at: path)
+
+        let output = try await runGitCommand(
+            ["for-each-ref", "--format=%(refname:short)", "refs/heads"],
+            at: path
+        )
+
+        return output
+            .components(separatedBy: .newlines)
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+    }
+
+    /// Switches to a local branch
+    func checkoutBranch(_ branch: String, at path: String) async throws {
+        try validateGitRepository(at: path)
+        _ = try await runGitCommand(["checkout", branch], at: path)
+    }
+
+    /// Lists worktrees for a repository
+    func getWorktrees(at path: String) async throws -> [GitWorktree] {
+        try validateGitRepository(at: path)
+        let output = try await runGitCommand(["worktree", "list", "--porcelain"], at: path)
+        return parseWorktreeListOutput(output)
+    }
+
     /// Checks if a path is a valid Git repository
     func isGitRepository(at path: String) -> Bool {
         let gitDir = (path as NSString).appendingPathComponent(".git")
         var isDirectory: ObjCBool = false
-        return fileManager.fileExists(atPath: gitDir, isDirectory: &isDirectory) && isDirectory.boolValue
+        return fileManager.fileExists(atPath: gitDir, isDirectory: &isDirectory)
     }
 
     /// Stages a file using git add
@@ -292,5 +337,71 @@ actor GitService {
         }
 
         return GitAheadBehind(ahead: ahead, behind: behind)
+    }
+
+    /// Parses `git worktree list --porcelain` output
+    private func parseWorktreeListOutput(_ output: String) -> [GitWorktree] {
+        var worktrees: [GitWorktree] = []
+
+        var currentPath: String?
+        var currentBranch: String?
+        var currentHead: String?
+        var isDetached = false
+
+        func flush() {
+            guard let path = currentPath else { return }
+            worktrees.append(
+                GitWorktree(
+                    path: path,
+                    branch: currentBranch,
+                    head: currentHead,
+                    isDetached: isDetached
+                )
+            )
+            currentPath = nil
+            currentBranch = nil
+            currentHead = nil
+            isDetached = false
+        }
+
+        let lines = output.components(separatedBy: .newlines)
+        for line in lines {
+            let trimmed = line.trimmingCharacters(in: .whitespacesAndNewlines)
+
+            if trimmed.isEmpty {
+                flush()
+                continue
+            }
+
+            if trimmed.hasPrefix("worktree ") {
+                flush()
+                currentPath = String(trimmed.dropFirst("worktree ".count))
+                continue
+            }
+
+            if trimmed.hasPrefix("HEAD ") {
+                currentHead = String(trimmed.dropFirst("HEAD ".count))
+                continue
+            }
+
+            if trimmed == "detached" {
+                isDetached = true
+                currentBranch = nil
+                continue
+            }
+
+            if trimmed.hasPrefix("branch ") {
+                let ref = String(trimmed.dropFirst("branch ".count))
+                if ref.hasPrefix("refs/heads/") {
+                    currentBranch = String(ref.dropFirst("refs/heads/".count))
+                } else {
+                    currentBranch = ref
+                }
+                continue
+            }
+        }
+
+        flush()
+        return worktrees
     }
 }
