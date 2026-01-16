@@ -360,11 +360,12 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = GitBar/GitBar.entitlements;
 				CODE_SIGN_IDENTITY = "-";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "";
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = TNJF6P8FFF;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -390,11 +391,13 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = GitBar/GitBar.entitlements;
 				CODE_SIGN_IDENTITY = "Developer ID Application";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Developer ID Application";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "";
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = TNJF6P8FFF;
+				"DEVELOPMENT_TEAM[sdk=macosx*]" = TNJF6P8FFF;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -417,20 +420,20 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		A10000D1229A0001000A0001 /* Build configuration list for PBXProject "GitBar" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				A1000030229A0001000A0001 /* Debug */,
-				A1000031229A0001000A0001 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
 		A1000020229A0001000A0001 /* Build configuration list for PBXNativeTarget "GitBar" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				A1000032229A0001000A0001 /* Debug */,
 				A1000033229A0001000A0001 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A10000D1229A0001000A0001 /* Build configuration list for PBXProject "GitBar" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A1000030229A0001000A0001 /* Debug */,
+				A1000031229A0001000A0001 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
