@@ -14,20 +14,18 @@
 	<key>com.apple.security.cs.disable-executable-page-protection</key>
 	<false/>
 
-	<!-- File access for reading git repositories -->
-	<key>com.apple.security.files.user-selected.read-write</key>
-	<true/>
-
 	<!-- Network client for update checks -->
 	<key>com.apple.security.network.client</key>
 	<true/>
 
-	<!-- App Sandbox -->
-	<key>com.apple.security.app-sandbox</key>
-	<true/>
+	<!-- App Sandbox DISABLED - Required to access ~/.claude/projects/ and git repos
+	     GitBar needs to read Claude Code project directories and arbitrary git
+	     repositories on the filesystem. This is not possible with App Sandbox
+	     without user-selected file access for each directory.
 
-	<!-- Bookmark access for persisting folder selections -->
-	<key>com.apple.security.files.bookmarks.app-scope</key>
-	<true/>
+	     Since GitBar is distributed outside the App Store (via GitHub/Homebrew),
+	     disabling sandbox is acceptable and common for developer tools. -->
+	<key>com.apple.security.app-sandbox</key>
+	<false/>
 </dict>
 </plist>
