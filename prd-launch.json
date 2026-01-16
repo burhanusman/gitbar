@@ -108,8 +108,9 @@
         "Test update flow from v1.0.0 to v1.0.1 works"
       ],
       "priority": 6,
-      "passes": false,
-      "notes": "Host appcast.xml in GitHub releases. Use generate_appcast tool from Sparkle"
+      "passes": true,
+      "notes": "Host appcast.xml in GitHub releases. Use generate_appcast tool from Sparkle",
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "LAUNCH-007",
@@ -272,6 +273,6 @@
       "Domain name ($12/year)",
       "Time for design/logo (DIY or ~$50 on Fiverr)"
     ],
-    "updatedAt": "2026-01-16T01:32:24.610Z"
+    "updatedAt": "2026-01-16T01:37:50.951Z"
   }
 }

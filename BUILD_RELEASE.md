@@ -8,6 +8,14 @@ Complete guide for building, signing, and releasing GitBar with Sparkle auto-upd
 - Xcode 15.0 or later
 - Apple Developer ID certificate (for distribution)
 - GitHub account with repository access
+- Homebrew (for installing tools)
+
+### Install Required Tools
+
+```bash
+# Install create-dmg for DMG creation
+brew install create-dmg
+```
 
 ## Initial Setup
 
@@ -158,7 +166,18 @@ xcrun stapler staple GitBar.app
 spctl -a -vvv -t install GitBar.app
 ```
 
-### 5. Create Distribution Package
+### 5. Create DMG Installer
+
+GitBar uses `create-dmg` to create professional DMG installers with drag-to-Applications UX:
+
+```bash
+# Create DMG with custom background and layout
+./scripts/create-dmg.sh build/Release/GitBar.app build
+
+# This creates: build/GitBar-v1.0.0.dmg
+```
+
+**Alternative: Create ZIP for Distribution**
 
 ```bash
 # Create final zip for distribution
@@ -168,6 +187,8 @@ zip -r GitBar.zip GitBar.app
 # Get file size (needed for appcast)
 ls -l GitBar.zip | awk '{print $5}'
 ```
+
+See [DMG_DISTRIBUTION.md](DMG_DISTRIBUTION.md) for detailed DMG creation and customization guide.
 
 ## Creating a Release
 
@@ -379,9 +400,26 @@ Examples:
 - 1.1.0 → New features
 - 2.0.0 → Major rewrite/breaking changes
 
+## Automated Release Script
+
+For a complete automated release workflow (build + sign + notarize + DMG):
+
+```bash
+./scripts/build-release.sh
+```
+
+This handles:
+- Building in Release configuration
+- Code signing with Developer ID
+- Notarizing app bundle
+- Creating and signing DMG
+- Notarizing DMG
+- Verification steps
+
 ## Resources
 
-- [Code Signing Guide](CODE_SIGNING.md)
+- [DMG Distribution Guide](DMG_DISTRIBUTION.md)
 - [Sparkle Setup](SPARKLE_SETUP.md)
+- [Build Guide](BUILD.md)
 - [Xcode Build Settings](https://developer.apple.com/documentation/xcode/build-settings-reference)
 - [Notarization Guide](https://developer.apple.com/documentation/security/notarizing_macos_software_before_distribution)

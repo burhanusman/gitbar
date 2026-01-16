@@ -102,17 +102,42 @@ else
     echo "⏭️  Skipping notarization (--skip-notarization flag set)"
 fi
 
-# Create DMG for distribution
-echo "💿 Creating DMG..."
-DMG_PATH="$BUILD_DIR/$APP_NAME.dmg"
-hdiutil create -volname "$APP_NAME" \
-    -srcfolder "$APP_PATH" \
-    -ov -format UDZO \
-    "$DMG_PATH"
+# Get version for DMG filename
+VERSION=$(defaults read "$APP_PATH/Contents/Info" CFBundleShortVersionString 2>/dev/null || echo "1.0.0")
+DMG_FILENAME="$APP_NAME-v$VERSION.dmg"
+DMG_PATH="$BUILD_DIR/$DMG_FILENAME"
 
+# Create beautiful DMG with drag-to-Applications UX
+echo "💿 Creating DMG..."
+"$SCRIPT_DIR/create-dmg.sh" "$APP_PATH" "$BUILD_DIR"
+
+# Sign DMG if not skipping notarization
+if [ "$SKIP_NOTARIZATION" = false ]; then
+    echo "🔏 Signing DMG..."
+    codesign --sign "Developer ID Application" --timestamp "$DMG_PATH"
+
+    echo "🚀 Notarizing DMG..."
+    DMG_NOTARIZE_ZIP="$BUILD_DIR/$APP_NAME-dmg-notarize.zip"
+    zip -j "$DMG_NOTARIZE_ZIP" "$DMG_PATH"
+
+    xcrun notarytool submit "$DMG_NOTARIZE_ZIP" \
+        --keychain-profile "$KEYCHAIN_PROFILE" \
+        --wait
+
+    echo "🔖 Stapling notarization ticket to DMG..."
+    xcrun stapler staple "$DMG_PATH"
+
+    rm "$DMG_NOTARIZE_ZIP"
+    echo "✅ DMG signed and notarized!"
+else
+    echo "⏭️  Skipping DMG signing/notarization"
+fi
+
+echo ""
 echo "✅ Release build complete!"
 echo "📍 App: $APP_PATH"
 echo "📍 DMG: $DMG_PATH"
+echo "📊 DMG Size: $(du -h "$DMG_PATH" | cut -f1)"
 
 # Display signing info
 echo ""
