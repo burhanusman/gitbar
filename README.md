@@ -126,9 +126,15 @@ By participating in this project, you agree to abide by our [Code of Conduct](CO
 
 ## Documentation
 
+### For Users
+- [Website](https://gitbar.app) - Marketing website and overview
+
+### For Developers
 - [Build Guide](BUILD.md) - Development setup
-- [Release Guide](BUILD_RELEASE.md) - Creating releases
-- [DMG Distribution](DMG_DISTRIBUTION.md) - DMG creation
+- [Release Guide](BUILD_RELEASE.md) - Creating releases (automated & manual)
+- [GitHub Actions Setup](.github/RELEASE_SETUP.md) - Automated release configuration
+- [Manual Release Process](.github/MANUAL_RELEASE.md) - Step-by-step manual release
+- [DMG Distribution](DMG_DISTRIBUTION.md) - DMG creation details
 - [Sparkle Setup](SPARKLE_SETUP.md) - Auto-update configuration
 - [Homebrew Distribution](HOMEBREW.md) - Homebrew cask setup and submission
 - [Icon Design](ICON_DESIGN.md) - App icon details

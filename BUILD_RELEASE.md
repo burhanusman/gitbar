@@ -241,121 +241,58 @@ Or manually:
 5. Verify update prompt appears
 6. Install update and verify app restarts with v1.0.1
 
-## Automated Release (GitHub Actions)
+## Automated Release (GitHub Actions) - RECOMMENDED
 
-Create `.github/workflows/release.yml`:
+GitBar includes a complete automated release workflow via GitHub Actions. This is the **recommended** way to create releases.
 
-```yaml
-name: Release GitBar
+### Quick Start
 
-on:
-  push:
-    tags:
-      - 'v*'
+1. **One-time setup:** Configure GitHub secrets (see [.github/RELEASE_SETUP.md](.github/RELEASE_SETUP.md))
+2. **Create a release:** Simply push a version tag
 
-jobs:
-  build-and-release:
-    runs-on: macos-latest
+```bash
+# Update version and create tag
+VERSION="1.0.0"
+git tag -a "v${VERSION}" -m "Release version ${VERSION}"
+git push origin "v${VERSION}"
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Xcode
-        uses: maxim-lobanov/setup-xcode@v1
-        with:
-          xcode-version: latest-stable
-
-      - name: Import signing certificate
-        env:
-          CERTIFICATE_BASE64: ${{ secrets.CERTIFICATE_BASE64 }}
-          CERTIFICATE_PASSWORD: ${{ secrets.CERTIFICATE_PASSWORD }}
-        run: |
-          echo $CERTIFICATE_BASE64 | base64 --decode > certificate.p12
-          security create-keychain -p actions temp.keychain
-          security default-keychain -s temp.keychain
-          security unlock-keychain -p actions temp.keychain
-          security import certificate.p12 -k temp.keychain \
-            -P $CERTIFICATE_PASSWORD -T /usr/bin/codesign
-          security set-key-partition-list -S apple-tool:,apple: \
-            -s -k actions temp.keychain
-          rm certificate.p12
-
-      - name: Build and archive
-        run: |
-          xcodebuild -project GitBar.xcodeproj \
-            -scheme GitBar \
-            -configuration Release \
-            -archivePath ./build/GitBar.xcarchive \
-            archive
-
-      - name: Export app
-        run: |
-          xcodebuild -exportArchive \
-            -archivePath ./build/GitBar.xcarchive \
-            -exportPath ./build/Release \
-            -exportOptionsPlist exportOptions.plist
-
-      - name: Notarize app
-        env:
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
-          TEAM_ID: ${{ secrets.TEAM_ID }}
-        run: |
-          cd build/Release
-          zip -r GitBar-notarize.zip GitBar.app
-          xcrun notarytool submit GitBar-notarize.zip \
-            --apple-id "$APPLE_ID" \
-            --password "$APPLE_PASSWORD" \
-            --team-id "$TEAM_ID" \
-            --wait
-          xcrun stapler staple GitBar.app
-          rm GitBar-notarize.zip
-
-      - name: Create distribution zip
-        run: |
-          cd build/Release
-          zip -r GitBar.zip GitBar.app
-
-      - name: Setup Sparkle
-        run: |
-          curl -L -o Sparkle.tar.xz \
-            https://github.com/sparkle-project/Sparkle/releases/download/2.5.2/Sparkle-2.5.2.tar.xz
-          tar -xf Sparkle.tar.xz
-
-      - name: Generate appcast
-        env:
-          SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
-        run: |
-          echo "$SPARKLE_PRIVATE_KEY" > private_key
-          chmod 600 private_key
-          ./bin/generate_appcast \
-            --ed-key-file private_key \
-            ./build/Release/
-          rm private_key
-
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
-        with:
-          files: |
-            build/Release/GitBar.zip
-            build/Release/appcast.xml
-          draft: false
-          prerelease: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+# GitHub Actions will automatically:
+# ✅ Build and sign the app
+# ✅ Notarize with Apple
+# ✅ Create DMG installer
+# ✅ Generate appcast.xml
+# ✅ Upload to GitHub Releases
 ```
 
-### Required GitHub Secrets
+### What Gets Automated
 
-Set these in GitHub → Settings → Secrets and variables → Actions:
+The workflow (`.github/workflows/release.yml`) handles:
 
-- `CERTIFICATE_BASE64`: Base64 encoded Developer ID certificate (.p12)
-- `CERTIFICATE_PASSWORD`: Password for the certificate
-- `APPLE_ID`: Apple ID email
-- `APPLE_APP_PASSWORD`: App-specific password from appleid.apple.com
-- `TEAM_ID`: Your Apple Developer Team ID
-- `SPARKLE_PRIVATE_KEY`: Private key from `generate_keys`
+1. **Build** - Compiles app with version from git tag
+2. **Code Signing** - Signs with Developer ID certificate
+3. **Notarization** - Submits to Apple for notarization
+4. **DMG Creation** - Creates professional installer with drag-to-Applications UX
+5. **DMG Signing** - Signs and notarizes the DMG
+6. **Appcast Generation** - Creates Sparkle update feed with signatures
+7. **GitHub Release** - Publishes release with DMG, ZIP, and appcast
+8. **Appcast Update** - Commits updated appcast.xml back to repository
+
+### Setup Instructions
+
+See complete setup guide: [.github/RELEASE_SETUP.md](.github/RELEASE_SETUP.md)
+
+**Required GitHub Secrets:**
+
+- `CERTIFICATE_BASE64` - Base64 encoded Developer ID certificate
+- `CERTIFICATE_PASSWORD` - Certificate password
+- `APPLE_ID` - Apple ID email
+- `APPLE_APP_SPECIFIC_PASSWORD` - App-specific password from appleid.apple.com
+- `TEAM_ID` - Apple Developer Team ID
+- `SPARKLE_PRIVATE_KEY` - Sparkle EdDSA private key
+
+### Manual Backup Process
+
+If GitHub Actions is unavailable, use the manual release process: [.github/MANUAL_RELEASE.md](.github/MANUAL_RELEASE.md)
 
 ## Troubleshooting
 
