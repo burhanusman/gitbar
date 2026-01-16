@@ -2,13 +2,13 @@ cask "gitbar" do
   version "1.0.0"
   sha256 :no_check # Will be updated with actual SHA256 after first release
 
-  url "https://github.com/yourusername/gitbar/releases/download/v#{version}/GitBar-v#{version}.dmg"
+  url "https://github.com/burhanusman/gitbar/releases/download/v#{version}/GitBar-v#{version}.dmg"
   name "GitBar"
   desc "Menubar app displaying git status for Claude Code and Codex projects"
-  homepage "https://github.com/yourusername/gitbar"
+  homepage "https://github.com/burhanusman/gitbar"
 
   livecheck do
-    url "https://github.com/yourusername/gitbar/releases/latest/download/appcast.xml"
+    url "https://github.com/burhanusman/gitbar/releases/latest/download/appcast.xml"
     strategy :sparkle
   end
 

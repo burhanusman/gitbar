@@ -2,18 +2,18 @@
 <rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" xmlns:dc="http://purl.org/dc/elements/1.1/">
     <channel>
         <title>GitBar Changelog</title>
-        <link>https://github.com/yourusername/gitbar</link>
+        <link>https://github.com/burhanusman/gitbar</link>
         <description>Most recent changes with links to updates.</description>
         <language>en</language>
         <item>
             <title>Version 1.0.1</title>
             <sparkle:version>1.0.1</sparkle:version>
             <sparkle:shortVersionString>1.0.1</sparkle:shortVersionString>
-            <link>https://github.com/yourusername/gitbar/releases/tag/v1.0.1</link>
-            <sparkle:releaseNotesLink>https://github.com/yourusername/gitbar/releases/tag/v1.0.1</sparkle:releaseNotesLink>
+            <link>https://github.com/burhanusman/gitbar/releases/tag/v1.0.1</link>
+            <sparkle:releaseNotesLink>https://github.com/burhanusman/gitbar/releases/tag/v1.0.1</sparkle:releaseNotesLink>
             <pubDate>Thu, 16 Jan 2026 00:00:00 +0000</pubDate>
             <enclosure
-                url="https://github.com/yourusername/gitbar/releases/download/v1.0.1/GitBar.zip"
+                url="https://github.com/burhanusman/gitbar/releases/download/v1.0.1/GitBar.zip"
                 sparkle:version="1.0.1"
                 sparkle:shortVersionString="1.0.1"
                 length="1234567"
@@ -25,11 +25,11 @@
             <title>Version 1.0.0</title>
             <sparkle:version>1.0.0</sparkle:version>
             <sparkle:shortVersionString>1.0.0</sparkle:shortVersionString>
-            <link>https://github.com/yourusername/gitbar/releases/tag/v1.0.0</link>
-            <sparkle:releaseNotesLink>https://github.com/yourusername/gitbar/releases/tag/v1.0.0</sparkle:releaseNotesLink>
+            <link>https://github.com/burhanusman/gitbar/releases/tag/v1.0.0</link>
+            <sparkle:releaseNotesLink>https://github.com/burhanusman/gitbar/releases/tag/v1.0.0</sparkle:releaseNotesLink>
             <pubDate>Thu, 16 Jan 2026 00:00:00 +0000</pubDate>
             <enclosure
-                url="https://github.com/yourusername/gitbar/releases/download/v1.0.0/GitBar.zip"
+                url="https://github.com/burhanusman/gitbar/releases/download/v1.0.0/GitBar.zip"
                 sparkle:version="1.0.0"
                 sparkle:shortVersionString="1.0.0"
                 length="1234567"

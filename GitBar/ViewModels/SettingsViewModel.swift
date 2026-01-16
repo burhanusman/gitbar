@@ -64,7 +64,7 @@ final class SettingsViewModel: ObservableObject {
     }
 
     func openGitHub() {
-        if let url = URL(string: "https://github.com/yourusername/gitbar") {
+        if let url = URL(string: "https://github.com/burhanusman/gitbar") {
             NSWorkspace.shared.open(url)
         }
     }

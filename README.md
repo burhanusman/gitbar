@@ -50,7 +50,7 @@ After installation, launch GitBar from Applications or Spotlight. Look for the g
 
 ### Manual Installation
 
-1. Download the latest DMG from [Releases](https://github.com/yourusername/gitbar/releases)
+1. Download the latest DMG from [Releases](https://github.com/burhanusman/gitbar/releases)
 2. Open the DMG file
 3. Drag GitBar.app to your Applications folder
 4. Launch GitBar from Applications or Spotlight
@@ -103,7 +103,7 @@ See [BUILD.md](BUILD.md) for development setup and [BUILD_RELEASE.md](BUILD_RELE
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/gitbar.git
+git clone https://github.com/burhanusman/gitbar.git
 cd gitbar
 
 # Open in Xcode
@@ -145,8 +145,8 @@ MIT License - See LICENSE file for details
 
 ## Support
 
-- Report issues at [GitHub Issues](https://github.com/yourusername/gitbar/issues)
-- View releases at [GitHub Releases](https://github.com/yourusername/gitbar/releases)
+- Report issues at [GitHub Issues](https://github.com/burhanusman/gitbar/issues)
+- View releases at [GitHub Releases](https://github.com/burhanusman/gitbar/releases)
 
 ## Credits
 
