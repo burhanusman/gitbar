@@ -72,6 +72,17 @@ struct ProjectRow: View {
                 .truncationMode(.middle)
 
             Spacer()
+
+            // Source badge for Claude/Codex projects
+            if project.source != .folder {
+                Text(project.source.rawValue)
+                    .font(.system(size: 9, weight: .medium))
+                    .foregroundColor(badgeForegroundColor)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(badgeBackgroundColor)
+                    .cornerRadius(4)
+            }
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
@@ -91,6 +102,28 @@ struct ProjectRow: View {
             return Color(hex: "#1a1a1a").opacity(0.5)
         } else {
             return Color.clear
+        }
+    }
+
+    private var badgeBackgroundColor: Color {
+        switch project.source {
+        case .claude:
+            return Color(hex: "#0A84FF").opacity(0.15)
+        case .codex:
+            return Color(hex: "#BF5AF2").opacity(0.15)
+        case .folder:
+            return Color.clear
+        }
+    }
+
+    private var badgeForegroundColor: Color {
+        switch project.source {
+        case .claude:
+            return Color(hex: "#0A84FF")
+        case .codex:
+            return Color(hex: "#BF5AF2")
+        case .folder:
+            return Color.secondary
         }
     }
 }
