@@ -30,7 +30,7 @@ struct ContentView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .popover(isPresented: $showSettings) {
+        .sheet(isPresented: $showSettings) {
             SettingsView()
         }
     }
