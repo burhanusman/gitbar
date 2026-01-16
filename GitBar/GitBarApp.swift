@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit
 
 extension Notification.Name {
     static let openSettings = Notification.Name("GitBar.openSettings")
@@ -29,8 +30,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
 
         if let button = statusItem?.button {
-            button.image = NSImage(named: "MenuBarIcon")
-            button.image?.isTemplate = true
+            button.image = makeStatusBarIcon()
             button.sendAction(on: [.leftMouseUp, .rightMouseUp])
             button.action = #selector(handleStatusItemClick(_:))
             button.target = self
@@ -45,6 +45,60 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         eventMonitor = EventMonitor(mask: [.leftMouseDown, .rightMouseDown]) { [weak self] _ in
             self?.closePopoverIfClickedOutside()
         }
+    }
+
+    private func makeStatusBarIcon() -> NSImage {
+        let size = NSSize(width: 18, height: 18)
+
+        let image = NSImage(size: size, flipped: false) { rect in
+            func snap(_ value: CGFloat) -> CGFloat {
+                (value * 2).rounded() / 2
+            }
+
+            let midX = snap(rect.midX)
+            let bottomY = snap(rect.minY + 4)
+            let middleY = snap(rect.minY + 9)
+            let topY = snap(rect.minY + 14)
+            let offsetX = snap(4)
+
+            let bottom = CGPoint(x: midX, y: bottomY)
+            let middle = CGPoint(x: midX, y: middleY)
+            let topLeft = CGPoint(x: midX - offsetX, y: topY)
+            let topRight = CGPoint(x: midX + offsetX, y: topY)
+
+            let strokeWidth: CGFloat = 1.4
+            let dotRadius: CGFloat = 1.6
+
+            NSColor.black.setStroke()
+            NSColor.black.setFill()
+
+            let lines = NSBezierPath()
+            lines.lineWidth = strokeWidth
+            lines.lineCapStyle = .round
+
+            lines.move(to: bottom)
+            lines.line(to: middle)
+            lines.line(to: topLeft)
+
+            lines.move(to: middle)
+            lines.line(to: topRight)
+            lines.stroke()
+
+            for point in [bottom, middle, topLeft, topRight] {
+                let dotRect = CGRect(
+                    x: point.x - dotRadius,
+                    y: point.y - dotRadius,
+                    width: dotRadius * 2,
+                    height: dotRadius * 2
+                )
+                NSBezierPath(ovalIn: dotRect).fill()
+            }
+
+            return true
+        }
+
+        image.isTemplate = true
+        return image
     }
 
     @objc private func handleStatusItemClick(_ sender: NSStatusBarButton) {
