@@ -274,6 +274,8 @@ struct SettingsView: View {
     }
 
     private func addFolder() {
+        NSApp.activate(ignoringOtherApps: true)
+
         let panel = NSOpenPanel()
         panel.canChooseFiles = false
         panel.canChooseDirectories = true
@@ -281,7 +283,8 @@ struct SettingsView: View {
         panel.prompt = "Add"
         panel.message = "Choose a folder to scan for git repositories."
 
-        if panel.runModal() == .OK, let url = panel.url {
+        panel.begin { response in
+            guard response == .OK, let url = panel.url else { return }
             viewModel.addRepoFolder(url.path)
         }
     }
