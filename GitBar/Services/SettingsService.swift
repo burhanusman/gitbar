@@ -11,8 +11,6 @@ final class SettingsService {
 
     private let launchAtLoginKey = "launchAtLogin"
     private let repoFoldersKey = "repoFolders"
-    private let checkForUpdatesAutomaticallyKey = "checkForUpdatesAutomatically"
-    private let lastUpdateCheckKey = "lastUpdateCheck"
     private let defaults = UserDefaults.standard
 
     private init() {}
@@ -39,26 +37,6 @@ final class SettingsService {
                 .sorted { $0.localizedStandardCompare($1) == .orderedAscending }
             defaults.set(normalized, forKey: repoFoldersKey)
             NotificationCenter.default.post(name: .repoFoldersDidChange, object: nil)
-        }
-    }
-
-    /// Gets the current auto-update preference from UserDefaults
-    var checkForUpdatesAutomatically: Bool {
-        get {
-            defaults.object(forKey: checkForUpdatesAutomaticallyKey) as? Bool ?? true
-        }
-        set {
-            defaults.set(newValue, forKey: checkForUpdatesAutomaticallyKey)
-        }
-    }
-
-    /// Gets the last time updates were checked
-    var lastUpdateCheck: Date? {
-        get {
-            defaults.object(forKey: lastUpdateCheckKey) as? Date
-        }
-        set {
-            defaults.set(newValue, forKey: lastUpdateCheckKey)
         }
     }
 

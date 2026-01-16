@@ -21,6 +21,7 @@
 		A1000018229A0001000A0006 /* SettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000019229A0001000A0006 /* SettingsViewModel.swift */; };
 		A100001A229A0001000A0007 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100001B229A0001000A0007 /* SettingsView.swift */; };
 		A100001C229A0001000A0008 /* Color+Hex.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100001D229A0001000A0008 /* Color+Hex.swift */; };
+		A100001E229A0001000A0009 /* SparkleUpdateService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100001F229A0001000A0009 /* SparkleUpdateService.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -40,6 +41,7 @@
 		A1000019229A0001000A0006 /* SettingsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsViewModel.swift; sourceTree = "<group>"; };
 		A100001B229A0001000A0007 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		A100001D229A0001000A0008 /* Color+Hex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Color+Hex.swift"; sourceTree = "<group>"; };
+		A100001F229A0001000A0009 /* SparkleUpdateService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SparkleUpdateService.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -120,6 +122,7 @@
 				A1000009229A0001000A0001 /* ClaudeProjectDiscoveryService.swift */,
 				A1000011229A0001000A0002 /* GitService.swift */,
 				A1000017229A0001000A0005 /* SettingsService.swift */,
+				A100001F229A0001000A0009 /* SparkleUpdateService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -221,6 +224,7 @@
 				A1000018229A0001000A0006 /* SettingsViewModel.swift in Sources */,
 				A100001A229A0001000A0007 /* SettingsView.swift in Sources */,
 				A100001C229A0001000A0008 /* Color+Hex.swift in Sources */,
+				A100001E229A0001000A0009 /* SparkleUpdateService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

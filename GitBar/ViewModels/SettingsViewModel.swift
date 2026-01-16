@@ -12,11 +12,10 @@ final class SettingsViewModel: ObservableObject {
 
     @Published var checkForUpdatesAutomatically: Bool {
         didSet {
-            SettingsService.shared.checkForUpdatesAutomatically = checkForUpdatesAutomatically
+            sparkleService.automaticallyChecksForUpdates = checkForUpdatesAutomatically
         }
     }
 
-    @Published var isCheckingForUpdates = false
     @Published var lastUpdateCheck: Date?
 
     let appVersion: String = {
@@ -27,14 +26,22 @@ final class SettingsViewModel: ObservableObject {
 
     @Published private(set) var repoFolders: [String]
 
+    private let sparkleService = SparkleUpdateService.shared
+
+    var isCheckingForUpdates: Bool {
+        sparkleService.isCheckingForUpdates
+    }
+
     init() {
         // Sync with system state first
         SettingsService.shared.syncLoginItemStatus()
         // Then read the current values
         self.launchAtLogin = SettingsService.shared.launchAtLogin
-        self.checkForUpdatesAutomatically = SettingsService.shared.checkForUpdatesAutomatically
-        self.lastUpdateCheck = SettingsService.shared.lastUpdateCheck
         self.repoFolders = SettingsService.shared.repoFolders
+
+        // Initialize from Sparkle
+        self.checkForUpdatesAutomatically = sparkleService.automaticallyChecksForUpdates
+        self.lastUpdateCheck = sparkleService.lastUpdateCheckDate
     }
 
     func addRepoFolder(_ path: String) {
@@ -48,23 +55,11 @@ final class SettingsViewModel: ObservableObject {
     }
 
     func checkForUpdates() {
-        guard !isCheckingForUpdates else { return }
-
-        isCheckingForUpdates = true
-
-        // Simulate checking for updates (in a real app, this would check GitHub releases API)
+        sparkleService.checkForUpdates()
+        // Update lastUpdateCheck after a short delay to allow Sparkle to update
         Task {
-            try? await Task.sleep(nanoseconds: 1_500_000_000) // 1.5 seconds
-
-            let now = Date()
-            SettingsService.shared.lastUpdateCheck = now
-            lastUpdateCheck = now
-            isCheckingForUpdates = false
-
-            // In a real implementation, you would:
-            // 1. Fetch latest release from GitHub API
-            // 2. Compare with current version
-            // 3. Show alert if update available
+            try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
+            lastUpdateCheck = sparkleService.lastUpdateCheckDate
         }
     }
 
