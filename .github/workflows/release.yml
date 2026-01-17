@@ -68,6 +68,9 @@ jobs:
             -scheme GitBar \
             -configuration Release \
             -archivePath ./build/GitBar.xcarchive \
+            ENABLE_HARDENED_RUNTIME=YES \
+            CODE_SIGN_INJECT_BASE_ENTITLEMENTS=NO \
+            OTHER_CODE_SIGN_FLAGS="--timestamp --options=runtime" \
             archive
 
       - name: Create export options
@@ -103,6 +106,10 @@ jobs:
           echo "Verifying code signature..."
           codesign --verify --deep --strict --verbose=2 ./build/GitBar.app
           codesign -dv --verbose=4 ./build/GitBar.app
+
+          echo "Checking for hardened runtime..."
+          codesign -dv --verbose=4 ./build/GitBar.app 2>&1 | grep -q "runtime" || (echo "ERROR: Hardened runtime not enabled!" && exit 1)
+          echo "✓ Hardened runtime enabled"
 
       - name: Setup notarization credentials
         env:
