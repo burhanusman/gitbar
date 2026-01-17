@@ -217,8 +217,36 @@ jobs:
           SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
         run: |
           echo "Generating appcast with Sparkle signatures..."
+
+          # Check if key is set
+          if [ -z "$SPARKLE_PRIVATE_KEY" ]; then
+            echo "Warning: SPARKLE_PRIVATE_KEY is empty, skipping Sparkle signing"
+            echo "Creating unsigned appcast..."
+            # Create a basic appcast without signature
+            VERSION="${{ steps.version.outputs.version }}"
+            cat > build/appcast.xml << APPCAST_EOF
+          <?xml version="1.0" encoding="utf-8"?>
+          <rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">
+            <channel>
+              <title>GitBar Updates</title>
+              <item>
+                <title>Version ${VERSION}</title>
+                <sparkle:version>${VERSION}</sparkle:version>
+                <sparkle:shortVersionString>${VERSION}</sparkle:shortVersionString>
+                <pubDate>$(date -R)</pubDate>
+                <enclosure url="https://github.com/${{ github.repository }}/releases/download/v${VERSION}/GitBar-v${VERSION}.zip" type="application/octet-stream"/>
+              </item>
+            </channel>
+          </rss>
+          APPCAST_EOF
+            exit 0
+          fi
+
           echo "$SPARKLE_PRIVATE_KEY" > private_key
           chmod 600 private_key
+
+          # Debug: Check key file
+          echo "Key file size: $(wc -c < private_key) bytes"
 
           VERSION="${{ steps.version.outputs.version }}"
 
