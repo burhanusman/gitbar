@@ -2,12 +2,16 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>CFBundleShortVersionString</key>
+	<string>1.0.0</string>
+	<key>CFBundleVersion</key>
+	<string>1.0.0</string>
 	<key>LSUIElement</key>
 	<true/>
 	<key>SUFeedURL</key>
 	<string>https://github.com/burhanusman/gitbar/releases/latest/download/appcast.xml</string>
 	<key>SUPublicEDKey</key>
-	<string>PLACEHOLDER_PUBLIC_KEY</string>
+	<string>gH/WQIPDtvh/dQzjqYWgusSB9s5/N9t18D00M9XFCVg=</string>
 	<key>SUEnableAutomaticChecks</key>
 	<true/>
 </dict>
