@@ -11,7 +11,8 @@ struct GitStatusView: View {
             headerView
 
             Divider()
-                .padding(.vertical, 12)
+                .padding(.top, 16)
+                .padding(.bottom, 12)
 
             // File changes or empty state
             if viewModel.isLoading {
@@ -45,7 +46,7 @@ struct GitStatusView: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .center, spacing: 8) {
                 Image(systemName: "arrow.triangle.branch")
-                    .font(.system(size: 13))
+                    .font(.system(size: 12))
                     .foregroundColor(.secondary)
 
                 Menu {
@@ -65,17 +66,17 @@ struct GitStatusView: View {
                         }
                     }
                 } label: {
-                    HStack(spacing: 6) {
+                    HStack(spacing: 5) {
                         Text(branchLabel)
-                            .font(.system(size: 15, weight: .semibold))
+                            .font(.system(size: 14, weight: .semibold))
 
                         Image(systemName: "chevron.down")
-                            .font(.system(size: 10))
+                            .font(.system(size: 9, weight: .medium))
                             .foregroundColor(.secondary)
 
                         if viewModel.isSwitchingBranch {
                             ProgressView()
-                                .scaleEffect(0.6)
+                                .scaleEffect(0.5)
                         }
                     }
                 }
@@ -84,12 +85,12 @@ struct GitStatusView: View {
 
                 if let aheadBehind = viewModel.aheadBehindText {
                     Text(aheadBehind)
-                        .font(.system(size: 11))
+                        .font(.system(size: 10, weight: .medium))
                         .foregroundColor(Color(hex: "#0A84FF"))
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(Color(hex: "#0A84FF").opacity(0.15))
-                        .cornerRadius(6)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 3)
+                        .background(Color(hex: "#0A84FF").opacity(0.12))
+                        .cornerRadius(4)
                 }
 
                 Spacer()
@@ -108,7 +109,7 @@ struct GitStatusView: View {
                         }
                     } label: {
                         Image(systemName: "square.stack.3d.up")
-                            .font(.system(size: 14))
+                            .font(.system(size: 13))
                             .foregroundColor(.secondary)
                     }
                     .menuStyle(BorderlessButtonMenuStyle())
@@ -117,7 +118,7 @@ struct GitStatusView: View {
 
                 Button(action: { viewModel.refresh() }) {
                     Image(systemName: "arrow.clockwise")
-                        .font(.system(size: 14))
+                        .font(.system(size: 13))
                         .foregroundColor(.secondary)
                 }
                 .buttonStyle(.plain)
@@ -127,48 +128,46 @@ struct GitStatusView: View {
             // Push/Pull buttons
             HStack(spacing: 8) {
                 // Pull button
-                Button(action: { viewModel.pull() }) {
-                    HStack(spacing: 6) {
+                TactileButton(
+                    action: { viewModel.pull() },
+                    isDisabled: !viewModel.canPull,
+                    helpText: "Pull changes from remote"
+                ) {
+                    HStack(spacing: 5) {
                         if viewModel.isPulling {
                             ProgressView()
-                                .scaleEffect(0.6)
+                                .scaleEffect(0.5)
                         } else {
                             Image(systemName: "arrow.down.circle")
-                                .font(.system(size: 13))
+                                .font(.system(size: 12))
                         }
                         Text(viewModel.isPulling ? "Pulling..." : "Pull")
-                            .font(.system(size: 13))
+                            .font(.system(size: 12, weight: .medium))
                     }
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 5)
                 }
-                .buttonStyle(.borderless)
-                .background(Color(hex: "#2a2a2a"))
-                .cornerRadius(6)
-                .disabled(!viewModel.canPull)
-                .help("Pull changes from remote")
 
                 // Push button
-                Button(action: { viewModel.push() }) {
-                    HStack(spacing: 6) {
+                TactileButton(
+                    action: { viewModel.push() },
+                    isDisabled: !viewModel.canPush,
+                    helpText: "Push commits to remote"
+                ) {
+                    HStack(spacing: 5) {
                         if viewModel.isPushing {
                             ProgressView()
-                                .scaleEffect(0.6)
+                                .scaleEffect(0.5)
                         } else {
                             Image(systemName: "arrow.up.circle")
-                                .font(.system(size: 13))
+                                .font(.system(size: 12))
                         }
                         Text(viewModel.isPushing ? "Pushing..." : "Push")
-                            .font(.system(size: 13))
+                            .font(.system(size: 12, weight: .medium))
                     }
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 5)
                 }
-                .buttonStyle(.borderless)
-                .background(Color(hex: "#2a2a2a"))
-                .cornerRadius(6)
-                .disabled(!viewModel.canPush)
-                .help("Push commits to remote")
 
                 Spacer()
 
@@ -222,6 +221,10 @@ struct GitStatusView: View {
                     .lineLimit(1)
             }
         }
+        .transition(.asymmetric(
+            insertion: .scale(scale: 0.9).combined(with: .opacity),
+            removal: .opacity
+        ))
         .onAppear {
             // Auto-dismiss success feedback after 3 seconds
             if case .pushSuccess = result {
@@ -270,19 +273,9 @@ struct GitStatusView: View {
     // MARK: - Empty State View
 
     private var emptyStateView: some View {
-        VStack(spacing: 12) {
-            Image(systemName: "checkmark.circle")
-                .font(.system(size: 32))
-                .foregroundColor(Color(hex: "#30D158"))
-            Text("Working tree clean")
-                .font(.system(size: 13))
-                .foregroundColor(.primary)
-            Text("No uncommitted changes")
-                .font(.system(size: 11))
-                .foregroundColor(.secondary)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 40)
+        EmptyStateAnimatedView()
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 40)
     }
 
     // MARK: - Changes List View
@@ -335,41 +328,42 @@ struct GitStatusView: View {
     // MARK: - Commit Section
 
     private var commitSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 10) {
             Divider()
-                .padding(.vertical, 8)
+                .padding(.top, 8)
+                .padding(.bottom, 4)
 
             // Commit message text field
             TextField("Commit message", text: $viewModel.commitMessage)
                 .textFieldStyle(.roundedBorder)
-                .font(.system(size: 13))
+                .font(.system(size: 12))
 
             // Commit button and feedback
-            HStack {
+            HStack(spacing: 12) {
                 Button(action: { viewModel.commit() }) {
-                    HStack(spacing: 6) {
+                    HStack(spacing: 5) {
                         if viewModel.isCommitting {
                             ProgressView()
-                                .scaleEffect(0.7)
+                                .scaleEffect(0.5)
                         }
                         Text(viewModel.isCommitting ? "Committing..." : "Commit")
-                            .font(.system(size: 13, weight: .medium))
+                            .font(.system(size: 12, weight: .medium))
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 8)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
                 }
                 .disabled(!viewModel.canCommit)
                 .buttonStyle(.borderless)
                 .background(viewModel.canCommit ? Color(hex: "#0A84FF") : Color(hex: "#2a2a2a"))
                 .foregroundColor(viewModel.canCommit ? .white : .secondary)
-                .cornerRadius(6)
-
-                Spacer()
+                .cornerRadius(5)
 
                 // Success/error feedback
                 if let result = viewModel.commitResult {
                     commitFeedback(result)
                 }
+
+                Spacer()
             }
         }
     }
@@ -394,6 +388,10 @@ struct GitStatusView: View {
                     .lineLimit(1)
             }
         }
+        .transition(.asymmetric(
+            insertion: .scale(scale: 0.9).combined(with: .opacity),
+            removal: .opacity
+        ))
         .onAppear {
             // Auto-dismiss success feedback after 3 seconds
             if case .success = result {
@@ -420,13 +418,18 @@ struct FileGroupView: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 6) {
                 Text(title)
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.system(size: 12, weight: .semibold))
                     .foregroundColor(titleColor)
 
-                Text("(\(files.count))")
-                    .font(.system(size: 11))
+                Text("\(files.count)")
+                    .font(.system(size: 11, weight: .medium))
                     .foregroundColor(.secondary)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(Color(hex: "#1a1a1a"))
+                    .cornerRadius(4)
             }
+            .padding(.bottom, 2)
 
             ForEach(files, id: \.path) { file in
                 FileRowView(
@@ -451,21 +454,21 @@ struct FileRowView: View {
     @State private var isHovering = false
 
     var body: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: 10) {
             // Status indicator
             Text(file.status.rawValue)
-                .font(.system(size: 11, design: .monospaced))
-                .fontWeight(.semibold)
+                .font(.system(size: 11, weight: .semibold, design: .monospaced))
                 .foregroundColor(statusColor)
-                .frame(width: 16)
+                .frame(width: 14, alignment: .center)
 
             // File path
             Text(file.path)
-                .font(.system(size: 13, design: .monospaced))
+                .font(.system(size: 12, design: .monospaced))
+                .foregroundColor(.primary)
                 .lineLimit(1)
                 .truncationMode(.middle)
 
-            Spacer()
+            Spacer(minLength: 8)
 
             // Stage/Unstage button (only visible on hover)
             if isHovering {
@@ -473,7 +476,7 @@ struct FileRowView: View {
                     // Unstage button for staged files
                     Button(action: { onUnstage?(file.path) }) {
                         Image(systemName: "minus.circle.fill")
-                            .font(.system(size: 16))
+                            .font(.system(size: 14))
                             .foregroundColor(.secondary)
                     }
                     .buttonStyle(.plain)
@@ -482,7 +485,7 @@ struct FileRowView: View {
                     // Stage button for unstaged/untracked files
                     Button(action: { onStage?(file.path) }) {
                         Image(systemName: "plus.circle.fill")
-                            .font(.system(size: 16))
+                            .font(.system(size: 14))
                             .foregroundColor(.secondary)
                     }
                     .buttonStyle(.plain)
@@ -491,8 +494,8 @@ struct FileRowView: View {
             }
         }
         .padding(.vertical, 6)
-        .padding(.horizontal, 8)
-        .background(isHovering ? Color(hex: "#2a2a2a") : Color(hex: "#1a1a1a").opacity(0.3))
+        .padding(.horizontal, 10)
+        .background(isHovering ? Color(hex: "#2a2a2a") : Color(hex: "#1a1a1a").opacity(0.4))
         .cornerRadius(6)
         .onHover { hovering in
             isHovering = hovering
@@ -517,6 +520,118 @@ struct FileRowView: View {
             return Color(hex: "#BF5AF2")
         case .typeChanged:
             return Color(hex: "#64D2FF")
+        }
+    }
+}
+
+// MARK: - Tactile Button
+
+/// Button with satisfying press feedback
+struct TactileButton<Content: View>: View {
+    let action: () -> Void
+    let isDisabled: Bool
+    let helpText: String
+    let content: () -> Content
+
+    @State private var isPressed = false
+    @State private var isHovering = false
+
+    var body: some View {
+        Button(action: action) {
+            content()
+        }
+        .buttonStyle(TactileButtonStyle(isPressed: $isPressed, isHovering: $isHovering))
+        .background(Color(hex: "#2a2a2a"))
+        .cornerRadius(6)
+        .scaleEffect(isPressed ? 0.96 : (isHovering ? 1.02 : 1.0))
+        .animation(.spring(response: 0.25, dampingFraction: 0.6), value: isPressed)
+        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isHovering)
+        .disabled(isDisabled)
+        .opacity(isDisabled ? 0.5 : 1.0)
+        .help(helpText)
+        .onHover { hovering in
+            isHovering = hovering && !isDisabled
+        }
+    }
+}
+
+struct TactileButtonStyle: ButtonStyle {
+    @Binding var isPressed: Bool
+    @Binding var isHovering: Bool
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .onChange(of: configuration.isPressed) { pressed in
+                isPressed = pressed
+            }
+    }
+}
+
+// MARK: - Empty State Animated View
+
+/// Refined animated empty state for clean working tree
+struct EmptyStateAnimatedView: View {
+    @State private var isAnimating = false
+    @State private var showText = false
+    @State private var pulseScale = 1.0
+
+    var body: some View {
+        VStack(spacing: 14) {
+            ZStack {
+                // Subtle pulse ring
+                Circle()
+                    .stroke(Color(hex: "#30D158").opacity(0.15), lineWidth: 1.5)
+                    .frame(width: 48, height: 48)
+                    .scaleEffect(pulseScale)
+                    .opacity(2.0 - pulseScale)
+
+                // Main checkmark circle
+                ZStack {
+                    Circle()
+                        .fill(Color(hex: "#30D158").opacity(0.12))
+                        .frame(width: 40, height: 40)
+
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 18, weight: .medium))
+                        .foregroundColor(Color(hex: "#30D158"))
+                        .scaleEffect(isAnimating ? 1.0 : 0.0)
+                        .rotationEffect(.degrees(isAnimating ? 0 : -45))
+                }
+            }
+            .frame(height: 52)
+
+            VStack(spacing: 4) {
+                Text("All clear")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundColor(.primary)
+                    .opacity(showText ? 1.0 : 0.0)
+                    .offset(y: showText ? 0 : 6)
+
+                Text("No uncommitted changes")
+                    .font(.system(size: 11))
+                    .foregroundColor(.secondary)
+                    .opacity(showText ? 1.0 : 0.0)
+                    .offset(y: showText ? 0 : 6)
+            }
+        }
+        .onAppear {
+            // Checkmark entrance with spring
+            withAnimation(.spring(response: 0.5, dampingFraction: 0.65)) {
+                isAnimating = true
+            }
+
+            // Subtle pulse animation
+            withAnimation(
+                .easeInOut(duration: 2.5)
+                .repeatForever(autoreverses: true)
+            ) {
+                pulseScale = 1.15
+            }
+
+            // Text fade in with slight delay
+            withAnimation(.easeOut(duration: 0.35).delay(0.15)) {
+                showText = true
+            }
         }
     }
 }

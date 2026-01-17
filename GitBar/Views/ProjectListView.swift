@@ -15,35 +15,36 @@ struct ProjectListView: View {
                 Spacer()
 
                 Button(action: addFolderSource) {
-                    HStack(spacing: 6) {
+                    HStack(spacing: 4) {
                         Image(systemName: "plus")
-                            .font(.system(size: 11, weight: .semibold))
+                            .font(.system(size: 10, weight: .semibold))
                         Text("Add")
                             .font(.system(size: 11, weight: .medium))
                     }
                     .foregroundColor(.secondary)
                     .padding(.horizontal, 8)
-                    .padding(.vertical, 6)
+                    .padding(.vertical, 4)
                     .background(Color(hex: "#1a1a1a"))
-                    .cornerRadius(6)
+                    .cornerRadius(4)
                 }
                 .buttonStyle(.plain)
                 .help("Add folder source")
             }
-            .padding(.horizontal, 8)
-            .padding(.top, 8)
+            .padding(.horizontal, 12)
+            .padding(.top, 12)
+            .padding(.bottom, 8)
 
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 8) {
                     ForEach($viewModel.sections) { section in
                         DisclosureGroup(isExpanded: section.isExpanded) {
-                            VStack(spacing: 8) {
+                            VStack(spacing: 4) {
                                 if section.wrappedValue.projects.isEmpty {
                                     Text("No repos found")
                                         .font(.system(size: 11))
                                         .foregroundColor(.secondary)
-                                        .padding(.horizontal, 12)
-                                        .padding(.vertical, 6)
+                                        .padding(.horizontal, 8)
+                                        .padding(.vertical, 8)
                                 } else {
                                     ForEach(section.wrappedValue.projects) { project in
                                         ProjectRow(
@@ -56,7 +57,6 @@ struct ProjectListView: View {
                                     }
                                 }
                             }
-                            .padding(.leading, 8)
                             .padding(.top, 4)
                         } label: {
                             HStack(spacing: 4) {
@@ -65,13 +65,15 @@ struct ProjectListView: View {
                                     .foregroundColor(.secondary)
                                 Spacer()
                             }
-                            .padding(.horizontal, 12)
+                            .padding(.leading, 28)
+                            .padding(.trailing, 8)
                             .padding(.vertical, 6)
                             .contentShape(Rectangle())
                         }
                     }
                 }
                 .padding(.vertical, 8)
+                .padding(.horizontal, 12)
             }
             .frame(minWidth: 150)
             .onAppear {
@@ -106,13 +108,36 @@ struct ProjectRow: View {
     let project: Project
     let isSelected: Bool
     @State private var isHovering = false
+    @State private var hoverScale: CGFloat = 1.0
+    @State private var indicatorPulse: CGFloat = 1.0
 
     var body: some View {
-        HStack(spacing: 8) {
-            // Uncommitted changes indicator
-            Circle()
-                .fill(project.hasUncommittedChanges ? Color(hex: "#0A84FF") : Color.clear)
-                .frame(width: 6, height: 6)
+        HStack(spacing: 10) {
+            // Uncommitted changes indicator with pulse
+            ZStack {
+                if project.hasUncommittedChanges {
+                    Circle()
+                        .fill(Color(hex: "#0A84FF").opacity(0.3))
+                        .frame(width: 6, height: 6)
+                        .scaleEffect(indicatorPulse)
+                        .opacity(2.0 - indicatorPulse)
+                }
+
+                Circle()
+                    .fill(project.hasUncommittedChanges ? Color(hex: "#0A84FF") : Color.clear)
+                    .frame(width: 6, height: 6)
+            }
+            .frame(width: 8, alignment: .center)
+            .onAppear {
+                if project.hasUncommittedChanges {
+                    withAnimation(
+                        .easeInOut(duration: 1.5)
+                        .repeatForever(autoreverses: false)
+                    ) {
+                        indicatorPulse = 2.0
+                    }
+                }
+            }
 
             Text(project.name)
                 .font(.system(size: 13))
@@ -120,7 +145,7 @@ struct ProjectRow: View {
                 .lineLimit(1)
                 .truncationMode(.middle)
 
-            Spacer()
+            Spacer(minLength: 4)
 
             // Source badge for Claude/Codex projects
             if project.source != .folder {
@@ -133,14 +158,17 @@ struct ProjectRow: View {
                     .cornerRadius(4)
             }
         }
-        .padding(.horizontal, 12)
+        .padding(.horizontal, 10)
         .padding(.vertical, 8)
         .background(backgroundColor)
         .cornerRadius(6)
-        .padding(.horizontal, 4)
+        .scaleEffect(hoverScale)
         .contentShape(Rectangle())
         .onHover { hovering in
-            isHovering = hovering
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                isHovering = hovering
+                hoverScale = hovering && !isSelected ? 1.02 : 1.0
+            }
         }
     }
 
