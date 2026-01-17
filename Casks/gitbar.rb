@@ -1,6 +1,6 @@
 cask "gitbar" do
-  version "1.0.0"
-  sha256 "8e11dc41468418804e4e94fc3103db5353beb5c262da957651f591fc5e580afa"
+  version "1.0.1"
+  sha256 "d8ab47b7805f2865ddb98d63bb22d6cdee331c49fbf5f891fd47ad4cb675a97d"
 
   url "https://github.com/burhanusman/gitbar/releases/download/v#{version}/GitBar-v#{version}.dmg"
   name "GitBar"
@@ -8,8 +8,8 @@ cask "gitbar" do
   homepage "https://github.com/burhanusman/gitbar"
 
   livecheck do
-    url "https://github.com/burhanusman/gitbar/releases/latest/download/appcast.xml"
-    strategy :sparkle
+    url :url
+    strategy :github_latest
   end
 
   auto_updates true
