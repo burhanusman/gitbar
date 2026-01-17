@@ -153,8 +153,26 @@ jobs:
 
       - name: Create DMG
         run: |
+          VERSION="${{ steps.version.outputs.version }}"
           chmod +x scripts/create-dmg.sh
           ./scripts/create-dmg.sh build/GitBar.app build
+
+          # Verify DMG was created with expected name
+          DMG_PATH="build/GitBar-v${VERSION}.dmg"
+          if [ ! -f "$DMG_PATH" ]; then
+            echo "Expected DMG not found at $DMG_PATH"
+            echo "Looking for DMG files in build/:"
+            ls -la build/*.dmg 2>/dev/null || echo "No DMG files found!"
+            # Try to find any DMG and rename it
+            FOUND_DMG=$(ls build/*.dmg 2>/dev/null | head -1)
+            if [ -n "$FOUND_DMG" ]; then
+              echo "Found DMG: $FOUND_DMG - renaming to $DMG_PATH"
+              mv "$FOUND_DMG" "$DMG_PATH"
+            else
+              exit 1
+            fi
+          fi
+          echo "DMG ready: $DMG_PATH"
 
       - name: Sign DMG
         run: |
