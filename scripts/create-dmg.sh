@@ -50,10 +50,23 @@ fi
 # Create DMG with create-dmg
 echo "💿 Creating DMG with drag-to-Applications layout..."
 
-# Check if AppIcon.icns exists (it may be in Assets.car instead)
+# Check for volume icon - prefer dmg-resources, then app bundle
 VOLICON_ARG=""
-if [ -f "$APP_PATH/Contents/Resources/AppIcon.icns" ]; then
+if [ -f "$DMG_RESOURCES/AppIcon.icns" ]; then
+    VOLICON_ARG="--volicon $DMG_RESOURCES/AppIcon.icns"
+    echo "🎨 Using volume icon from dmg-resources"
+elif [ -f "$APP_PATH/Contents/Resources/AppIcon.icns" ]; then
     VOLICON_ARG="--volicon $APP_PATH/Contents/Resources/AppIcon.icns"
+    echo "🎨 Using volume icon from app bundle"
+else
+    echo "⚠️  No volume icon found, DMG will use default icon"
+fi
+
+# Use --skip-jenkins in CI environments (no display available for AppleScript)
+SKIP_JENKINS=""
+if [ -n "$CI" ] || [ -n "$GITHUB_ACTIONS" ]; then
+    SKIP_JENKINS="--skip-jenkins"
+    echo "⚠️  CI environment detected, skipping AppleScript customization"
 fi
 
 create-dmg \
@@ -66,7 +79,7 @@ create-dmg \
   --icon "$APP_NAME.app" 130 185 \
   --hide-extension "$APP_NAME.app" \
   --app-drop-link 530 185 \
-  --skip-jenkins \
+  $SKIP_JENKINS \
   "$DMG_PATH" \
   "$APP_PATH"
 
