@@ -196,13 +196,14 @@ jobs:
           # echo "Stapling notarization ticket to DMG..."
           # xcrun stapler staple "$DMG_PATH"
 
-      - name: Download Sparkle tools
-        run: |
-          echo "Downloading Sparkle..."
-          curl -L -o Sparkle.tar.xz \
-            https://github.com/sparkle-project/Sparkle/releases/download/2.6.4/Sparkle-2.6.4.tar.xz
-          tar -xf Sparkle.tar.xz
-          chmod +x bin/generate_appcast
+      # TODO: Re-enable when Sparkle signing is fixed
+      # - name: Download Sparkle tools
+      #   run: |
+      #     echo "Downloading Sparkle..."
+      #     curl -L -o Sparkle.tar.xz \
+      #       https://github.com/sparkle-project/Sparkle/releases/download/2.6.4/Sparkle-2.6.4.tar.xz
+      #     tar -xf Sparkle.tar.xz
+      #     chmod +x bin/generate_appcast
 
       - name: Create distribution archive for Sparkle
         run: |
@@ -212,49 +213,37 @@ jobs:
           zip -r GitBar.zip GitBar.app
           mv GitBar.zip "GitBar-v${VERSION}.zip"
 
+      # TODO: Re-enable Sparkle signing once key issues are resolved
+      # The generate_appcast tool was rejecting the key format.
       - name: Generate appcast
-        env:
-          SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
         run: |
-          echo "Generating appcast with Sparkle signatures..."
+          echo "Generating appcast (unsigned)..."
+          VERSION="${{ steps.version.outputs.version }}"
+          ZIP_SIZE=$(stat -f%z "build/GitBar-v${VERSION}.zip")
 
-          # Check if key is set
-          if [ -z "$SPARKLE_PRIVATE_KEY" ]; then
-            echo "Warning: SPARKLE_PRIVATE_KEY is empty, skipping Sparkle signing"
-            echo "Creating unsigned appcast..."
-            # Create a basic appcast without signature
-            VERSION="${{ steps.version.outputs.version }}"
-            cat > build/appcast.xml << APPCAST_EOF
+          cat > build/appcast.xml << APPCAST_EOF
           <?xml version="1.0" encoding="utf-8"?>
           <rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">
             <channel>
               <title>GitBar Updates</title>
+              <link>https://github.com/${{ github.repository }}</link>
+              <description>Most recent updates to GitBar</description>
+              <language>en</language>
               <item>
                 <title>Version ${VERSION}</title>
                 <sparkle:version>${VERSION}</sparkle:version>
                 <sparkle:shortVersionString>${VERSION}</sparkle:shortVersionString>
                 <pubDate>$(date -R)</pubDate>
-                <enclosure url="https://github.com/${{ github.repository }}/releases/download/v${VERSION}/GitBar-v${VERSION}.zip" type="application/octet-stream"/>
+                <enclosure
+                  url="https://github.com/${{ github.repository }}/releases/download/v${VERSION}/GitBar-v${VERSION}.zip"
+                  length="${ZIP_SIZE}"
+                  type="application/octet-stream"/>
               </item>
             </channel>
           </rss>
           APPCAST_EOF
-            exit 0
-          fi
 
-          VERSION="${{ steps.version.outputs.version }}"
-
-          # Debug: Check key length (without revealing it)
-          echo "Key length: ${#SPARKLE_PRIVATE_KEY} characters"
-
-          # Generate appcast entry for this version
-          # Use -s flag to pass key directly instead of file
-          ./bin/generate_appcast \
-            -s "$SPARKLE_PRIVATE_KEY" \
-            --download-url-prefix "https://github.com/${{ github.repository }}/releases/download/${{ steps.version.outputs.tag }}/" \
-            build/
-
-          # The generated appcast will be in build/appcast.xml
+          echo "Appcast created at build/appcast.xml"
 
       - name: Commit updated appcast
         run: |
