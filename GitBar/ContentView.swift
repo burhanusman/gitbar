@@ -13,15 +13,25 @@ struct ContentView: View {
             Divider()
 
             // Main content
-            NavigationSplitView {
-                ProjectListView(viewModel: projectListViewModel)
-                    .navigationSplitViewColumnWidth(min: 180, ideal: 220, max: 260)
-            } detail: {
-                if let selectedProject = projectListViewModel.selectedProject {
-                    GitStatusView(project: selectedProject)
-                } else {
-                    SelectProjectEmptyState()
+            ZStack {
+                Theme.background.ignoresSafeArea()
+
+                NavigationSplitView {
+                    ProjectListView(viewModel: projectListViewModel)
+                        .navigationSplitViewColumnWidth(min: 200, ideal: 240, max: 300)
+                        .background(Theme.sidebarBackground)
+                } detail: {
+                    ZStack {
+                        Theme.background.ignoresSafeArea()
+                        
+                        if let selectedProject = projectListViewModel.selectedProject {
+                            GitStatusView(project: selectedProject)
+                        } else {
+                            SelectProjectEmptyState()
+                        }
+                    }
                 }
+                .navigationSplitViewStyle(.balanced)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -72,47 +82,47 @@ struct SelectProjectEmptyState: View {
     @State private var arrowOffset: CGFloat = 0
 
     var body: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 24) {
             // Animated folder with subtle motion
             ZStack {
                 // Glow effect
                 Circle()
-                    .fill(Color.blue.opacity(0.08))
-                    .frame(width: 64, height: 64)
-                    .scaleEffect(isAnimating ? 1.15 : 1.0)
-                    .opacity(isAnimating ? 0.2 : 0.1)
+                    .fill(Theme.accent.opacity(0.1))
+                    .frame(width: 80, height: 80)
+                    .scaleEffect(isAnimating ? 1.1 : 1.0)
+                    .blur(radius: 20)
 
-                Image(systemName: "folder")
-                    .font(.system(size: 32, weight: .light))
-                    .foregroundColor(.secondary)
+                Image(systemName: "folder.fill")
+                    .font(.system(size: 32, weight: .regular))
+                    .foregroundColor(Theme.textSecondary)
                     .scaleEffect(isAnimating ? 1.0 : 0.95)
-                    .opacity(isAnimating ? 0.7 : 0.5)
+                    .opacity(0.8)
             }
-            .frame(height: 64)
+            .frame(height: 80)
 
-            VStack(spacing: 6) {
-                HStack(spacing: 5) {
+            VStack(spacing: 8) {
+                HStack(spacing: 6) {
                     Image(systemName: "arrow.left")
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundColor(.secondary)
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundColor(Theme.accent)
                         .offset(x: arrowOffset)
 
                     Text("Choose a project")
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundColor(.primary)
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(Theme.textPrimary)
                 }
                 .opacity(showText ? 1.0 : 0.0)
 
-                Text("View git status and make commits")
-                    .font(.system(size: 11))
-                    .foregroundColor(.secondary)
+                Text("Select a repository to view status")
+                    .font(.system(size: 12))
+                    .foregroundColor(Theme.textTertiary)
                     .opacity(showText ? 1.0 : 0.0)
             }
         }
         .onAppear {
             // Gentle breathing animation for folder
             withAnimation(
-                .easeInOut(duration: 2.5)
+                .easeInOut(duration: 3.0)
                 .repeatForever(autoreverses: true)
             ) {
                 isAnimating = true
@@ -123,11 +133,11 @@ struct SelectProjectEmptyState: View {
                 .easeInOut(duration: 1.5)
                 .repeatForever(autoreverses: true)
             ) {
-                arrowOffset = -3
+                arrowOffset = -4
             }
 
             // Text fade in
-            withAnimation(.easeOut(duration: 0.4).delay(0.1)) {
+            withAnimation(.easeOut(duration: 0.5).delay(0.2)) {
                 showText = true
             }
         }

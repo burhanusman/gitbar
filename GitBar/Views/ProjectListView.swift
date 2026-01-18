@@ -4,78 +4,90 @@ import AppKit
 /// Sidebar view displaying the list of projects
 struct ProjectListView: View {
     @ObservedObject var viewModel: ProjectListViewModel
+    @State private var hoveredProjectId: String?
 
     var body: some View {
         VStack(spacing: 0) {
+            // Header
             HStack {
-                Text("Projects")
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundColor(.secondary)
+                Text("PROJECTS")
+                    .font(.system(size: 11, weight: .bold))
+                    .tracking(1.0)
+                    .foregroundColor(Theme.textTertiary)
 
                 Spacer()
 
                 Button(action: addFolderSource) {
-                    HStack(spacing: 4) {
-                        Image(systemName: "plus")
-                            .font(.system(size: 10, weight: .semibold))
-                        Text("Add")
-                            .font(.system(size: 11, weight: .medium))
-                    }
-                    .foregroundColor(.secondary)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(Color(hex: "#1a1a1a"))
-                    .cornerRadius(4)
+                    Image(systemName: "plus")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundColor(Theme.textSecondary)
+                        .frame(width: 24, height: 24)
+                        .background(Theme.surface)
+                        .clipShape(Circle())
+                        .overlay(
+                            Circle()
+                                .stroke(Theme.border.opacity(0.5), lineWidth: 0.5)
+                        )
                 }
                 .buttonStyle(.plain)
                 .help("Add folder source")
             }
-            .padding(.horizontal, 12)
-            .padding(.top, 12)
-            .padding(.bottom, 8)
+            .padding(.horizontal, Theme.padding)
+            .padding(.top, Theme.paddingMedium)
+            .padding(.bottom, Theme.paddingSmall)
 
             ScrollView {
-                LazyVStack(alignment: .leading, spacing: 8) {
+                LazyVStack(alignment: .leading, spacing: 6) {
                     ForEach($viewModel.sections) { section in
                         DisclosureGroup(isExpanded: section.isExpanded) {
-                            VStack(spacing: 4) {
-                                if section.wrappedValue.projects.isEmpty {
-                                    Text("No repos found")
-                                        .font(.system(size: 11))
-                                        .foregroundColor(.secondary)
-                                        .padding(.horizontal, 8)
-                                        .padding(.vertical, 8)
-                                } else {
-                                    ForEach(section.wrappedValue.projects) { project in
-                                        ProjectRow(
-                                            project: project,
-                                            isSelected: viewModel.selectedProject?.id == project.id
-                                        )
-                                        .onTapGesture {
+                            if section.wrappedValue.projects.isEmpty {
+                                Text("No repos found")
+                                    .font(.system(size: 11))
+                                    .foregroundColor(Theme.textTertiary)
+                                    .padding(.leading, 12)
+                                    .padding(.vertical, 8)
+                            } else {
+                                ForEach(section.wrappedValue.projects) { project in
+                                    ProjectRow(
+                                        project: project,
+                                        isSelected: viewModel.selectedProject?.id == project.id,
+                                        isHovered: hoveredProjectId == project.id
+                                    )
+                                    .onTapGesture {
+                                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                                             viewModel.selectProject(project)
+                                        }
+                                    }
+                                    .onHover { isHovering in
+                                        if isHovering {
+                                            hoveredProjectId = project.id
+                                            NSCursor.pointingHand.push()
+                                        } else {
+                                            if hoveredProjectId == project.id {
+                                                hoveredProjectId = nil
+                                            }
+                                            NSCursor.pop()
                                         }
                                     }
                                 }
                             }
-                            .padding(.top, 4)
                         } label: {
-                            HStack(spacing: 4) {
-                                Text(section.wrappedValue.title)
-                                    .font(.system(size: 11, weight: .medium))
-                                    .foregroundColor(.secondary)
+                            HStack(spacing: 6) {
+                                Text(section.wrappedValue.title.uppercased())
+                                    .font(.system(size: 10, weight: .semibold))
+                                    .tracking(0.5)
+                                    .foregroundColor(Theme.textTertiary)
                                 Spacer()
                             }
-                            .padding(.leading, 28)
-                            .padding(.trailing, 8)
-                            .padding(.vertical, 6)
+                            .padding(.vertical, 4)
                             .contentShape(Rectangle())
                         }
                     }
                 }
-                .padding(.vertical, 8)
                 .padding(.horizontal, 12)
+                .padding(.vertical, 8)
             }
-            .frame(minWidth: 150)
+            .background(Theme.sidebarBackground)
             .onAppear {
                 viewModel.loadProjects()
                 viewModel.startAutoRefresh()
@@ -107,105 +119,73 @@ struct ProjectListView: View {
 struct ProjectRow: View {
     let project: Project
     let isSelected: Bool
-    @State private var isHovering = false
-    @State private var hoverScale: CGFloat = 1.0
-    @State private var indicatorPulse: CGFloat = 1.0
+    let isHovered: Bool
 
     var body: some View {
-        HStack(spacing: 10) {
-            // Uncommitted changes indicator with pulse
-            ZStack {
-                if project.hasUncommittedChanges {
-                    Circle()
-                        .fill(Color(hex: "#0A84FF").opacity(0.3))
-                        .frame(width: 6, height: 6)
-                        .scaleEffect(indicatorPulse)
-                        .opacity(2.0 - indicatorPulse)
-                }
-
+        HStack(spacing: 12) {
+            // Status Indicator (Dot)
+            if project.hasUncommittedChanges {
                 Circle()
-                    .fill(project.hasUncommittedChanges ? Color(hex: "#0A84FF") : Color.clear)
+                    .fill(Theme.accent)
+                    .frame(width: 6, height: 6)
+                    .shadow(color: Theme.accent.opacity(0.4), radius: 3)
+            } else {
+                Circle()
+                    .fill(Theme.textTertiary.opacity(0.3))
                     .frame(width: 6, height: 6)
             }
-            .frame(width: 8, alignment: .center)
-            .onAppear {
-                if project.hasUncommittedChanges {
-                    withAnimation(
-                        .easeInOut(duration: 1.5)
-                        .repeatForever(autoreverses: false)
-                    ) {
-                        indicatorPulse = 2.0
-                    }
-                }
-            }
 
+            // Project Name
             Text(project.name)
-                .font(.system(size: 13))
-                .foregroundColor(isSelected ? .primary : .secondary)
+                .font(.system(size: 13, weight: isSelected ? .medium : .regular))
+                .foregroundColor(isSelected ? .white : (isHovered ? Theme.textPrimary : Theme.textSecondary))
                 .lineLimit(1)
-                .truncationMode(.middle)
 
-            Spacer(minLength: 4)
+            Spacer()
 
-            // Source badge for Claude/Codex projects
+            // Source Badge
             if project.source != .folder {
-                Text(project.source.rawValue)
-                    .font(.system(size: 9, weight: .medium))
-                    .foregroundColor(badgeForegroundColor)
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(badgeBackgroundColor)
-                    .cornerRadius(4)
+                Text(project.source.rawValue.prefix(1).uppercased())
+                    .font(.system(size: 9, weight: .bold))
+                    .foregroundColor(badgeColor)
+                    .frame(width: 16, height: 16)
+                    .background(badgeColor.opacity(0.15))
+                    .clipShape(RoundedRectangle(cornerRadius: 4))
             }
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 8)
-        .background(backgroundColor)
-        .cornerRadius(6)
-        .scaleEffect(hoverScale)
-        .contentShape(Rectangle())
-        .onHover { hovering in
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                isHovering = hovering
-                hoverScale = hovering && !isSelected ? 1.02 : 1.0
-            }
-        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .fill(backgroundColor)
+        )
+        .scaleEffect(isHovered && !isSelected ? 1.01 : 1.0)
+        .animation(.spring(response: 0.2, dampingFraction: 0.8), value: isHovered)
+        // Glow effect for selected
+        .shadow(color: isSelected ? Theme.accent.opacity(0.15) : Color.clear, radius: 8, x: 0, y: 4)
     }
 
     private var backgroundColor: Color {
         if isSelected {
-            return Color(hex: "#2a2a2a")
-        } else if isHovering {
-            return Color(hex: "#1a1a1a").opacity(0.5)
+            return Theme.accent.opacity(0.15) // Subtle tinted background for selected
+        } else if isHovered {
+            return Theme.surfaceHover
         } else {
             return Color.clear
         }
     }
 
-    private var badgeBackgroundColor: Color {
+    private var badgeColor: Color {
         switch project.source {
-        case .claude:
-            return Color(hex: "#0A84FF").opacity(0.15)
-        case .codex:
-            return Color(hex: "#BF5AF2").opacity(0.15)
-        case .folder:
-            return Color.clear
-        }
-    }
-
-    private var badgeForegroundColor: Color {
-        switch project.source {
-        case .claude:
-            return Color(hex: "#0A84FF")
-        case .codex:
-            return Color(hex: "#BF5AF2")
-        case .folder:
-            return Color.secondary
+        case .claude: return Theme.ai
+        case .codex: return Color.purple
+        case .folder: return Theme.textTertiary
         }
     }
 }
 
 #Preview {
     ProjectListView(viewModel: ProjectListViewModel())
-        .frame(width: 200, height: 400)
+        .frame(width: 240, height: 500)
+        .background(Theme.sidebarBackground)
 }

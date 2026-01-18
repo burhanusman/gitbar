@@ -12,17 +12,17 @@ struct SettingsView: View {
             HStack {
                 Text("Settings")
                     .font(.system(size: 15, weight: .semibold))
-                    .foregroundColor(.primary)
+                    .foregroundColor(Theme.textPrimary)
 
                 Spacer()
 
                 Button(action: { dismiss() }) {
                     Text("Done")
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundColor(.primary)
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundColor(.white)
                         .padding(.horizontal, 12)
                         .padding(.vertical, 6)
-                        .background(Color(hex: "#2a2a2a"))
+                        .background(Theme.accent)
                         .cornerRadius(6)
                 }
                 .buttonStyle(.plain)
@@ -30,53 +30,47 @@ struct SettingsView: View {
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 16)
-
-            Divider()
+            .background(Theme.surface)
+            .overlay(
+                Rectangle()
+                    .frame(height: 1)
+                    .foregroundColor(Theme.border),
+                alignment: .bottom
+            )
 
             // Form content
             ScrollView {
-                VStack(spacing: 0) {
+                VStack(spacing: 24) {
                     // General Section
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("GENERAL")
-                            .font(.system(size: 11, weight: .semibold))
-                            .foregroundColor(.secondary)
-                            .padding(.horizontal, 20)
-                            .padding(.top, 16)
-
+                    sectionContainer(title: "GENERAL") {
                         VStack(spacing: 0) {
                             Toggle(isOn: $viewModel.launchAtLogin) {
-                                VStack(alignment: .leading, spacing: 2) {
+                                VStack(alignment: .leading, spacing: 4) {
                                     Text("Launch at Login")
-                                        .font(.system(size: 13))
+                                        .font(.system(size: 13, weight: .medium))
+                                        .foregroundColor(Theme.textPrimary)
                                     Text("Automatically start GitBar when you log in")
-                                        .font(.system(size: 11))
-                                        .foregroundColor(.secondary)
+                                        .font(.system(size: 12))
+                                        .foregroundColor(Theme.textTertiary)
                                 }
                             }
                             .toggleStyle(.switch)
-                            .padding(.horizontal, 20)
-                            .padding(.vertical, 12)
+                            .tint(Theme.accent)
+                            .padding(16)
                         }
-                        .background(Color(hex: "#1a1a1a"))
                     }
 
                     // Folders Section
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("FOLDERS")
-                            .font(.system(size: 11, weight: .semibold))
-                            .foregroundColor(.secondary)
-                            .padding(.horizontal, 20)
-                            .padding(.top, 20)
-
+                    sectionContainer(title: "FOLDERS") {
                         VStack(spacing: 0) {
                             HStack {
-                                VStack(alignment: .leading, spacing: 2) {
+                                VStack(alignment: .leading, spacing: 4) {
                                     Text("Folder sources")
-                                        .font(.system(size: 13))
+                                        .font(.system(size: 13, weight: .medium))
+                                        .foregroundColor(Theme.textPrimary)
                                     Text("Scan these folders for git repositories")
-                                        .font(.system(size: 11))
-                                        .foregroundColor(.secondary)
+                                        .font(.system(size: 12))
+                                        .foregroundColor(Theme.textTertiary)
                                 }
 
                                 Spacer()
@@ -86,44 +80,44 @@ struct SettingsView: View {
                                         Image(systemName: "plus")
                                             .font(.system(size: 11, weight: .semibold))
                                         Text("Add Folder")
-                                            .font(.system(size: 13))
+                                            .font(.system(size: 12, weight: .semibold))
                                     }
-                                    .foregroundColor(.primary)
-                                    .padding(.horizontal, 12)
+                                    .foregroundColor(Theme.textPrimary)
+                                    .padding(.horizontal, 10)
                                     .padding(.vertical, 6)
-                                    .background(Color(hex: "#2a2a2a"))
+                                    .background(Theme.surfaceHover)
                                     .cornerRadius(6)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 6)
+                                            .stroke(Theme.border, lineWidth: 1)
+                                    )
                                 }
                                 .buttonStyle(.plain)
                             }
-                            .padding(.horizontal, 20)
-                            .padding(.vertical, 12)
+                            .padding(16)
+                            
+                            Divider().overlay(Theme.border)
 
                             if viewModel.repoFolders.isEmpty {
-                                Divider()
-                                    .padding(.leading, 20)
-
                                 Text("No folders added")
-                                    .font(.system(size: 11))
-                                    .foregroundColor(.secondary)
-                                    .padding(.horizontal, 20)
-                                    .padding(.vertical, 12)
+                                    .font(.system(size: 13))
+                                    .foregroundColor(Theme.textTertiary)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .padding(16)
                             } else {
-                                Divider()
-                                    .padding(.leading, 20)
-
                                 VStack(spacing: 0) {
                                     ForEach(viewModel.repoFolders, id: \.self) { folderPath in
                                         HStack(spacing: 12) {
                                             VStack(alignment: .leading, spacing: 2) {
                                                 Text(URL(fileURLWithPath: folderPath).lastPathComponent)
-                                                    .font(.system(size: 13))
+                                                    .font(.system(size: 13, weight: .medium))
+                                                    .foregroundColor(Theme.textPrimary)
                                                     .lineLimit(1)
                                                     .truncationMode(.middle)
 
                                                 Text(folderPath)
                                                     .font(.system(size: 11))
-                                                    .foregroundColor(.secondary)
+                                                    .foregroundColor(Theme.textTertiary)
                                                     .lineLimit(1)
                                                     .truncationMode(.middle)
                                             }
@@ -131,64 +125,59 @@ struct SettingsView: View {
                                             Spacer()
 
                                             Button(action: { viewModel.removeRepoFolder(folderPath) }) {
-                                                Image(systemName: "minus.circle")
+                                                Image(systemName: "minus.circle.fill")
                                                     .font(.system(size: 14))
-                                                    .foregroundColor(Color(hex: "#FF453A"))
+                                                    .foregroundColor(Theme.error)
+                                                    .opacity(0.8)
                                             }
                                             .buttonStyle(.plain)
                                             .help("Remove folder")
                                         }
-                                        .padding(.horizontal, 20)
-                                        .padding(.vertical, 10)
+                                        .padding(12)
+                                        .background(Theme.surface.opacity(0.5)) // Slightly darker row
 
                                         if folderPath != viewModel.repoFolders.last {
-                                            Divider()
-                                                .padding(.leading, 20)
+                                            Divider().overlay(Theme.border).padding(.leading, 16)
                                         }
                                     }
                                 }
+                                .background(Theme.surface)
                             }
                         }
-                        .background(Color(hex: "#1a1a1a"))
                     }
 
                     // Updates Section
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("UPDATES")
-                            .font(.system(size: 11, weight: .semibold))
-                            .foregroundColor(.secondary)
-                            .padding(.horizontal, 20)
-                            .padding(.top, 20)
-
+                    sectionContainer(title: "UPDATES") {
                         VStack(spacing: 0) {
                             Toggle(isOn: $viewModel.checkForUpdatesAutomatically) {
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text("Check for updates automatically")
-                                        .font(.system(size: 13))
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("Automatic Updates")
+                                        .font(.system(size: 13, weight: .medium))
+                                        .foregroundColor(Theme.textPrimary)
                                     Text("Get notified when new versions are available")
-                                        .font(.system(size: 11))
-                                        .foregroundColor(.secondary)
+                                        .font(.system(size: 12))
+                                        .foregroundColor(Theme.textTertiary)
                                 }
                             }
                             .toggleStyle(.switch)
-                            .padding(.horizontal, 20)
-                            .padding(.vertical, 12)
+                            .tint(Theme.accent)
+                            .padding(16)
 
-                            Divider()
-                                .padding(.leading, 20)
+                            Divider().overlay(Theme.border).padding(.leading, 16)
 
                             HStack {
-                                VStack(alignment: .leading, spacing: 2) {
+                                VStack(alignment: .leading, spacing: 4) {
                                     Text("Check for updates")
-                                        .font(.system(size: 13))
+                                        .font(.system(size: 13, weight: .medium))
+                                        .foregroundColor(Theme.textPrimary)
                                     if viewModel.isCheckingForUpdates {
                                         Text("Checking...")
-                                            .font(.system(size: 11))
-                                            .foregroundColor(.secondary)
+                                            .font(.system(size: 12))
+                                            .foregroundColor(Theme.textSecondary)
                                     } else if let lastCheck = viewModel.lastUpdateCheck {
                                         Text("Last checked: \(formatDate(lastCheck))")
                                             .font(.system(size: 11))
-                                            .foregroundColor(.secondary)
+                                            .foregroundColor(Theme.textTertiary)
                                     }
                                 }
 
@@ -196,75 +185,89 @@ struct SettingsView: View {
 
                                 Button(action: { viewModel.checkForUpdates() }) {
                                     Text("Check Now")
-                                        .font(.system(size: 13))
-                                        .foregroundColor(.primary)
-                                        .padding(.horizontal, 12)
+                                        .font(.system(size: 12, weight: .semibold))
+                                        .foregroundColor(Theme.textPrimary)
+                                        .padding(.horizontal, 10)
                                         .padding(.vertical, 6)
-                                        .background(Color(hex: "#2a2a2a"))
+                                        .background(Theme.surfaceHover)
                                         .cornerRadius(6)
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 6)
+                                                .stroke(Theme.border, lineWidth: 1)
+                                        )
                                 }
                                 .buttonStyle(.plain)
                                 .disabled(viewModel.isCheckingForUpdates)
                             }
-                            .padding(.horizontal, 20)
-                            .padding(.vertical, 12)
+                            .padding(16)
                         }
-                        .background(Color(hex: "#1a1a1a"))
                     }
 
                     // About Section
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("ABOUT")
-                            .font(.system(size: 11, weight: .semibold))
-                            .foregroundColor(.secondary)
-                            .padding(.horizontal, 20)
-                            .padding(.top, 20)
-
+                    sectionContainer(title: "ABOUT") {
                         VStack(spacing: 0) {
                             HStack {
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text("Version")
-                                        .font(.system(size: 13))
-                                    Text("GitBar \(viewModel.appVersion)")
-                                        .font(.system(size: 11))
-                                        .foregroundColor(.secondary)
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("GitBar")
+                                        .font(.system(size: 13, weight: .bold))
+                                        .foregroundColor(Theme.textPrimary)
+                                    Text("Version \(viewModel.appVersion)")
+                                        .font(.system(size: 12))
+                                        .foregroundColor(Theme.textTertiary)
                                 }
 
                                 Spacer()
                             }
-                            .padding(.horizontal, 20)
-                            .padding(.vertical, 12)
+                            .padding(16)
 
-                            Divider()
-                                .padding(.leading, 20)
+                            Divider().overlay(Theme.border).padding(.leading, 16)
 
                             Button(action: { viewModel.openGitHub() }) {
                                 HStack {
                                     Text("View on GitHub")
-                                        .font(.system(size: 13))
-                                        .foregroundColor(.primary)
+                                        .font(.system(size: 13, weight: .medium))
+                                        .foregroundColor(Theme.textPrimary)
 
                                     Spacer()
 
                                     Image(systemName: "arrow.up.right")
-                                        .font(.system(size: 11))
-                                        .foregroundColor(.secondary)
+                                        .font(.system(size: 12))
+                                        .foregroundColor(Theme.textTertiary)
                                 }
+                                .padding(16)
                                 .contentShape(Rectangle())
                             }
                             .buttonStyle(.plain)
-                            .padding(.horizontal, 20)
-                            .padding(.vertical, 12)
                         }
-                        .background(Color(hex: "#1a1a1a"))
                     }
-
+                    
                     Spacer(minLength: 20)
                 }
+                .padding(20)
             }
         }
-        .frame(width: 420, height: 420)
-        .background(Color(hex: "#0d0d0d"))
+        .frame(width: 440, height: 500)
+        .background(Theme.background)
+    }
+
+    // MARK: - Helper Views
+
+    private func sectionContainer<Content: View>(title: String, @ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title)
+                .font(.system(size: 11, weight: .bold))
+                .tracking(1.0)
+                .foregroundColor(Theme.textTertiary)
+                .padding(.leading, 4)
+
+            VStack(spacing: 0, content: content)
+                .background(Theme.surface)
+                .cornerRadius(Theme.radius)
+                .overlay(
+                    RoundedRectangle(cornerRadius: Theme.radius)
+                        .stroke(Theme.border, lineWidth: 1)
+                )
+        }
     }
 
     private func formatDate(_ date: Date) -> String {
