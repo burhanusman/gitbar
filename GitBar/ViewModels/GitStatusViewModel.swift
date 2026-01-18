@@ -259,6 +259,58 @@ class GitStatusViewModel: ObservableObject {
         }
     }
 
+    /// Discards changes to a file and refreshes the status
+    func discardFile(_ filePath: String) {
+        guard let path = projectPath else { return }
+        Task {
+            do {
+                try await gitService.restoreFile(filePath, at: path)
+                refresh()
+            } catch {
+                self.error = error
+            }
+        }
+    }
+
+    /// Stages all changes
+    func stageAll() {
+        guard let path = projectPath else { return }
+        Task {
+            do {
+                try await gitService.stageAllFiles(at: path)
+                refresh()
+            } catch {
+                self.error = error
+            }
+        }
+    }
+
+    /// Unstages all changes
+    func unstageAll() {
+        guard let path = projectPath else { return }
+        Task {
+            do {
+                try await gitService.unstageAllFiles(at: path)
+                refresh()
+            } catch {
+                self.error = error
+            }
+        }
+    }
+
+    /// Discards all changes (restores tracked files)
+    func discardAll() {
+        guard let path = projectPath else { return }
+        Task {
+            do {
+                try await gitService.restoreAllFiles(at: path)
+                refresh()
+            } catch {
+                self.error = error
+            }
+        }
+    }
+
     // MARK: - Auto-Refresh
 
     /// Starts the auto-refresh timer for the active project

@@ -6,6 +6,9 @@ struct GitStatusView: View {
     let project: Project
     @StateObject private var viewModel = GitStatusViewModel()
 
+    @State private var fileToDiscard: String?
+    @State private var showDiscardAllConfirmation = false
+    
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             // Header with branch name and actions
@@ -42,6 +45,30 @@ struct GitStatusView: View {
         .onChange(of: project.path) { newPath in
             viewModel.loadStatus(for: newPath)
             viewModel.startAutoRefresh()
+        }
+        .alert("Discard Changes?", isPresented: Binding<Bool>(
+            get: { fileToDiscard != nil || showDiscardAllConfirmation },
+            set: { if !$0 { fileToDiscard = nil; showDiscardAllConfirmation = false } }
+        )) {
+            Button("Cancel", role: .cancel) {
+                fileToDiscard = nil
+                showDiscardAllConfirmation = false
+            }
+            Button("Discard", role: .destructive) {
+                if let file = fileToDiscard {
+                    viewModel.discardFile(file)
+                } else if showDiscardAllConfirmation {
+                    viewModel.discardAll()
+                }
+                fileToDiscard = nil
+                showDiscardAllConfirmation = false
+            }
+        } message: {
+            if let file = fileToDiscard {
+                Text("Are you sure you want to discard changes to '\(file)'? This cannot be undone.")
+            } else {
+                Text("Are you sure you want to discard all changes? This cannot be undone.")
+            }
         }
     }
 
@@ -135,7 +162,8 @@ struct GitStatusView: View {
                         title: "STAGED CHANGES",
                         files: viewModel.stagedFiles,
                         accentColor: Theme.success,
-                        onUnstage: { viewModel.unstageFile($0) }
+                        onUnstage: { viewModel.unstageFile($0) },
+                        onUnstageAll: { viewModel.unstageAll() }
                     )
                 }
 
@@ -145,7 +173,10 @@ struct GitStatusView: View {
                         title: "CHANGES",
                         files: viewModel.modifiedFiles,
                         accentColor: Theme.warning,
-                        onStage: { viewModel.stageFile($0) }
+                        onStage: { viewModel.stageFile($0) },
+                        onDiscard: { fileToDiscard = $0 },
+                        onStageAll: { viewModel.stageAll() },
+                        onDiscardAll: { showDiscardAllConfirmation = true }
                     )
                 }
 
@@ -155,7 +186,8 @@ struct GitStatusView: View {
                         title: "UNTRACKED FILES",
                         files: viewModel.untrackedFiles,
                         accentColor: Theme.textTertiary,
-                        onStage: { viewModel.stageFile($0) }
+                        onStage: { viewModel.stageFile($0) },
+                        onStageAll: { viewModel.stageAll() }
                     )
                 }
 
@@ -281,6 +313,10 @@ struct FileGroupSection: View {
     let accentColor: Color
     var onStage: ((String) -> Void)? = nil
     var onUnstage: ((String) -> Void)? = nil
+    var onDiscard: ((String) -> Void)? = nil
+    var onStageAll: (() -> Void)? = nil
+    var onUnstageAll: (() -> Void)? = nil
+    var onDiscardAll: (() -> Void)? = nil
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -299,11 +335,53 @@ struct FileGroupSection: View {
                     .cornerRadius(4)
                 
                 Spacer()
+                
+                // Bulk Actions
+                HStack(spacing: 4) {
+                    if let onDiscardAll = onDiscardAll {
+                        Button(action: onDiscardAll) {
+                            Image(systemName: "trash")
+                                .font(.system(size: 10, weight: .bold))
+                                .foregroundColor(Theme.textTertiary)
+                                .frame(width: 20, height: 20)
+                        }
+                        .buttonStyle(.plain)
+                        .help("Discard all changes")
+                    }
+                    
+                    if let onUnstageAll = onUnstageAll {
+                        Button(action: onUnstageAll) {
+                            Image(systemName: "minus")
+                                .font(.system(size: 10, weight: .bold))
+                                .foregroundColor(Theme.textTertiary)
+                                .frame(width: 20, height: 20)
+                        }
+                        .buttonStyle(.plain)
+                        .help("Unstage all")
+                    }
+                    
+                    if let onStageAll = onStageAll {
+                        Button(action: onStageAll) {
+                            Image(systemName: "plus")
+                                .font(.system(size: 10, weight: .bold))
+                                .foregroundColor(Theme.textTertiary)
+                                .frame(width: 20, height: 20)
+                        }
+                        .buttonStyle(.plain)
+                        .help("Stage all")
+                    }
+                }
             }
             
             VStack(spacing: 1) { // Tighter spacing for card feel
                 ForEach(files, id: \.path) { file in
-                    FileRowItem(file: file, accentColor: accentColor, onStage: onStage, onUnstage: onUnstage)
+                    FileRowItem(
+                        file: file,
+                        accentColor: accentColor,
+                        onStage: onStage,
+                        onUnstage: onUnstage,
+                        onDiscard: onDiscard
+                    )
                 }
             }
             .background(Theme.surface)
@@ -321,6 +399,7 @@ struct FileRowItem: View {
     let accentColor: Color
     let onStage: ((String) -> Void)?
     let onUnstage: ((String) -> Void)?
+    let onDiscard: ((String) -> Void)?
     
     @State private var isHovering = false
     
@@ -341,19 +420,34 @@ struct FileRowItem: View {
             
             // Action Button (Visible on Hover)
             if isHovering {
-                Button(action: {
-                    if let onStage = onStage { onStage(file.path) }
-                    if let onUnstage = onUnstage { onUnstage(file.path) }
-                }) {
-                    Image(systemName: onStage != nil ? "plus" : "minus")
-                        .font(.system(size: 12, weight: .bold))
-                        .foregroundColor(Theme.textSecondary)
-                        .frame(width: 24, height: 24)
-                        .background(Theme.background)
-                        .clipShape(Circle())
+                HStack(spacing: 8) {
+                    if let onDiscard = onDiscard {
+                        Button(action: { onDiscard(file.path) }) {
+                            Image(systemName: "trash")
+                                .font(.system(size: 11))
+                                .foregroundColor(Theme.textTertiary)
+                                .frame(width: 24, height: 24)
+                        }
+                        .buttonStyle(.plain)
+                        .help("Discard changes")
+                        .transition(.opacity)
+                    }
+                    
+                    Button(action: {
+                        if let onStage = onStage { onStage(file.path) }
+                        if let onUnstage = onUnstage { onUnstage(file.path) }
+                    }) {
+                        Image(systemName: onStage != nil ? "plus" : "minus")
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundColor(Theme.textSecondary)
+                            .frame(width: 24, height: 24)
+                            .background(Theme.background)
+                            .clipShape(Circle())
+                    }
+                    .buttonStyle(.plain)
+                    .help(onStage != nil ? "Stage file" : "Unstage file")
+                    .transition(.opacity)
                 }
-                .buttonStyle(.plain)
-                .transition(.opacity)
             }
         }
         .padding(.horizontal, 12)

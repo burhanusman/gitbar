@@ -81,6 +81,11 @@ struct ProjectListView: View {
                             }
                             .padding(.vertical, 4)
                             .contentShape(Rectangle())
+                            .onTapGesture {
+                                withAnimation {
+                                    section.wrappedValue.isExpanded.toggle()
+                                }
+                            }
                         }
                     }
                 }
@@ -126,8 +131,9 @@ struct ProjectRow: View {
             // Status Indicator (Dot)
             if project.hasUncommittedChanges {
                 Circle()
+                // Use a slightly larger, cleaner dot
                     .fill(Theme.accent)
-                    .frame(width: 6, height: 6)
+                    .frame(width: 8, height: 8)
                     .shadow(color: Theme.accent.opacity(0.4), radius: 3)
             } else {
                 Circle()
@@ -142,16 +148,8 @@ struct ProjectRow: View {
                 .lineLimit(1)
 
             Spacer()
-
-            // Source Badge
-            if project.source != .folder {
-                Text(project.source.rawValue.prefix(1).uppercased())
-                    .font(.system(size: 9, weight: .bold))
-                    .foregroundColor(badgeColor)
-                    .frame(width: 16, height: 16)
-                    .background(badgeColor.opacity(0.15))
-                    .clipShape(RoundedRectangle(cornerRadius: 4))
-            }
+            
+            // Removed Source Badge "C" as per request
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
@@ -172,14 +170,6 @@ struct ProjectRow: View {
             return Theme.surfaceHover
         } else {
             return Color.clear
-        }
-    }
-
-    private var badgeColor: Color {
-        switch project.source {
-        case .claude: return Theme.ai
-        case .codex: return Color.purple
-        case .folder: return Theme.textTertiary
         }
     }
 }

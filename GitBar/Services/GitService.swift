@@ -251,6 +251,33 @@ actor GitService {
         _ = try await runGitCommand(["pull"], at: repoPath)
     }
 
+    /// Restores a file (discards changes) using git restore
+    func restoreFile(_ filePath: String, at repoPath: String) async throws {
+        try validateGitRepository(at: repoPath)
+        _ = try await runGitCommand(["restore", filePath], at: repoPath)
+    }
+
+    /// Stages all changes using git add .
+    func stageAllFiles(at repoPath: String) async throws {
+        try validateGitRepository(at: repoPath)
+        _ = try await runGitCommand(["add", "."], at: repoPath)
+    }
+
+    /// Unstages all files using git restore --staged .
+    func unstageAllFiles(at repoPath: String) async throws {
+        try validateGitRepository(at: repoPath)
+        _ = try await runGitCommand(["restore", "--staged", "."], at: repoPath)
+    }
+
+    /// Discards all changes using git restore .
+    func restoreAllFiles(at repoPath: String) async throws {
+        try validateGitRepository(at: repoPath)
+        // Note: 'git restore .' only discards modified tracked files.
+        // It does not clean untracked files. For that 'git clean -fd' would be needed,
+        // but let's stick to safe restore for now or just restore tracked.
+        _ = try await runGitCommand(["restore", "."], at: repoPath)
+    }
+
     // MARK: - Private Methods
 
     /// Validates that the path is a Git repository, throws if not
