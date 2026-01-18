@@ -20,7 +20,7 @@ struct ProjectListView: View {
             return ProjectSection(
                 id: section.id,
                 title: section.title,
-                isExpanded: true, // Always expanded when searching
+                isExpanded: true,
                 projects: filtered
             )
         }
@@ -29,123 +29,45 @@ struct ProjectListView: View {
     var body: some View {
         VStack(spacing: 0) {
             // Search field
-            HStack(spacing: 8) {
-                Image(systemName: "magnifyingglass")
-                    .font(.system(size: 12))
-                    .foregroundColor(Theme.textTertiary)
+            searchField
+                .padding(.horizontal, Theme.space3)
+                .padding(.top, Theme.space3)
+                .padding(.bottom, Theme.space2)
 
-                TextField("Search projects...", text: $searchText)
-                    .textFieldStyle(.plain)
-                    .font(.system(size: 12))
-                    .focused($isSearchFocused)
-
-                if !searchText.isEmpty {
-                    Button(action: { searchText = "" }) {
-                        Image(systemName: "xmark.circle.fill")
-                            .font(.system(size: 12))
-                            .foregroundColor(Theme.textTertiary)
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 8)
-            .background(Theme.surface)
-            .cornerRadius(8)
-            .overlay(
-                RoundedRectangle(cornerRadius: 8)
-                    .stroke(isSearchFocused ? Theme.accent.opacity(0.5) : Theme.border.opacity(0.5), lineWidth: 1)
-            )
-            .padding(.horizontal, 12)
-            .padding(.top, 12)
-            .padding(.bottom, 8)
-
-            // Header
+            // Header with project count
             HStack {
                 Text("PROJECTS")
-                    .font(.system(size: 11, weight: .bold))
-                    .tracking(1.0)
-                    .foregroundColor(Theme.textTertiary)
+                    .font(.system(size: Theme.fontXS, weight: .semibold))
+                    .tracking(0.8)
+                    .foregroundColor(Theme.textMuted)
 
                 Spacer()
 
                 Button(action: addFolderSource) {
                     Image(systemName: "plus")
-                        .font(.system(size: 10, weight: .bold))
-                        .foregroundColor(Theme.textSecondary)
-                        .frame(width: 24, height: 24)
+                        .font(.system(size: Theme.fontXS, weight: .semibold))
+                        .foregroundColor(Theme.textTertiary)
+                        .frame(width: 22, height: 22)
                         .background(Theme.surface)
                         .clipShape(Circle())
-                        .overlay(
-                            Circle()
-                                .stroke(Theme.border.opacity(0.5), lineWidth: 0.5)
-                        )
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(ScaleButtonStyle())
                 .help("Add folder source")
             }
-            .padding(.horizontal, Theme.padding)
-            .padding(.top, Theme.paddingSmall)
-            .padding(.bottom, Theme.paddingSmall)
+            .padding(.horizontal, Theme.space4)
+            .padding(.vertical, Theme.space2)
 
+            // Project list
             ScrollView {
-                LazyVStack(alignment: .leading, spacing: 6) {
+                LazyVStack(alignment: .leading, spacing: Theme.space1) {
                     if searchText.isEmpty {
-                        // Normal view with collapsible sections
-                        ForEach($viewModel.sections) { section in
-                            DisclosureGroup(isExpanded: section.isExpanded) {
-                                if section.wrappedValue.projects.isEmpty {
-                                    Text("No repos found")
-                                        .font(.system(size: 11))
-                                        .foregroundColor(Theme.textTertiary)
-                                        .padding(.leading, 12)
-                                        .padding(.vertical, 8)
-                                } else {
-                                    ForEach(section.wrappedValue.projects) { project in
-                                        projectRow(for: project)
-                                    }
-                                }
-                            } label: {
-                                HStack(spacing: 6) {
-                                    Text(section.wrappedValue.title.uppercased())
-                                        .font(.system(size: 10, weight: .semibold))
-                                        .tracking(0.5)
-                                        .foregroundColor(Theme.textTertiary)
-                                    Spacer()
-                                }
-                                .padding(.vertical, 4)
-                                .contentShape(Rectangle())
-                                .onTapGesture {
-                                    withAnimation {
-                                        section.wrappedValue.isExpanded.toggle()
-                                    }
-                                }
-                            }
-                        }
+                        normalSectionsView
                     } else {
-                        // Filtered view - flat list when searching
-                        if filteredSections.isEmpty {
-                            VStack(spacing: 8) {
-                                Image(systemName: "magnifyingglass")
-                                    .font(.system(size: 20))
-                                    .foregroundColor(Theme.textTertiary)
-                                Text("No projects found")
-                                    .font(.system(size: 12))
-                                    .foregroundColor(Theme.textTertiary)
-                            }
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 24)
-                        } else {
-                            ForEach(filteredSections) { section in
-                                ForEach(section.projects) { project in
-                                    projectRow(for: project)
-                                }
-                            }
-                        }
+                        filteredResultsView
                     }
                 }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
+                .padding(.horizontal, Theme.space3)
+                .padding(.vertical, Theme.space2)
             }
             .background(Theme.sidebarBackground)
             .onAppear {
@@ -158,23 +80,119 @@ struct ProjectListView: View {
         }
     }
 
-    private func addFolderSource() {
-        NSApp.activate(ignoringOtherApps: true)
+    // MARK: - Search Field
 
-        let panel = NSOpenPanel()
-        panel.canChooseFiles = false
-        panel.canChooseDirectories = true
-        panel.allowsMultipleSelection = false
-        panel.prompt = "Add"
-        panel.message = "Choose a folder to scan for git repositories."
+    private var searchField: some View {
+        HStack(spacing: Theme.space2) {
+            Image(systemName: "magnifyingglass")
+                .font(.system(size: Theme.fontSM, weight: .medium))
+                .foregroundColor(isSearchFocused ? Theme.accent : Theme.textTertiary)
 
-        panel.begin { response in
-            guard response == .OK, let url = panel.url else { return }
-            SettingsService.shared.addRepoFolder(url.path)
+            TextField("Search...", text: $searchText)
+                .textFieldStyle(.plain)
+                .font(.system(size: Theme.fontBase))
+                .focused($isSearchFocused)
+
+            if !searchText.isEmpty {
+                Button(action: { withAnimation(.easeOut(duration: 0.15)) { searchText = "" } }) {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: Theme.fontSM))
+                        .foregroundColor(Theme.textTertiary)
+                }
+                .buttonStyle(.plain)
+                .transition(.opacity.combined(with: .scale))
+            }
+        }
+        .padding(.horizontal, Theme.space3)
+        .padding(.vertical, Theme.space2)
+        .background(Theme.surface)
+        .cornerRadius(Theme.radius)
+        .overlay(
+            RoundedRectangle(cornerRadius: Theme.radius)
+                .stroke(isSearchFocused ? Theme.borderFocus : Theme.borderSubtle, lineWidth: 1)
+        )
+        .animation(.easeOut(duration: Theme.animationFast), value: isSearchFocused)
+    }
+
+    // MARK: - Normal Sections View
+
+    @ViewBuilder
+    private var normalSectionsView: some View {
+        ForEach($viewModel.sections) { section in
+            DisclosureGroup(isExpanded: section.isExpanded) {
+                if section.wrappedValue.projects.isEmpty {
+                    emptySourceView
+                } else {
+                    ForEach(section.wrappedValue.projects) { project in
+                        projectRow(for: project)
+                    }
+                }
+            } label: {
+                sectionLabel(section.wrappedValue)
+            }
         }
     }
 
-    /// Creates a project row with context menu
+    private func sectionLabel(_ section: ProjectSection) -> some View {
+        HStack(spacing: Theme.space2) {
+            Text(section.title.uppercased())
+                .font(.system(size: Theme.fontXS, weight: .medium))
+                .tracking(0.5)
+                .foregroundColor(Theme.textMuted)
+
+            Text("\(section.projects.count)")
+                .font(.system(size: 9, weight: .bold))
+                .foregroundColor(Theme.textMuted)
+                .padding(.horizontal, 5)
+                .padding(.vertical, 2)
+                .background(Theme.surface)
+                .cornerRadius(4)
+
+            Spacer()
+        }
+        .padding(.vertical, Theme.space1)
+        .contentShape(Rectangle())
+    }
+
+    private var emptySourceView: some View {
+        Text("No repositories")
+            .font(.system(size: Theme.fontSM))
+            .foregroundColor(Theme.textMuted)
+            .padding(.leading, Theme.space3)
+            .padding(.vertical, Theme.space2)
+    }
+
+    // MARK: - Filtered Results View
+
+    @ViewBuilder
+    private var filteredResultsView: some View {
+        if filteredSections.isEmpty {
+            VStack(spacing: Theme.space3) {
+                Image(systemName: "magnifyingglass")
+                    .font(.system(size: 24, weight: .light))
+                    .foregroundColor(Theme.textMuted)
+
+                Text("No results")
+                    .font(.system(size: Theme.fontBase, weight: .medium))
+                    .foregroundColor(Theme.textTertiary)
+
+                Text("Try a different search term")
+                    .font(.system(size: Theme.fontSM))
+                    .foregroundColor(Theme.textMuted)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, Theme.space8)
+        } else {
+            ForEach(filteredSections) { section in
+                ForEach(section.projects) { project in
+                    projectRow(for: project)
+                }
+            }
+        }
+    }
+
+    // MARK: - Project Row
+
     @ViewBuilder
     private func projectRow(for project: Project) -> some View {
         ProjectRow(
@@ -183,19 +201,13 @@ struct ProjectListView: View {
             isHovered: hoveredProjectId == project.id
         )
         .onTapGesture {
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+            withAnimation(.easeOut(duration: Theme.animationBase)) {
                 viewModel.selectProject(project)
             }
         }
         .onHover { isHovering in
-            if isHovering {
-                hoveredProjectId = project.id
-                NSCursor.pointingHand.push()
-            } else {
-                if hoveredProjectId == project.id {
-                    hoveredProjectId = nil
-                }
-                NSCursor.pop()
+            withAnimation(.easeOut(duration: Theme.animationFast)) {
+                hoveredProjectId = isHovering ? project.id : nil
             }
         }
         .contextMenu {
@@ -219,7 +231,24 @@ struct ProjectListView: View {
         }
     }
 
-    /// Opens the project folder in Terminal
+    // MARK: - Actions
+
+    private func addFolderSource() {
+        NSApp.activate(ignoringOtherApps: true)
+
+        let panel = NSOpenPanel()
+        panel.canChooseFiles = false
+        panel.canChooseDirectories = true
+        panel.allowsMultipleSelection = false
+        panel.prompt = "Add"
+        panel.message = "Choose a folder containing git repositories"
+
+        panel.begin { response in
+            guard response == .OK, let url = panel.url else { return }
+            SettingsService.shared.addRepoFolder(url.path)
+        }
+    }
+
     private func openInTerminal(_ path: String) {
         let script = """
         tell application "Terminal"
@@ -233,12 +262,10 @@ struct ProjectListView: View {
         }
     }
 
-    /// Opens the project folder in the default code editor (VS Code, Cursor, or falls back to Finder)
     private func openInEditor(_ path: String) {
         let fileManager = FileManager.default
         let url = URL(fileURLWithPath: path)
 
-        // Try common code editors in order of preference
         let editors = [
             "/Applications/Cursor.app",
             "/Applications/Visual Studio Code.app",
@@ -258,73 +285,90 @@ struct ProjectListView: View {
             }
         }
 
-        // Fallback: open in Finder
         NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: path)
     }
 
-    /// Reveals the project in Finder
     private func revealInFinder(_ path: String) {
         NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: path)
     }
 
-    /// Copies the project path to clipboard
     private func copyPath(_ path: String) {
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(path, forType: .string)
     }
 }
 
-/// Individual row for a project in the sidebar
+// MARK: - Project Row
+
 struct ProjectRow: View {
     let project: Project
     let isSelected: Bool
     let isHovered: Bool
 
     var body: some View {
-        HStack(spacing: 12) {
-            // Status Indicator (Dot)
-            if project.hasUncommittedChanges {
-                Circle()
-                // Use a slightly larger, cleaner dot
-                    .fill(Theme.accent)
-                    .frame(width: 8, height: 8)
-                    .shadow(color: Theme.accent.opacity(0.4), radius: 3)
-            } else {
-                Circle()
-                    .fill(Theme.textTertiary.opacity(0.3))
-                    .frame(width: 6, height: 6)
-            }
+        HStack(spacing: Theme.space3) {
+            // Status indicator
+            statusIndicator
 
-            // Project Name
+            // Project name
             Text(project.name)
-                .font(.system(size: 13, weight: isSelected ? .medium : .regular))
-                .foregroundColor(isSelected ? .white : (isHovered ? Theme.textPrimary : Theme.textSecondary))
+                .font(.system(size: Theme.fontBase, weight: isSelected ? .medium : .regular))
+                .foregroundColor(textColor)
                 .lineLimit(1)
 
             Spacer()
-            
-            // Removed Source Badge "C" as per request
         }
-        .padding(.horizontal, 12)
+        .padding(.horizontal, Theme.space3)
         .padding(.vertical, 10)
-        .background(
-            RoundedRectangle(cornerRadius: 8)
-                .fill(backgroundColor)
+        .background(backgroundColor)
+        .cornerRadius(Theme.radius)
+        .shadow(
+            color: isSelected ? Theme.accent.opacity(0.12) : .clear,
+            radius: isSelected ? 8 : 0,
+            x: 0,
+            y: isSelected ? 2 : 0
         )
-        .scaleEffect(isHovered && !isSelected ? 1.01 : 1.0)
-        .animation(.spring(response: 0.2, dampingFraction: 0.8), value: isHovered)
-        // Glow effect for selected
-        .shadow(color: isSelected ? Theme.accent.opacity(0.15) : Color.clear, radius: 8, x: 0, y: 4)
+    }
+
+    @ViewBuilder
+    private var statusIndicator: some View {
+        Circle()
+            .fill(indicatorColor)
+            .frame(width: indicatorSize, height: indicatorSize)
+            .shadow(
+                color: project.hasUncommittedChanges ? Theme.accent.opacity(0.4) : .clear,
+                radius: project.hasUncommittedChanges ? 4 : 0
+            )
+    }
+
+    private var indicatorColor: Color {
+        project.hasUncommittedChanges ? Theme.accent : Theme.textMuted.opacity(0.4)
+    }
+
+    private var indicatorSize: CGFloat {
+        project.hasUncommittedChanges ? 8 : 6
+    }
+
+    private var textColor: Color {
+        if isSelected { return Theme.textPrimary }
+        if isHovered { return Theme.textPrimary }
+        return Theme.textSecondary
     }
 
     private var backgroundColor: Color {
-        if isSelected {
-            return Theme.accent.opacity(0.15) // Subtle tinted background for selected
-        } else if isHovered {
-            return Theme.surfaceHover
-        } else {
-            return Color.clear
-        }
+        if isSelected { return Theme.accentMuted }
+        if isHovered { return Theme.surfaceHover }
+        return .clear
+    }
+}
+
+// MARK: - Scale Button Style
+
+struct ScaleButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.92 : 1.0)
+            .animation(.easeOut(duration: 0.1), value: configuration.isPressed)
     }
 }
 

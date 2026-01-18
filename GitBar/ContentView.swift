@@ -7,10 +7,10 @@ struct ContentView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // Header with settings gear
             headerView
 
             Divider()
+                .background(Theme.border)
 
             // Main content
             ZStack {
@@ -23,7 +23,7 @@ struct ContentView: View {
                 } detail: {
                     ZStack {
                         Theme.background.ignoresSafeArea()
-                        
+
                         if let selectedProject = projectListViewModel.selectedProject {
                             GitStatusView(project: selectedProject)
                         } else {
@@ -35,9 +35,8 @@ struct ContentView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .scaleEffect(hasAppeared ? 1.0 : 0.95)
         .opacity(hasAppeared ? 1.0 : 0.0)
-        .animation(.spring(response: 0.4, dampingFraction: 0.75, blendDuration: 0), value: hasAppeared)
+        .animation(.easeOut(duration: 0.2), value: hasAppeared)
         .sheet(isPresented: $showSettings) {
             SettingsView()
         }
@@ -53,92 +52,95 @@ struct ContentView: View {
     }
 
     private var headerView: some View {
-        HStack {
-            Text("GitBar")
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundColor(.primary)
+        HStack(spacing: Theme.space3) {
+            // App title
+            HStack(spacing: Theme.space2) {
+                Image(systemName: "arrow.triangle.branch")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundColor(Theme.accent)
+
+                Text("GitBar")
+                    .font(.system(size: Theme.fontBase, weight: .semibold))
+                    .foregroundColor(Theme.textPrimary)
+            }
 
             Spacer()
 
+            // Settings button
             Button(action: { showSettings.toggle() }) {
                 Image(systemName: "gearshape")
-                    .font(.system(size: 13))
-                    .foregroundColor(.secondary)
+                    .font(.system(size: Theme.fontBase, weight: .medium))
+                    .foregroundColor(Theme.textTertiary)
+                    .frame(width: 28, height: 28)
+                    .background(Theme.surface.opacity(0.01)) // Invisible but hittable
+                    .cornerRadius(Theme.radiusSmall)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(HeaderButtonStyle())
             .help("Settings")
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
+        .padding(.horizontal, Theme.space4)
+        .padding(.vertical, Theme.space3)
+        .background(Theme.sidebarBackground)
     }
 }
 
-// MARK: - Select Project Empty State
+// MARK: - Header Button Style
 
-/// Refined empty state when no project is selected
+struct HeaderButtonStyle: ButtonStyle {
+    @State private var isHovered = false
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .background(
+                RoundedRectangle(cornerRadius: Theme.radiusSmall)
+                    .fill(isHovered ? Theme.surfaceHover : .clear)
+            )
+            .scaleEffect(configuration.isPressed ? 0.92 : 1.0)
+            .animation(.easeOut(duration: 0.1), value: configuration.isPressed)
+            .onHover { isHovered = $0 }
+    }
+}
+
+// MARK: - Empty State
+
 struct SelectProjectEmptyState: View {
-    @State private var isAnimating = false
-    @State private var showText = false
-    @State private var arrowOffset: CGFloat = 0
+    @State private var isVisible = false
 
     var body: some View {
-        VStack(spacing: 24) {
-            // Animated folder with subtle motion
+        VStack(spacing: Theme.space5) {
+            // Icon
             ZStack {
-                // Glow effect
                 Circle()
-                    .fill(Theme.accent.opacity(0.1))
-                    .frame(width: 80, height: 80)
-                    .scaleEffect(isAnimating ? 1.1 : 1.0)
-                    .blur(radius: 20)
+                    .fill(Theme.accentMuted)
+                    .frame(width: 72, height: 72)
 
-                Image(systemName: "folder.fill")
-                    .font(.system(size: 32, weight: .regular))
-                    .foregroundColor(Theme.textSecondary)
-                    .scaleEffect(isAnimating ? 1.0 : 0.95)
-                    .opacity(0.8)
+                Image(systemName: "folder")
+                    .font(.system(size: 28, weight: .medium))
+                    .foregroundColor(Theme.accent)
             }
-            .frame(height: 80)
 
-            VStack(spacing: 8) {
-                HStack(spacing: 6) {
+            // Text
+            VStack(spacing: Theme.space2) {
+                HStack(spacing: Theme.space2) {
                     Image(systemName: "arrow.left")
-                        .font(.system(size: 12, weight: .bold))
+                        .font(.system(size: Theme.fontSM, weight: .semibold))
                         .foregroundColor(Theme.accent)
-                        .offset(x: arrowOffset)
 
-                    Text("Choose a project")
-                        .font(.system(size: 14, weight: .semibold))
+                    Text("Select a project")
+                        .font(.system(size: Theme.fontLG, weight: .semibold))
                         .foregroundColor(Theme.textPrimary)
                 }
-                .opacity(showText ? 1.0 : 0.0)
 
-                Text("Select a repository to view status")
-                    .font(.system(size: 12))
+                Text("Choose a repository from the sidebar")
+                    .font(.system(size: Theme.fontBase))
                     .foregroundColor(Theme.textTertiary)
-                    .opacity(showText ? 1.0 : 0.0)
             }
         }
+        .opacity(isVisible ? 1.0 : 0.0)
+        .offset(y: isVisible ? 0 : 8)
         .onAppear {
-            // Gentle breathing animation for folder
-            withAnimation(
-                .easeInOut(duration: 3.0)
-                .repeatForever(autoreverses: true)
-            ) {
-                isAnimating = true
-            }
-
-            // Arrow pointing left with subtle motion
-            withAnimation(
-                .easeInOut(duration: 1.5)
-                .repeatForever(autoreverses: true)
-            ) {
-                arrowOffset = -4
-            }
-
-            // Text fade in
-            withAnimation(.easeOut(duration: 0.5).delay(0.2)) {
-                showText = true
+            withAnimation(.easeOut(duration: 0.3).delay(0.1)) {
+                isVisible = true
             }
         }
     }
