@@ -149,15 +149,24 @@ jobs:
       #
       #     rm GitBar-notarize.zip
 
-      - name: Install create-dmg
+      - name: Install dmgbuild
         run: |
-          brew install create-dmg
+          # Install dmgbuild via pipx (works reliably in CI, no AppleScript needed)
+          brew install pipx
+          pipx install dmgbuild
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
 
       - name: Create DMG
         run: |
           VERSION="${{ steps.version.outputs.version }}"
-          chmod +x scripts/create-dmg.sh
-          ./scripts/create-dmg.sh build/GitBar.app build
+          chmod +x scripts/create-dmg-v2.sh
+
+          # Set paths for dmgbuild settings
+          export APP_PATH="build/GitBar.app"
+          export DMG_RESOURCES="dmg-resources"
+          export PATH="$HOME/.local/bin:$PATH"
+
+          ./scripts/create-dmg-v2.sh build/GitBar.app build
 
           # Verify DMG was created with expected name
           DMG_PATH="build/GitBar-v${VERSION}.dmg"
