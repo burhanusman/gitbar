@@ -11,9 +11,20 @@ final class SettingsService {
 
     private let launchAtLoginKey = "launchAtLogin"
     private let repoFoldersKey = "repoFolders"
+    private let lastSelectedProjectPathKey = "lastSelectedProjectPath"
     private let defaults = UserDefaults.standard
 
     private init() {}
+
+    /// Last selected project path (for restoring selection on app launch)
+    var lastSelectedProjectPath: String? {
+        get {
+            defaults.string(forKey: lastSelectedProjectPathKey)
+        }
+        set {
+            defaults.set(newValue, forKey: lastSelectedProjectPathKey)
+        }
+    }
 
     /// Gets the current launch at login setting from UserDefaults
     var launchAtLogin: Bool {

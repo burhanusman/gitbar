@@ -1,6 +1,6 @@
 import SwiftUI
+import AppKit
 
-/// Main view showing current branch, remote tracking status, and changed files
 /// Main view showing current branch, remote tracking status, and changed files
 struct GitStatusView: View {
     let project: Project
@@ -8,6 +8,7 @@ struct GitStatusView: View {
 
     @State private var fileToDiscard: String?
     @State private var showDiscardAllConfirmation = false
+    @State private var showCopiedFeedback = false
     
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -111,6 +112,15 @@ struct GitStatusView: View {
                 }
                 .menuStyle(BorderlessButtonMenuStyle())
 
+                // Copy branch name button
+                Button(action: copyBranchName) {
+                    Image(systemName: showCopiedFeedback ? "checkmark" : "doc.on.doc")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundColor(showCopiedFeedback ? Theme.success : Theme.textTertiary)
+                }
+                .buttonStyle(.plain)
+                .help("Copy branch name")
+
                 if let aheadBehind = viewModel.aheadBehindText {
                     Text(aheadBehind)
                         .font(.system(size: 11, weight: .bold))
@@ -143,6 +153,25 @@ struct GitStatusView: View {
                     isDisabled: !viewModel.canPush,
                     action: { viewModel.push() }
                 )
+            }
+        }
+    }
+
+    /// Copies the current branch name to clipboard
+    private func copyBranchName() {
+        guard let branch = viewModel.gitStatus?.currentBranch else { return }
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(branch, forType: .string)
+
+        // Show feedback
+        withAnimation(.easeInOut(duration: 0.2)) {
+            showCopiedFeedback = true
+        }
+
+        // Reset after delay
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+            withAnimation(.easeInOut(duration: 0.2)) {
+                showCopiedFeedback = false
             }
         }
     }
@@ -400,24 +429,44 @@ struct FileRowItem: View {
     let onStage: ((String) -> Void)?
     let onUnstage: ((String) -> Void)?
     let onDiscard: ((String) -> Void)?
-    
+
     @State private var isHovering = false
-    
+
     var body: some View {
         HStack(spacing: 12) {
             // Status Icon
             Image(systemName: "circle.fill")
                 .font(.system(size: 6))
                 .foregroundColor(statusColor)
-            
+
             Text(file.path)
                 .font(.system(size: 13, design: .monospaced))
                 .foregroundColor(Theme.textPrimary)
                 .lineLimit(1)
                 .truncationMode(.middle)
-            
+
             Spacer()
-            
+
+            // Line stats (always visible if available)
+            if let stats = file.lineStats, !stats.isEmpty {
+                HStack(spacing: 4) {
+                    if stats.added > 0 {
+                        Text("+\(stats.added)")
+                            .font(.system(size: 10, weight: .medium, design: .monospaced))
+                            .foregroundColor(Theme.success)
+                    }
+                    if stats.removed > 0 {
+                        Text("-\(stats.removed)")
+                            .font(.system(size: 10, weight: .medium, design: .monospaced))
+                            .foregroundColor(Theme.error)
+                    }
+                }
+                .padding(.horizontal, 6)
+                .padding(.vertical, 2)
+                .background(Theme.surface.opacity(0.5))
+                .cornerRadius(4)
+            }
+
             // Action Button (Visible on Hover)
             if isHovering {
                 HStack(spacing: 8) {
@@ -432,7 +481,7 @@ struct FileRowItem: View {
                         .help("Discard changes")
                         .transition(.opacity)
                     }
-                    
+
                     Button(action: {
                         if let onStage = onStage { onStage(file.path) }
                         if let onUnstage = onUnstage { onUnstage(file.path) }
@@ -455,7 +504,7 @@ struct FileRowItem: View {
         .background(isHovering ? Theme.surfaceActive : Color.clear)
         .onHover { isHovering = $0 }
     }
-    
+
     private var statusColor: Color {
         switch file.status {
         case .modified: return Theme.warning
@@ -471,14 +520,26 @@ struct CommitBox: View {
     let isCommitting: Bool
     let canCommit: Bool
     let commitAction: () -> Void
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("COMMIT")
-                .font(.system(size: 11, weight: .bold))
-                .tracking(1.0)
-                .foregroundColor(Theme.textTertiary)
-            
+            HStack {
+                Text("COMMIT")
+                    .font(.system(size: 11, weight: .bold))
+                    .tracking(1.0)
+                    .foregroundColor(Theme.textTertiary)
+
+                Spacer()
+
+                Text("⌘↵")
+                    .font(.system(size: 10, weight: .medium, design: .rounded))
+                    .foregroundColor(Theme.textTertiary.opacity(0.6))
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(Theme.surface)
+                    .cornerRadius(4)
+            }
+
             HStack(spacing: 12) {
                 TextField("Summary", text: $message)
                     .textFieldStyle(.plain)
@@ -490,7 +551,12 @@ struct CommitBox: View {
                         RoundedRectangle(cornerRadius: Theme.cornerRadiusMedium)
                             .stroke(Theme.border, lineWidth: 1)
                     )
-                
+                    .onSubmit {
+                        if canCommit {
+                            commitAction()
+                        }
+                    }
+
                 Button(action: commitAction) {
                     HStack {
                         if isCommitting {

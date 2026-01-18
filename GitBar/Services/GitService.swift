@@ -18,6 +18,23 @@ enum GitError: Error, LocalizedError {
     }
 }
 
+/// Represents line change statistics for a file
+struct GitLineStats: Equatable {
+    let added: Int
+    let removed: Int
+
+    var description: String {
+        var parts: [String] = []
+        if added > 0 { parts.append("+\(added)") }
+        if removed > 0 { parts.append("-\(removed)") }
+        return parts.joined(separator: " ")
+    }
+
+    var isEmpty: Bool {
+        added == 0 && removed == 0
+    }
+}
+
 /// Represents a file change from git status
 struct GitFileChange: Equatable {
     enum Status: String {
@@ -62,6 +79,7 @@ struct GitFileChange: Equatable {
     let path: String
     let status: Status
     let isStaged: Bool
+    var lineStats: GitLineStats?
 }
 
 /// Represents ahead/behind status relative to upstream
@@ -148,12 +166,46 @@ actor GitService {
         return branch.isEmpty ? nil : branch
     }
 
-    /// Gets the list of file changes (staged and unstaged)
+    /// Gets the list of file changes (staged and unstaged) with line stats
     func getFileChanges(at path: String) async throws -> [GitFileChange] {
         try validateGitRepository(at: path)
 
-        let output = try await runGitCommand(["status", "--porcelain"], at: path)
-        return parseStatusOutput(output)
+        async let statusOutput = runGitCommand(["status", "--porcelain"], at: path)
+        async let stagedStats = runGitCommand(["diff", "--cached", "--numstat"], at: path)
+        async let unstagedStats = runGitCommand(["diff", "--numstat"], at: path)
+
+        let (status, staged, unstaged) = try await (statusOutput, stagedStats, unstagedStats)
+
+        var changes = parseStatusOutput(status)
+
+        // Parse line stats
+        let stagedLineStats = parseNumstatOutput(staged)
+        let unstagedLineStats = parseNumstatOutput(unstaged)
+
+        // Merge line stats into changes
+        for i in changes.indices {
+            let filePath = changes[i].path
+            if changes[i].isStaged {
+                changes[i].lineStats = stagedLineStats[filePath]
+            } else {
+                changes[i].lineStats = unstagedLineStats[filePath]
+            }
+        }
+
+        return changes
+    }
+
+    /// Gets line stats for a specific file
+    func getLineStats(for filePath: String, staged: Bool, at repoPath: String) async throws -> GitLineStats? {
+        try validateGitRepository(at: repoPath)
+
+        let args = staged
+            ? ["diff", "--cached", "--numstat", "--", filePath]
+            : ["diff", "--numstat", "--", filePath]
+
+        let output = try await runGitCommand(args, at: repoPath)
+        let stats = parseNumstatOutput(output)
+        return stats[filePath]
     }
 
     /// Checks if there are any uncommitted changes
@@ -430,5 +482,34 @@ actor GitService {
 
         flush()
         return worktrees
+    }
+
+    /// Parses `git diff --numstat` output into a dictionary of file path -> line stats
+    private func parseNumstatOutput(_ output: String) -> [String: GitLineStats] {
+        var stats: [String: GitLineStats] = [:]
+
+        let lines = output.components(separatedBy: .newlines)
+        for line in lines {
+            let trimmed = line.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmed.isEmpty else { continue }
+
+            // Format: added<tab>removed<tab>filename
+            // Binary files show "-" for added/removed
+            let parts = trimmed.components(separatedBy: "\t")
+            guard parts.count >= 3 else { continue }
+
+            let addedStr = parts[0]
+            let removedStr = parts[1]
+            let filePath = parts[2...].joined(separator: "\t") // Handle paths with tabs
+
+            // Skip binary files (shown as "-")
+            guard addedStr != "-" && removedStr != "-" else { continue }
+
+            if let added = Int(addedStr), let removed = Int(removedStr) {
+                stats[filePath] = GitLineStats(added: added, removed: removed)
+            }
+        }
+
+        return stats
     }
 }

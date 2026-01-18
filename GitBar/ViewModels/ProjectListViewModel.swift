@@ -45,7 +45,8 @@ class ProjectListViewModel: ObservableObject {
         let repoFolders = SettingsService.shared.repoFolders
 
         let previousExpansion = Dictionary(uniqueKeysWithValues: sections.map { ($0.id, $0.isExpanded) })
-        let previouslySelectedPath = selectedProject?.path
+        // Use current selection, or fall back to persisted last selection
+        let previouslySelectedPath = selectedProject?.path ?? SettingsService.shared.lastSelectedProjectPath
 
         loadProjectsTask = Task {
             var newSections: [ProjectSection] = []
@@ -146,9 +147,10 @@ class ProjectListViewModel: ObservableObject {
         }
     }
 
-    /// Selects a project
+    /// Selects a project and persists the selection
     func selectProject(_ project: Project) {
         selectedProject = project
+        SettingsService.shared.lastSelectedProjectPath = project.path
     }
 
     /// Checks if a Git repository has uncommitted changes using GitService
