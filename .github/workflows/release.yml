@@ -242,22 +242,17 @@ jobs:
             exit 0
           fi
 
-          echo "$SPARKLE_PRIVATE_KEY" > private_key
-          chmod 600 private_key
-
-          # Debug: Check key file
-          echo "Key file size: $(wc -c < private_key) bytes"
-
           VERSION="${{ steps.version.outputs.version }}"
 
+          # Debug: Check key length (without revealing it)
+          echo "Key length: ${#SPARKLE_PRIVATE_KEY} characters"
+
           # Generate appcast entry for this version
+          # Use -s flag to pass key directly instead of file
           ./bin/generate_appcast \
-            --ed-key-file private_key \
+            -s "$SPARKLE_PRIVATE_KEY" \
             --download-url-prefix "https://github.com/${{ github.repository }}/releases/download/${{ steps.version.outputs.tag }}/" \
             build/
-
-          # Clean up private key
-          rm private_key
 
           # The generated appcast will be in build/appcast.xml
 
