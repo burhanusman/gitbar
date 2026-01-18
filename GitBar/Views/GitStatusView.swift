@@ -9,6 +9,7 @@ struct GitStatusView: View {
     @State private var fileToDiscard: String?
     @State private var showDiscardAllConfirmation = false
     @State private var showCopiedFeedback = false
+    @State private var isBranchHovered = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -73,7 +74,7 @@ struct GitStatusView: View {
 
     private var headerView: some View {
         HStack(alignment: .center, spacing: Theme.space4) {
-            // Branch info
+            // Branch info - flexible width with hover area for copy button
             HStack(spacing: Theme.space2) {
                 Image(systemName: "arrow.triangle.branch")
                     .font(.system(size: 14, weight: .semibold))
@@ -81,12 +82,15 @@ struct GitStatusView: View {
 
                 branchMenu
 
+                // Copy button - fades in on hover
                 copyBranchButton
+                    .opacity(isBranchHovered || showCopiedFeedback ? 1 : 0)
 
                 if let aheadBehind = viewModel.aheadBehindText {
                     aheadBehindBadge(aheadBehind)
                 }
             }
+            .onHover { isBranchHovered = $0 }
 
             Spacer()
 
@@ -109,6 +113,8 @@ struct GitStatusView: View {
                 )
             }
         }
+        .animation(.easeOut(duration: Theme.animationFast), value: isBranchHovered)
+        .animation(.easeOut(duration: Theme.animationFast), value: showCopiedFeedback)
     }
 
     private var branchMenu: some View {
@@ -133,6 +139,7 @@ struct GitStatusView: View {
                 Text(viewModel.gitStatus?.currentBranch ?? "...")
                     .font(.system(size: Theme.fontLG, weight: .semibold))
                     .foregroundColor(Theme.textPrimary)
+                    .lineLimit(1)
 
                 Image(systemName: "chevron.down")
                     .font(.system(size: 9, weight: .bold))
@@ -140,6 +147,7 @@ struct GitStatusView: View {
             }
         }
         .menuStyle(BorderlessButtonMenuStyle())
+        .help(viewModel.gitStatus?.currentBranch ?? "")
     }
 
     private var copyBranchButton: some View {
@@ -481,41 +489,57 @@ struct FileRowItem: View {
                 .fill(statusColor)
                 .frame(width: 6, height: 6)
 
-            // File path
+            // File path - takes full available width
             Text(file.path)
                 .font(.system(size: Theme.fontBase, design: .monospaced))
                 .foregroundColor(Theme.textPrimary)
                 .lineLimit(1)
                 .truncationMode(.middle)
 
-            Spacer()
+            Spacer(minLength: Theme.space2)
 
             // Line stats
             if let stats = file.lineStats, !stats.isEmpty {
                 lineStatsView(stats)
             }
-
-            // Actions (on hover)
-            if isHovered {
-                HStack(spacing: Theme.space2) {
-                    if let onDiscard = onDiscard {
-                        FileActionButton(icon: "trash", action: { onDiscard(file.path) })
-                    }
-
-                    FileActionButton(
-                        icon: onStage != nil ? "plus" : "minus",
-                        action: {
-                            if let onStage = onStage { onStage(file.path) }
-                            if let onUnstage = onUnstage { onUnstage(file.path) }
-                        }
-                    )
-                }
-                .transition(.opacity.animation(.easeOut(duration: Theme.animationFast)))
-            }
         }
         .padding(.horizontal, Theme.space3)
         .padding(.vertical, Theme.space3)
         .background(isHovered ? Theme.surfaceHover : .clear)
+        .overlay(alignment: .trailing) {
+            // Action buttons overlay on hover with gradient fade
+            if isHovered {
+                HStack(spacing: 0) {
+                    // Gradient fade from transparent to hover background
+                    LinearGradient(
+                        colors: [Theme.surfaceHover.opacity(0), Theme.surfaceHover],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                    .frame(width: 32)
+
+                    // Action buttons
+                    HStack(spacing: Theme.space2) {
+                        if let onDiscard = onDiscard {
+                            FileActionButton(icon: "trash", action: { onDiscard(file.path) })
+                        }
+
+                        FileActionButton(
+                            icon: onStage != nil ? "plus" : "minus",
+                            action: {
+                                if let onStage = onStage { onStage(file.path) }
+                                if let onUnstage = onUnstage { onUnstage(file.path) }
+                            }
+                        )
+                    }
+                    .padding(.trailing, Theme.space3)
+                    .padding(.vertical, Theme.space3)
+                    .background(Theme.surfaceHover)
+                }
+                .transition(.opacity.combined(with: .move(edge: .trailing)))
+            }
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 0))
         .onHover { isHovered = $0 }
         .animation(.easeOut(duration: Theme.animationFast), value: isHovered)
     }
@@ -532,6 +556,7 @@ struct FileRowItem: View {
             }
         }
         .font(.system(size: Theme.fontXS, weight: .medium, design: .monospaced))
+        .fixedSize()
         .padding(.horizontal, Theme.space2)
         .padding(.vertical, 3)
         .background(Theme.background)

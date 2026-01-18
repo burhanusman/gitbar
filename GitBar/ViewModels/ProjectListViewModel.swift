@@ -153,6 +153,44 @@ class ProjectListViewModel: ObservableObject {
         SettingsService.shared.lastSelectedProjectPath = project.path
     }
 
+    /// Returns a flat list of all visible projects (from expanded sections only)
+    func allVisibleProjects(filteredSections: [ProjectSection]? = nil) -> [Project] {
+        let sectionsToUse = filteredSections ?? sections
+        return sectionsToUse.flatMap { section in
+            section.isExpanded ? section.projects : []
+        }
+    }
+
+    /// Selects the next project in the list (keyboard navigation)
+    func selectNextProject(filteredSections: [ProjectSection]? = nil) {
+        let visibleProjects = allVisibleProjects(filteredSections: filteredSections)
+        guard !visibleProjects.isEmpty else { return }
+
+        if let currentProject = selectedProject,
+           let currentIndex = visibleProjects.firstIndex(where: { $0.id == currentProject.id }) {
+            let nextIndex = min(currentIndex + 1, visibleProjects.count - 1)
+            selectProject(visibleProjects[nextIndex])
+        } else {
+            // No selection, select first
+            selectProject(visibleProjects[0])
+        }
+    }
+
+    /// Selects the previous project in the list (keyboard navigation)
+    func selectPreviousProject(filteredSections: [ProjectSection]? = nil) {
+        let visibleProjects = allVisibleProjects(filteredSections: filteredSections)
+        guard !visibleProjects.isEmpty else { return }
+
+        if let currentProject = selectedProject,
+           let currentIndex = visibleProjects.firstIndex(where: { $0.id == currentProject.id }) {
+            let prevIndex = max(currentIndex - 1, 0)
+            selectProject(visibleProjects[prevIndex])
+        } else {
+            // No selection, select last
+            selectProject(visibleProjects[visibleProjects.count - 1])
+        }
+    }
+
     /// Checks if a Git repository has uncommitted changes using GitService
     private func checkForUncommittedChanges(at path: String) async -> Bool {
         do {

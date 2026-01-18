@@ -7,6 +7,7 @@ struct ProjectListView: View {
     @State private var hoveredProjectId: String?
     @State private var searchText: String = ""
     @FocusState private var isSearchFocused: Bool
+    @State private var keyboardMonitor: Any?
 
     /// Filtered projects based on search text
     private var filteredSections: [ProjectSection] {
@@ -73,10 +74,48 @@ struct ProjectListView: View {
             .onAppear {
                 viewModel.loadProjects()
                 viewModel.startAutoRefresh()
+                setupKeyboardMonitor()
             }
             .onDisappear {
                 viewModel.stopAutoRefresh()
+                removeKeyboardMonitor()
             }
+        }
+    }
+
+    // MARK: - Keyboard Navigation
+
+    private func setupKeyboardMonitor() {
+        keyboardMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+            handleKeyEvent(event)
+        }
+    }
+
+    private func removeKeyboardMonitor() {
+        if let monitor = keyboardMonitor {
+            NSEvent.removeMonitor(monitor)
+            keyboardMonitor = nil
+        }
+    }
+
+    private func handleKeyEvent(_ event: NSEvent) -> NSEvent? {
+        // Only handle if not in a text field (other than our search field)
+        // Arrow keys: up = 126, down = 125
+        switch event.keyCode {
+        case 125: // Down arrow
+            withAnimation(.easeOut(duration: Theme.animationFast)) {
+                let sections = searchText.isEmpty ? nil : filteredSections
+                viewModel.selectNextProject(filteredSections: sections)
+            }
+            return nil // Consume the event
+        case 126: // Up arrow
+            withAnimation(.easeOut(duration: Theme.animationFast)) {
+                let sections = searchText.isEmpty ? nil : filteredSections
+                viewModel.selectPreviousProject(filteredSections: sections)
+            }
+            return nil // Consume the event
+        default:
+            return event // Pass through other events
         }
     }
 
