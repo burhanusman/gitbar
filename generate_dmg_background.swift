@@ -52,8 +52,8 @@ drawText("Drag GitBar to your Applications folder", at: CGPoint(x: width/2, y: h
 
 // Draw arrow from left (app icon location) to right (Applications folder)
 let arrowPath = NSBezierPath()
-let arrowStart = CGPoint(x: 180, y: height/2)
-let arrowEnd = CGPoint(x: 480, y: height/2)
+let arrowStart = CGPoint(x: 215, y: height/2)
+let arrowEnd = CGPoint(x: 445, y: height/2)
 
 arrowPath.move(to: arrowStart)
 arrowPath.line(to: arrowEnd)
@@ -71,8 +71,8 @@ arrowPath.stroke()
 
 // Draw placeholder circles for icons
 let iconSize: CGFloat = 100
-let leftIconCenter = CGPoint(x: 130, y: height/2)
-let rightIconCenter = CGPoint(x: 530, y: height/2)
+let leftIconCenter = CGPoint(x: 165, y: height/2)
+let rightIconCenter = CGPoint(x: 495, y: height/2)
 
 // Left circle (App icon placeholder)
 let leftCircle = NSBezierPath(ovalIn: NSRect(

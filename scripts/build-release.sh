@@ -64,7 +64,7 @@ if [ "$SKIP_BUILD" = false ]; then
     <key>method</key>
     <string>developer-id</string>
     <key>teamID</key>
-    <string>\${DEVELOPMENT_TEAM}</string>
+    <string>TNJF6P8FFF</string>
     <key>signingStyle</key>
     <string>manual</string>
     <key>stripSwiftSymbols</key>

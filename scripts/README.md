@@ -44,6 +44,8 @@ Complete release build workflow including signing and notarization.
 
 Creates beautiful DMG installer with drag-to-Applications UX.
 
+In CI/headless environments (where AppleScript can be unreliable), this script automatically falls back to `create-dmg-v2.sh` (dmgbuild-based) to preserve the Finder layout.
+
 **Usage:**
 ```bash
 ./scripts/create-dmg.sh [app-path] [output-dir]
@@ -70,6 +72,22 @@ Creates beautiful DMG installer with drag-to-Applications UX.
 ./scripts/create-dmg.sh build/Release/GitBar.app build
 
 # Output: build/GitBar-v1.0.0.dmg
+```
+
+---
+
+### create-dmg-v2.sh
+
+Creates DMG installers using `dmgbuild` (AppleScript-free), for reliable CI builds.
+
+**Usage:**
+```bash
+./scripts/create-dmg-v2.sh [app-path] [output-dir]
+```
+
+**Prerequisites:**
+```bash
+pipx install dmgbuild
 ```
 
 ---

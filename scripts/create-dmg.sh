@@ -21,6 +21,13 @@ if [ ! -d "$APP_PATH" ]; then
     exit 1
 fi
 
+# In CI/headless environments, use dmgbuild (no AppleScript needed) for reliable layout
+if [ -n "$CI" ] || [ -n "$GITHUB_ACTIONS" ]; then
+    echo "⚠️  CI environment detected, using dmgbuild-based DMG creation..."
+    "$SCRIPT_DIR/create-dmg-v2.sh" "$APP_PATH" "$OUTPUT_DIR"
+    exit $?
+fi
+
 # Check if create-dmg is installed
 if ! command -v create-dmg &> /dev/null; then
     echo "❌ Error: create-dmg not found"
@@ -43,8 +50,12 @@ rm -f "$DMG_PATH"
 # Generate background image if needed
 if [ ! -f "$DMG_RESOURCES/background.png" ]; then
     echo "🎨 Generating DMG background image..."
-    cd "$PROJECT_DIR"
-    ./generate_dmg_background.swift
+    if [ -x "$SCRIPT_DIR/generate_retro_background.swift" ]; then
+        "$SCRIPT_DIR/generate_retro_background.swift"
+    else
+        cd "$PROJECT_DIR"
+        ./generate_dmg_background.swift
+    fi
 fi
 
 # Create DMG with create-dmg
@@ -62,13 +73,6 @@ else
     echo "⚠️  No volume icon found, DMG will use default icon"
 fi
 
-# Use --skip-jenkins in CI environments (no display available for AppleScript)
-SKIP_JENKINS=""
-if [ -n "$CI" ] || [ -n "$GITHUB_ACTIONS" ]; then
-    SKIP_JENKINS="--skip-jenkins"
-    echo "⚠️  CI environment detected, skipping AppleScript customization"
-fi
-
 create-dmg \
   --volname "$APP_NAME" \
   $VOLICON_ARG \
@@ -76,10 +80,9 @@ create-dmg \
   --window-pos 200 120 \
   --window-size 660 400 \
   --icon-size 100 \
-  --icon "$APP_NAME.app" 130 185 \
+  --icon "$APP_NAME.app" 165 200 \
   --hide-extension "$APP_NAME.app" \
-  --app-drop-link 530 185 \
-  $SKIP_JENKINS \
+  --app-drop-link 495 200 \
   "$DMG_PATH" \
   "$APP_PATH"
 

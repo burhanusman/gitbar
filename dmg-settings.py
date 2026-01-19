@@ -37,10 +37,10 @@ window_rect = ((200, 120), (660, 400))
 icon_size = 100
 
 # Icon positions (based on 660x400 window)
-# GitBar.app on left, Applications on right
+# Centered layout: window center is 330
 icon_locations = {
-    'GitBar.app': (130, 185),
-    'Applications': (530, 185),
+    'GitBar.app': (180, 200),
+    'Applications': (480, 200),
 }
 
 # Hide file extensions

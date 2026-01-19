@@ -113,41 +113,43 @@ jobs:
           codesign -dv --verbose=4 ./build/GitBar.app 2>&1 | grep -q "runtime" || (echo "ERROR: Hardened runtime not enabled!" && exit 1)
           echo "✓ Hardened runtime enabled"
 
-      # TODO: Re-enable notarization once CI timeout issues are resolved
-      # The notarization step was hanging indefinitely in GitHub Actions.
-      # See: https://github.com/burhanusman/gitbar/issues/XXX (create tracking issue)
-      #
-      # - name: Setup notarization credentials
-      #   env:
-      #     APP_STORE_CONNECT_API_KEY_P8: ${{ secrets.APP_STORE_CONNECT_API_KEY_P8 }}
-      #   run: |
-      #     echo "Setting up App Store Connect API key..."
-      #     echo "$APP_STORE_CONNECT_API_KEY_P8" > /tmp/api-key.p8
-      #     chmod 600 /tmp/api-key.p8
-      #
-      # - name: Notarize app bundle
-      #   env:
-      #     APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
-      #     APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
-      #   run: |
-      #     echo "Creating zip for notarization..."
-      #     cd build
-      #     zip -r GitBar-notarize.zip GitBar.app
-      #
-      #     echo "Submitting for notarization..."
-      #     xcrun notarytool submit GitBar-notarize.zip \
-      #       --key /tmp/api-key.p8 \
-      #       --key-id "$APP_STORE_CONNECT_KEY_ID" \
-      #       --issuer "$APP_STORE_CONNECT_ISSUER_ID" \
-      #       --wait
-      #
-      #     echo "Stapling notarization ticket..."
-      #     xcrun stapler staple GitBar.app
-      #
-      #     echo "Verifying notarization..."
-      #     spctl --assess --verbose=4 --type execute GitBar.app
-      #
-      #     rm GitBar-notarize.zip
+      - name: Store notarization credentials
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          echo "Storing notarization credentials in keychain..."
+          # Use the temp keychain we created for signing
+          KEYCHAIN_PATH="$(security default-keychain | xargs)"
+          xcrun notarytool store-credentials "gitbar-notarytool" \
+            --apple-id "$APPLE_ID" \
+            --team-id "$APPLE_TEAM_ID" \
+            --password "$APPLE_PASSWORD" \
+            --keychain "$KEYCHAIN_PATH"
+          echo "✓ Notarization credentials stored in $KEYCHAIN_PATH"
+
+      - name: Notarize app bundle
+        run: |
+          echo "Creating zip for notarization..."
+          cd build
+          zip -r GitBar-notarize.zip GitBar.app
+
+          echo "Submitting for notarization..."
+          KEYCHAIN_PATH="$(security default-keychain | xargs)"
+          xcrun notarytool submit GitBar-notarize.zip \
+            --keychain-profile "gitbar-notarytool" \
+            --keychain "$KEYCHAIN_PATH" \
+            --wait
+
+          echo "Stapling notarization ticket..."
+          xcrun stapler staple GitBar.app
+
+          echo "Verifying notarization..."
+          spctl --assess --verbose=4 --type execute GitBar.app
+
+          rm GitBar-notarize.zip
+          echo "✓ App notarized and stapled"
 
       - name: Install dmgbuild
         run: |
@@ -185,7 +187,7 @@ jobs:
           fi
           echo "DMG ready: $DMG_PATH"
 
-      - name: Sign DMG
+      - name: Sign and notarize DMG
         run: |
           VERSION="${{ steps.version.outputs.version }}"
           DMG_PATH="build/GitBar-v${VERSION}.dmg"
@@ -196,16 +198,19 @@ jobs:
           echo "Verifying DMG signature..."
           codesign --verify --verbose=2 "$DMG_PATH"
 
-          # TODO: Re-enable DMG notarization once CI timeout issues are resolved
-          # echo "Submitting DMG for notarization..."
-          # xcrun notarytool submit "$DMG_PATH" \
-          #   --key /tmp/api-key.p8 \
-          #   --key-id "$APP_STORE_CONNECT_KEY_ID" \
-          #   --issuer "$APP_STORE_CONNECT_ISSUER_ID" \
-          #   --wait
-          #
-          # echo "Stapling notarization ticket to DMG..."
-          # xcrun stapler staple "$DMG_PATH"
+          echo "Submitting DMG for notarization..."
+          KEYCHAIN_PATH="$(security default-keychain | xargs)"
+          xcrun notarytool submit "$DMG_PATH" \
+            --keychain-profile "gitbar-notarytool" \
+            --keychain "$KEYCHAIN_PATH" \
+            --wait
+
+          echo "Stapling notarization ticket to DMG..."
+          xcrun stapler staple "$DMG_PATH"
+
+          echo "Verifying DMG notarization..."
+          xcrun stapler validate "$DMG_PATH"
+          echo "✓ DMG signed and notarized"
 
       # TODO: Re-enable when Sparkle signing is fixed
       # - name: Download Sparkle tools
@@ -293,14 +298,9 @@ jobs:
           - Download `GitBar-v${{ steps.version.outputs.version }}.zip`
           - Extract and move to Applications folder
 
-          ### ⚠️ Gatekeeper Note
+          ### ✅ Signed & Notarized
 
-          This release is code-signed but not yet notarized with Apple. On first launch, macOS may show a security warning. To open:
-          1. Right-click (or Control-click) on GitBar.app
-          2. Select "Open" from the context menu
-          3. Click "Open" in the dialog
-
-          You only need to do this once. Notarization will be added in a future release.
+          This release is code-signed with a Developer ID certificate and notarized by Apple. The app will open without any Gatekeeper warnings.
 
           ### Auto-Updates
 
@@ -351,10 +351,8 @@ jobs:
       - name: Cleanup
         if: always()
         run: |
-          # Clean up temporary keychain
+          # Clean up temporary keychain (contains signing cert and notarization credentials)
           security delete-keychain temp.keychain || true
-          # TODO: Re-enable when notarization is restored
-          # rm -f /tmp/api-key.p8 || true
 
       - name: Release summary
         run: |
@@ -369,12 +367,12 @@ jobs:
           echo "### Status:" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ Built and archived" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ Code signed (Developer ID)" >> $GITHUB_STEP_SUMMARY
-          echo "- ⏭️ Notarization skipped (TODO: fix CI timeout)" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ DMG created and signed" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Notarized by Apple" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ DMG created, signed, and notarized" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ Appcast generated" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ GitHub Release published" >> $GITHUB_STEP_SUMMARY
           echo "- ⚠️ Homebrew tap needs manual update (see above)" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "⚠️ Note: App is signed but not notarized. Users may need to right-click → Open on first launch." >> $GITHUB_STEP_SUMMARY
+          echo "✅ App is signed and notarized. Users can open it without Gatekeeper warnings." >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "🔗 [View Release](https://github.com/${{ github.repository }}/releases/tag/${{ steps.version.outputs.tag }})" >> $GITHUB_STEP_SUMMARY

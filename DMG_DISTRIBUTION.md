@@ -109,19 +109,13 @@ This script:
 
 ### Background Image
 
-The DMG background is generated programmatically at `dmg-resources/background.png` (660x400px):
+The DMG background is generated programmatically at `dmg-resources/background.png` (retina 1320x800px, displayed as 660x400px):
 
 ```bash
-./generate_dmg_background.swift
+./scripts/generate_retro_background.swift
 ```
 
-Features:
-- Installation instruction text
-- Arrow showing drag direction
-- Icon placeholders for app and Applications folder
-- Professional gradient background
-
-To customize, edit `generate_dmg_background.swift` and regenerate.
+To customize, edit `scripts/generate_retro_background.swift` and regenerate.
 
 ### Layout Configuration
 
@@ -134,10 +128,9 @@ create-dmg \
   --window-pos 200 120 \
   --window-size 660 400 \
   --icon-size 100 \
-  --icon "GitBar.app" 130 185 \        # App icon position
-  --app-drop-link 530 185 \            # Applications folder position
+  --icon "GitBar.app" 165 200 \        # App icon position
+  --app-drop-link 495 200 \            # Applications folder position
   --hide-extension "GitBar.app" \
-  --skip-jenkins \                      # Avoid AppleScript hanging
   "$DMG_PATH" \
   "$APP_PATH"
 ```
