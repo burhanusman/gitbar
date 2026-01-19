@@ -137,15 +137,3 @@ extension View {
             .animation(.easeOut(duration: Theme.animationBase), value: isVisible)
     }
 }
-
-// MARK: - Focus Effect Disabled Modifier (macOS 14+ compatible)
-
-struct FocusEffectDisabledModifier: ViewModifier {
-    func body(content: Content) -> some View {
-        if #available(macOS 14.0, *) {
-            content.focusEffectDisabled()
-        } else {
-            content
-        }
-    }
-}

@@ -4,15 +4,10 @@ import AppKit
 /// Sidebar view displaying the list of projects
 struct ProjectListView: View {
     @ObservedObject var viewModel: ProjectListViewModel
-    @FocusState.Binding var focusedArea: AppFocus?
     @State private var hoveredProjectId: String?
     @State private var searchText: String = ""
+    @FocusState private var isSearchFocused: Bool
     @State private var keyboardMonitor: Any?
-
-    /// Whether search field is focused (computed from focusedArea)
-    private var isSearchFocused: Bool {
-        focusedArea == .search
-    }
 
     /// Filtered projects based on search text
     private var filteredSections: [ProjectSection] {
@@ -40,23 +35,12 @@ struct ProjectListView: View {
                 .padding(.top, Theme.space3)
                 .padding(.bottom, Theme.space2)
 
-            // Header with project count and keyboard hints
+            // Header with project count
             HStack {
                 Text("PROJECTS")
                     .font(.system(size: Theme.fontXS, weight: .semibold))
                     .tracking(0.8)
                     .foregroundColor(Theme.textMuted)
-
-                // Show focus indicator
-                if focusedArea == .sidebar {
-                    Text("↑↓")
-                        .font(.system(size: 9, weight: .medium, design: .monospaced))
-                        .foregroundColor(Theme.textMuted)
-                        .padding(.horizontal, 4)
-                        .padding(.vertical, 2)
-                        .background(Theme.surfaceHover)
-                        .cornerRadius(3)
-                }
 
                 Spacer()
 
@@ -87,12 +71,6 @@ struct ProjectListView: View {
                 .padding(.vertical, Theme.space2)
             }
             .background(Theme.sidebarBackground)
-            .focusable()
-            .focused($focusedArea, equals: .sidebar)
-            .modifier(FocusEffectDisabledModifier())
-            .onTapGesture {
-                focusedArea = .sidebar
-            }
             .onAppear {
                 viewModel.loadProjects()
                 viewModel.startAutoRefresh()
@@ -121,47 +99,24 @@ struct ProjectListView: View {
     }
 
     private func handleKeyEvent(_ event: NSEvent) -> NSEvent? {
-        // Arrow keys: up = 126, down = 125, escape = 53
+        // Only handle if not in a text field (other than our search field)
+        // Arrow keys: up = 126, down = 125
         switch event.keyCode {
         case 125: // Down arrow
-            // Only handle if focused on sidebar
-            if focusedArea == .sidebar || focusedArea == .search {
-                withAnimation(.easeOut(duration: Theme.animationFast)) {
-                    let sections = searchText.isEmpty ? nil : filteredSections
-                    viewModel.selectNextProject(filteredSections: sections)
-                }
-                return nil // Consume the event
+            withAnimation(.easeOut(duration: Theme.animationFast)) {
+                let sections = searchText.isEmpty ? nil : filteredSections
+                viewModel.selectNextProject(filteredSections: sections)
             }
+            return nil // Consume the event
         case 126: // Up arrow
-            if focusedArea == .sidebar || focusedArea == .search {
-                withAnimation(.easeOut(duration: Theme.animationFast)) {
-                    let sections = searchText.isEmpty ? nil : filteredSections
-                    viewModel.selectPreviousProject(filteredSections: sections)
-                }
-                return nil // Consume the event
+            withAnimation(.easeOut(duration: Theme.animationFast)) {
+                let sections = searchText.isEmpty ? nil : filteredSections
+                viewModel.selectPreviousProject(filteredSections: sections)
             }
-        case 53: // Escape
-            if isSearchFocused && !searchText.isEmpty {
-                // Clear search text
-                withAnimation(.easeOut(duration: 0.15)) {
-                    searchText = ""
-                }
-                return nil
-            } else if isSearchFocused {
-                // Exit search, focus sidebar
-                focusedArea = .sidebar
-                return nil
-            }
-        case 36: // Return/Enter
-            if focusedArea == .sidebar, viewModel.selectedProject != nil {
-                // Switch focus to file list when Enter is pressed on a project
-                focusedArea = .fileList
-                return nil
-            }
+            return nil // Consume the event
         default:
-            break
+            return event // Pass through other events
         }
-        return event // Pass through other events
     }
 
     // MARK: - Search Field
@@ -175,18 +130,7 @@ struct ProjectListView: View {
             TextField("Search...", text: $searchText)
                 .textFieldStyle(.plain)
                 .font(.system(size: Theme.fontBase))
-                .focused($focusedArea, equals: .search)
-
-            // Keyboard hint when not focused
-            if !isSearchFocused && searchText.isEmpty {
-                Text("⌘F")
-                    .font(.system(size: 9, weight: .medium, design: .monospaced))
-                    .foregroundColor(Theme.textMuted)
-                    .padding(.horizontal, 4)
-                    .padding(.vertical, 2)
-                    .background(Theme.surfaceHover)
-                    .cornerRadius(3)
-            }
+                .focused($isSearchFocused)
 
             if !searchText.isEmpty {
                 Button(action: { withAnimation(.easeOut(duration: 0.15)) { searchText = "" } }) {
@@ -293,13 +237,11 @@ struct ProjectListView: View {
         ProjectRow(
             project: project,
             isSelected: viewModel.selectedProject?.id == project.id,
-            isHovered: hoveredProjectId == project.id,
-            isFocused: focusedArea == .sidebar && viewModel.selectedProject?.id == project.id
+            isHovered: hoveredProjectId == project.id
         )
         .onTapGesture {
             withAnimation(.easeOut(duration: Theme.animationBase)) {
                 viewModel.selectProject(project)
-                focusedArea = .sidebar
             }
         }
         .onHover { isHovering in
@@ -309,17 +251,17 @@ struct ProjectListView: View {
         }
         .contextMenu {
             Button(action: { openInTerminal(project.path) }) {
-                Label("Open in Terminal  ⌘T", systemImage: "terminal")
+                Label("Open in Terminal", systemImage: "terminal")
             }
 
             Button(action: { openInEditor(project.path) }) {
-                Label("Open in Editor  ⌘E", systemImage: "curlybraces")
+                Label("Open in Editor", systemImage: "curlybraces")
             }
 
             Divider()
 
             Button(action: { revealInFinder(project.path) }) {
-                Label("Reveal in Finder  ⇧⌘O", systemImage: "folder")
+                Label("Reveal in Finder", systemImage: "folder")
             }
 
             Button(action: { copyPath(project.path) }) {
@@ -401,7 +343,6 @@ struct ProjectRow: View {
     let project: Project
     let isSelected: Bool
     let isHovered: Bool
-    var isFocused: Bool = false
 
     var body: some View {
         HStack(spacing: Theme.space3) {
@@ -426,7 +367,6 @@ struct ProjectRow: View {
             x: 0,
             y: isSelected ? 2 : 0
         )
-        .animation(.easeOut(duration: Theme.animationFast), value: isFocused)
     }
 
     @ViewBuilder
@@ -471,15 +411,8 @@ struct ScaleButtonStyle: ButtonStyle {
     }
 }
 
-struct ProjectListView_Previews: PreviewProvider {
-    @FocusState static var focusedArea: AppFocus?
-
-    static var previews: some View {
-        ProjectListView(
-            viewModel: ProjectListViewModel(),
-            focusedArea: $focusedArea
-        )
+#Preview {
+    ProjectListView(viewModel: ProjectListViewModel())
         .frame(width: 240, height: 500)
         .background(Theme.sidebarBackground)
-    }
 }
