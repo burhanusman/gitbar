@@ -8,6 +8,7 @@ struct ProjectListView: View {
     @State private var searchText: String = ""
     @FocusState private var isSearchFocused: Bool
     @State private var keyboardMonitor: Any?
+    @State private var isSortButtonHovered: Bool = false
 
     /// Filtered projects based on search text
     private var filteredSections: [ProjectSection] {
@@ -44,6 +45,18 @@ struct ProjectListView: View {
 
                 Spacer()
 
+                // Sort toggle button
+                SortToggleButton(
+                    sortMode: viewModel.sortMode,
+                    isHovered: isSortButtonHovered,
+                    action: { viewModel.toggleSortMode() }
+                )
+                .onHover { isHovered in
+                    withAnimation(.easeOut(duration: Theme.animationFast)) {
+                        isSortButtonHovered = isHovered
+                    }
+                }
+
                 Button(action: addFolderSource) {
                     Image(systemName: "plus")
                         .font(.system(size: Theme.fontXS, weight: .semibold))
@@ -59,7 +72,7 @@ struct ProjectListView: View {
             .padding(.vertical, Theme.space2)
 
             // Project list
-            ScrollView {
+            ScrollView(.vertical, showsIndicators: true) {
                 LazyVStack(alignment: .leading, spacing: Theme.space1) {
                     if searchText.isEmpty {
                         normalSectionsView
@@ -162,8 +175,10 @@ struct ProjectListView: View {
                 if section.wrappedValue.projects.isEmpty {
                     emptySourceView
                 } else {
-                    ForEach(section.wrappedValue.projects) { project in
-                        projectRow(for: project)
+                    let projects = section.wrappedValue.projects
+                    ForEach(Array(projects.enumerated()), id: \.element.id) { index, project in
+                        let nextBarId = index < projects.count - 1 ? projects[index + 1].id : nil
+                        projectRow(for: project, nextBarId: nextBarId)
                     }
                 }
             } label: {
@@ -223,8 +238,10 @@ struct ProjectListView: View {
             .padding(.vertical, Theme.space8)
         } else {
             ForEach(filteredSections) { section in
-                ForEach(section.projects) { project in
-                    projectRow(for: project)
+                let projects = section.projects
+                ForEach(Array(projects.enumerated()), id: \.element.id) { index, project in
+                    let nextBarId = index < projects.count - 1 ? projects[index + 1].id : nil
+                    projectRow(for: project, nextBarId: nextBarId)
                 }
             }
         }
@@ -233,11 +250,12 @@ struct ProjectListView: View {
     // MARK: - Project Row
 
     @ViewBuilder
-    private func projectRow(for project: Project) -> some View {
+    private func projectRow(for project: Project, nextBarId: String? = nil) -> some View {
         ProjectRow(
             project: project,
             isSelected: viewModel.selectedProject?.id == project.id,
-            isHovered: hoveredProjectId == project.id
+            isHovered: hoveredProjectId == project.id,
+            nextBarId: nextBarId
         )
         .onTapGesture {
             withAnimation(.easeOut(duration: Theme.animationBase)) {
@@ -343,29 +361,40 @@ struct ProjectRow: View {
     let project: Project
     let isSelected: Bool
     let isHovered: Bool
+    var nextBarId: String? = nil
 
     var body: some View {
-        HStack(spacing: Theme.space3) {
-            // Status indicator
-            statusIndicator
+        VStack(alignment: .leading, spacing: Theme.space2) {
+            HStack(spacing: Theme.space3) {
+                // Status indicator
+                statusIndicator
 
-            // Project name
-            Text(project.name)
-                .font(.system(size: Theme.fontBase, weight: isSelected ? .medium : .regular))
-                .foregroundColor(textColor)
-                .lineLimit(1)
+                // Project name
+                Text(project.name)
+                    .font(.system(size: Theme.fontBase, weight: isSelected ? .medium : .regular))
+                    .foregroundColor(textColor)
+                    .lineLimit(1)
 
-            Spacer()
+                Spacer()
+            }
+
+            // Momentum bar - commit activity visualization
+            HStack {
+                Spacer()
+                MomentumBar(activity: project.commitActivity, barId: project.id, nextBarId: nextBarId)
+            }
         }
         .padding(.horizontal, Theme.space3)
-        .padding(.vertical, 10)
-        .background(backgroundColor)
-        .cornerRadius(Theme.radius)
-        .shadow(
-            color: isSelected ? Theme.accent.opacity(0.12) : .clear,
-            radius: isSelected ? 8 : 0,
-            x: 0,
-            y: isSelected ? 2 : 0
+        .padding(.vertical, Theme.space2)
+        .background(
+            RoundedRectangle(cornerRadius: Theme.radius)
+                .fill(backgroundColor)
+                .shadow(
+                    color: isSelected ? Theme.accent.opacity(0.12) : .clear,
+                    radius: isSelected ? 8 : 0,
+                    x: 0,
+                    y: isSelected ? 2 : 0
+                )
         )
     }
 
@@ -398,6 +427,46 @@ struct ProjectRow: View {
         if isSelected { return Theme.accentMuted }
         if isHovered { return Theme.surfaceHover }
         return .clear
+    }
+}
+
+// MARK: - Sort Toggle Button
+
+struct SortToggleButton: View {
+    let sortMode: ProjectSortMode
+    let isHovered: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 2) {
+                // Main icon
+                Group {
+                    if sortMode == .alphabetical {
+                        Text("A")
+                            .font(.system(size: 9, weight: .bold, design: .rounded))
+                    } else {
+                        Image(systemName: "clock")
+                            .font(.system(size: 9, weight: .semibold))
+                    }
+                }
+                .foregroundColor(isHovered ? Theme.textSecondary : Theme.textTertiary)
+
+                // Arrow indicator
+                Image(systemName: sortMode == .alphabetical ? "chevron.down" : "chevron.up")
+                    .font(.system(size: 7, weight: .bold))
+                    .foregroundColor(isHovered ? Theme.textSecondary : Theme.textTertiary)
+            }
+            .frame(width: 26, height: 22)
+            .background(
+                RoundedRectangle(cornerRadius: 6)
+                    .fill(isHovered ? Theme.surfaceHover : Theme.surface)
+            )
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(ScaleButtonStyle())
+        .help(sortMode == .alphabetical ? "Sort by recent activity" : "Sort alphabetically")
+        .animation(.spring(response: 0.25, dampingFraction: 0.8), value: sortMode)
     }
 }
 

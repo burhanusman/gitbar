@@ -1,8 +1,29 @@
 import Foundation
 import ServiceManagement
 
+/// How projects should be sorted in the sidebar
+enum ProjectSortMode: String, CaseIterable {
+    case alphabetical = "alphabetical"
+    case recent = "recent"
+
+    var displayName: String {
+        switch self {
+        case .alphabetical: return "Alphabetical"
+        case .recent: return "Recent Activity"
+        }
+    }
+
+    var iconName: String {
+        switch self {
+        case .alphabetical: return "textformat.abc"
+        case .recent: return "clock"
+        }
+    }
+}
+
 extension Notification.Name {
     static let repoFoldersDidChange = Notification.Name("SettingsService.repoFoldersDidChange")
+    static let projectSortModeDidChange = Notification.Name("SettingsService.projectSortModeDidChange")
 }
 
 /// Service for managing app settings including launch at login
@@ -12,9 +33,25 @@ final class SettingsService {
     private let launchAtLoginKey = "launchAtLogin"
     private let repoFoldersKey = "repoFolders"
     private let lastSelectedProjectPathKey = "lastSelectedProjectPath"
+    private let projectSortModeKey = "projectSortMode"
     private let defaults = UserDefaults.standard
 
     private init() {}
+
+    /// How projects are sorted in the sidebar
+    var projectSortMode: ProjectSortMode {
+        get {
+            guard let rawValue = defaults.string(forKey: projectSortModeKey),
+                  let mode = ProjectSortMode(rawValue: rawValue) else {
+                return .alphabetical
+            }
+            return mode
+        }
+        set {
+            defaults.set(newValue.rawValue, forKey: projectSortModeKey)
+            NotificationCenter.default.post(name: .projectSortModeDidChange, object: nil)
+        }
+    }
 
     /// Last selected project path (for restoring selection on app launch)
     var lastSelectedProjectPath: String? {

@@ -7,6 +7,28 @@ enum ProjectSource: String, Codable, Equatable {
     case folder = "Folder"
 }
 
+/// Represents daily commit activity for a project
+struct CommitActivity: Equatable {
+    let dailyCounts: [Int]  // Array of commit counts, index 0 = today, index 1 = yesterday, etc.
+
+    /// Returns the last N days of activity
+    func last(_ days: Int) -> [Int] {
+        Array(dailyCounts.prefix(days))
+    }
+
+    /// Maximum commits in a single day (for normalization)
+    var maxCount: Int {
+        dailyCounts.max() ?? 0
+    }
+
+    /// Total commits in the period
+    var totalCommits: Int {
+        dailyCounts.reduce(0, +)
+    }
+
+    static let empty = CommitActivity(dailyCounts: Array(repeating: 0, count: 30))
+}
+
 /// Represents a Git project displayed in the sidebar
 struct Project: Identifiable, Equatable {
     let id: String
@@ -14,21 +36,27 @@ struct Project: Identifiable, Equatable {
     let path: String
     let source: ProjectSource
     var hasUncommittedChanges: Bool
+    var commitActivity: CommitActivity
+    var lastActivityDate: Date?
 
-    init(name: String, path: String, source: ProjectSource = .folder, hasUncommittedChanges: Bool = false) {
+    init(name: String, path: String, source: ProjectSource = .folder, hasUncommittedChanges: Bool = false, commitActivity: CommitActivity = .empty, lastActivityDate: Date? = nil) {
         self.id = path
         self.name = name
         self.path = path
         self.source = source
         self.hasUncommittedChanges = hasUncommittedChanges
+        self.commitActivity = commitActivity
+        self.lastActivityDate = lastActivityDate
     }
 
     /// Creates a Project from a ClaudeProject (works for both Claude and Codex)
-    init(from claudeProject: ClaudeProjectDiscoveryService.ClaudeProject, hasUncommittedChanges: Bool = false) {
+    init(from claudeProject: ClaudeProjectDiscoveryService.ClaudeProject, hasUncommittedChanges: Bool = false, commitActivity: CommitActivity = .empty, lastActivityDate: Date? = nil) {
         self.id = claudeProject.path
         self.name = claudeProject.name
         self.path = claudeProject.path
         self.source = claudeProject.source
         self.hasUncommittedChanges = hasUncommittedChanges
+        self.commitActivity = commitActivity
+        self.lastActivityDate = lastActivityDate
     }
 }

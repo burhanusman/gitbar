@@ -23,6 +23,7 @@
 		A100001C229A0001000A0008 /* Color+Hex.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100001D229A0001000A0008 /* Color+Hex.swift */; };
 		A100001E229A0001000A0009 /* SparkleUpdateService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100001F229A0001000A0009 /* SparkleUpdateService.swift */; };
 		A1000022229A0001000A000A /* EventMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000021229A0001000A000A /* EventMonitor.swift */; };
+		A1000023229A0001000A000B /* MomentumBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000024229A0001000A000B /* MomentumBar.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -44,6 +45,7 @@
 		A100001D229A0001000A0008 /* Color+Hex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Color+Hex.swift"; sourceTree = "<group>"; };
 		A100001F229A0001000A0009 /* SparkleUpdateService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SparkleUpdateService.swift; sourceTree = "<group>"; };
 		A1000021229A0001000A000A /* EventMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventMonitor.swift; sourceTree = "<group>"; };
+		A1000024229A0001000A000B /* MomentumBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MomentumBar.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -96,6 +98,7 @@
 				A100000F229A0001000A0001 /* ProjectListView.swift */,
 				A1000013229A0001000A0003 /* GitStatusView.swift */,
 				A100001B229A0001000A0007 /* SettingsView.swift */,
+				A1000024229A0001000A000B /* MomentumBar.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -229,6 +232,7 @@
 				A100001C229A0001000A0008 /* Color+Hex.swift in Sources */,
 				A100001E229A0001000A0009 /* SparkleUpdateService.swift in Sources */,
 				A1000022229A0001000A000A /* EventMonitor.swift in Sources */,
+				A1000023229A0001000A000B /* MomentumBar.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

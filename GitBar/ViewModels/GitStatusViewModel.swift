@@ -239,7 +239,7 @@ class GitStatusViewModel: ObservableObject {
         Task {
             do {
                 try await gitService.stageFile(filePath, at: path)
-                refresh()
+                await refreshQuietly()
             } catch {
                 self.error = error
             }
@@ -252,7 +252,7 @@ class GitStatusViewModel: ObservableObject {
         Task {
             do {
                 try await gitService.unstageFile(filePath, at: path)
-                refresh()
+                await refreshQuietly()
             } catch {
                 self.error = error
             }
@@ -265,7 +265,7 @@ class GitStatusViewModel: ObservableObject {
         Task {
             do {
                 try await gitService.restoreFile(filePath, at: path)
-                refresh()
+                await refreshQuietly()
             } catch {
                 self.error = error
             }
@@ -278,7 +278,7 @@ class GitStatusViewModel: ObservableObject {
         Task {
             do {
                 try await gitService.stageAllFiles(at: path)
-                refresh()
+                await refreshQuietly()
             } catch {
                 self.error = error
             }
@@ -291,7 +291,7 @@ class GitStatusViewModel: ObservableObject {
         Task {
             do {
                 try await gitService.unstageAllFiles(at: path)
-                refresh()
+                await refreshQuietly()
             } catch {
                 self.error = error
             }
@@ -304,10 +304,21 @@ class GitStatusViewModel: ObservableObject {
         Task {
             do {
                 try await gitService.restoreAllFiles(at: path)
-                refresh()
+                await refreshQuietly()
             } catch {
                 self.error = error
             }
+        }
+    }
+
+    /// Refreshes status without showing the loading indicator (for quick operations like staging)
+    private func refreshQuietly() async {
+        guard let path = projectPath else { return }
+        do {
+            let status = try await gitService.getStatus(at: path)
+            self.gitStatus = status
+        } catch {
+            self.error = error
         }
     }
 

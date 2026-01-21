@@ -330,6 +330,66 @@ actor GitService {
         _ = try await runGitCommand(["restore", "."], at: repoPath)
     }
 
+    /// Gets the date of the last commit in the repository
+    func getLastCommitDate(at path: String) async throws -> Date? {
+        try validateGitRepository(at: path)
+
+        let output = try await runGitCommand([
+            "log", "-1", "--format=%ct"
+        ], at: path)
+
+        let trimmed = output.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, let timestamp = TimeInterval(trimmed) else {
+            return nil
+        }
+
+        return Date(timeIntervalSince1970: timestamp)
+    }
+
+    /// Gets commit activity for the last N days (returns commit count per day)
+    func getCommitActivity(at path: String, days: Int = 30) async throws -> [Date: Int] {
+        try validateGitRepository(at: path)
+
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+
+        // Get commits from the last N days
+        let sinceDate = calendar.date(byAdding: .day, value: -days, to: today)!
+        let dateFormatter = ISO8601DateFormatter()
+        dateFormatter.formatOptions = [.withFullDate]
+
+        let output = try await runGitCommand([
+            "log",
+            "--since=\(dateFormatter.string(from: sinceDate))",
+            "--format=%cd",
+            "--date=short"
+        ], at: path)
+
+        // Parse output and count commits per day
+        var activity: [Date: Int] = [:]
+
+        // Initialize all days with 0
+        for dayOffset in 0..<days {
+            if let date = calendar.date(byAdding: .day, value: -dayOffset, to: today) {
+                activity[calendar.startOfDay(for: date)] = 0
+            }
+        }
+
+        // Count commits per day
+        let lines = output.components(separatedBy: .newlines)
+        let inputFormatter = DateFormatter()
+        inputFormatter.dateFormat = "yyyy-MM-dd"
+
+        for line in lines {
+            let trimmed = line.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmed.isEmpty, let date = inputFormatter.date(from: trimmed) else { continue }
+            let dayStart = calendar.startOfDay(for: date)
+            activity[dayStart, default: 0] += 1
+        }
+
+        return activity
+    }
+
     // MARK: - Private Methods
 
     /// Validates that the path is a Git repository, throws if not
