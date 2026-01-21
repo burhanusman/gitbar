@@ -1,16 +1,17 @@
 {
   "images" : [
     {
-      "filename" : "menubar_16x16.png",
+      "filename" : "icon_16x16@1x.png",
       "idiom" : "universal",
       "scale" : "1x"
     },
     {
-      "filename" : "menubar_32x32.png",
+      "filename" : "icon_16x16@2x.png",
       "idiom" : "universal",
       "scale" : "2x"
     },
     {
+      "filename" : "icon_32x32@2x.png",
       "idiom" : "universal",
       "scale" : "3x"
     }

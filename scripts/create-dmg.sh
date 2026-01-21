@@ -47,15 +47,23 @@ echo "📍 Output: $DMG_PATH"
 # Remove old DMG if it exists
 rm -f "$DMG_PATH"
 
-# Generate background image if needed
-if [ ! -f "$DMG_RESOURCES/background.png" ]; then
-    echo "🎨 Generating DMG background image..."
-    if [ -x "$SCRIPT_DIR/generate_retro_background.swift" ]; then
-        "$SCRIPT_DIR/generate_retro_background.swift"
-    else
-        cd "$PROJECT_DIR"
-        ./generate_dmg_background.swift
-    fi
+# Generate background image if needed (prefer TIFF for Retina support)
+if [ ! -f "$DMG_RESOURCES/background.tiff" ]; then
+    echo "🎨 Generating DMG background images (1x + 2x for Retina)..."
+    cd "$PROJECT_DIR"
+    ./generate_dmg_background.swift
+fi
+
+# Determine which background file to use (TIFF for Retina, PNG as fallback)
+if [ -f "$DMG_RESOURCES/background.tiff" ]; then
+    BACKGROUND_FILE="$DMG_RESOURCES/background.tiff"
+    echo "🖼️  Using multi-resolution TIFF background (Retina-ready)"
+elif [ -f "$DMG_RESOURCES/background.png" ]; then
+    BACKGROUND_FILE="$DMG_RESOURCES/background.png"
+    echo "🖼️  Using PNG background (non-Retina)"
+else
+    echo "❌ Error: No background image found"
+    exit 1
 fi
 
 # Create DMG with create-dmg
@@ -76,7 +84,7 @@ fi
 create-dmg \
   --volname "$APP_NAME" \
   $VOLICON_ARG \
-  --background "$DMG_RESOURCES/background.png" \
+  --background "$BACKGROUND_FILE" \
   --window-pos 200 120 \
   --window-size 660 400 \
   --icon-size 100 \
