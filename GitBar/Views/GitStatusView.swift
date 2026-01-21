@@ -158,10 +158,12 @@ struct GitStatusView: View {
                 .frame(width: 24, height: 24)
                 .background(showCopiedFeedback ? Theme.successMuted : Theme.surface)
                 .cornerRadius(Theme.radiusSmall)
+                .contentShape(Rectangle())
         }
         .buttonStyle(ScaleButtonStyle())
         .help("Copy branch name")
         .animation(.easeOut(duration: Theme.animationFast), value: showCopiedFeedback)
+        .pointingHandCursor()
     }
 
     private func aheadBehindBadge(_ text: String) -> some View {
@@ -343,12 +345,14 @@ struct ActionButton: View {
                 RoundedRectangle(cornerRadius: Theme.radius)
                     .stroke(borderColor, lineWidth: 1)
             )
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .disabled(isDisabled)
         .help(label)
         .onHover { isHovered = $0 }
         .animation(.easeOut(duration: Theme.animationFast), value: isHovered)
+        .pointingHandCursor()
     }
 
     private var foregroundColor: Color {
@@ -463,11 +467,13 @@ struct IconButton: View {
                 .frame(width: 22, height: 22)
                 .background(isHovered ? Theme.surfaceHover : .clear)
                 .cornerRadius(Theme.radiusSmall)
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .help(help)
         .onHover { isHovered = $0 }
         .animation(.easeOut(duration: Theme.animationFast), value: isHovered)
+        .pointingHandCursor()
     }
 }
 
@@ -540,8 +546,10 @@ struct FileRowItem: View {
             }
         }
         .clipShape(RoundedRectangle(cornerRadius: 0))
+        .contentShape(Rectangle())
         .onHover { isHovered = $0 }
         .animation(.easeOut(duration: Theme.animationFast), value: isHovered)
+        .pointingHandCursor()
     }
 
     private func lineStatsView(_ stats: GitLineStats) -> some View {
@@ -589,10 +597,12 @@ struct FileActionButton: View {
                 .frame(width: 24, height: 24)
                 .background(isHovered ? Theme.surfaceActive : Theme.surface)
                 .cornerRadius(Theme.radiusSmall)
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .onHover { isHovered = $0 }
         .animation(.easeOut(duration: Theme.animationFast), value: isHovered)
+        .pointingHandCursor()
     }
 }
 
@@ -663,9 +673,11 @@ struct CommitBox: View {
                         RoundedRectangle(cornerRadius: Theme.radius)
                             .stroke(canCommit ? Theme.accent : Theme.border, lineWidth: 1)
                     )
+                    .contentShape(Rectangle())
                 }
                 .buttonStyle(ScaleButtonStyle())
                 .disabled(!canCommit)
+                .pointingHandCursor()
             }
         }
         .padding(Theme.space4)
