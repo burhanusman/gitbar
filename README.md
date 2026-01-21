@@ -1,7 +1,7 @@
 # GitBar
 
 <div align="center">
-  <img src="GitBar/Assets.xcassets/AppIcon.appiconset/icon_256x256.png" width="256" alt="GitBar Icon">
+  <img src="GitBar/Assets.xcassets/AppIcon.appiconset/icon_256x256@1x.png" width="128" alt="GitBar Icon">
 
   <p><strong>Git repository status at a glance. Lives in your menu bar.</strong></p>
 
@@ -15,19 +15,6 @@
 ## Overview
 
 GitBar lives in your macOS menubar and provides instant visibility into the git status of your development projects. Whether you're working with Claude Code, Codex, or any git repository, GitBar keeps you informed about uncommitted changes, branch status, and sync state with your remote repositories.
-
-## Screenshots
-
-<!-- TODO: Add screenshots/GIF showing:
-- Menubar icon with git status
-- Project list with multiple repositories
-- Settings panel
-- Auto-update functionality
-Record with Kap (https://getkap.co/) or LICEcap (https://www.cockos.com/licecap/)
--->
-
-![GitBar Demo](docs/images/demo.gif)
-*Coming soon: animated demo*
 
 ## Features
 
@@ -43,7 +30,7 @@ Record with Kap (https://getkap.co/) or LICEcap (https://www.cockos.com/licecap/
 ### Homebrew (Recommended)
 
 ```bash
-brew install --cask gitbar
+brew install --cask burhanusman/gitbar/gitbar
 ```
 
 After installation, launch GitBar from Applications or Spotlight. Look for the git branch icon in your menubar.

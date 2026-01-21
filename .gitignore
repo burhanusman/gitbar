@@ -34,6 +34,10 @@ Carthage/Build/
 *.swp
 *~.nib
 
+# Secrets
+.env
+.env.*
+
 # Project files
 .ralph-tui/
 prd.json
