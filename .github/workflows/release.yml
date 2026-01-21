@@ -116,8 +116,8 @@ jobs:
       - name: Store notarization credentials
         env:
           APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.TEAM_ID }}
         run: |
           echo "Storing notarization credentials in keychain..."
           # Use the temp keychain we created for signing

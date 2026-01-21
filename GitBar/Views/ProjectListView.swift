@@ -67,6 +67,7 @@ struct ProjectListView: View {
                 }
                 .buttonStyle(ScaleButtonStyle())
                 .help("Add folder source")
+                .pointingHandCursor()
             }
             .padding(.horizontal, Theme.space4)
             .padding(.vertical, Theme.space2)
@@ -153,6 +154,7 @@ struct ProjectListView: View {
                 }
                 .buttonStyle(.plain)
                 .transition(.opacity.combined(with: .scale))
+                .pointingHandCursor()
             }
         }
         .padding(.horizontal, Theme.space3)
@@ -386,6 +388,7 @@ struct ProjectRow: View {
         }
         .padding(.horizontal, Theme.space3)
         .padding(.vertical, Theme.space2)
+        .contentShape(Rectangle())
         .background(
             RoundedRectangle(cornerRadius: Theme.radius)
                 .fill(backgroundColor)
@@ -396,6 +399,7 @@ struct ProjectRow: View {
                     y: isSelected ? 2 : 0
                 )
         )
+        .pointingHandCursor()
     }
 
     @ViewBuilder
@@ -467,6 +471,7 @@ struct SortToggleButton: View {
         .buttonStyle(ScaleButtonStyle())
         .help(sortMode == .alphabetical ? "Sort by recent activity" : "Sort alphabetically")
         .animation(.spring(response: 0.25, dampingFraction: 0.8), value: sortMode)
+        .pointingHandCursor()
     }
 }
 

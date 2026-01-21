@@ -24,9 +24,11 @@ struct SettingsView: View {
                         .padding(.vertical, 6)
                         .background(Theme.accent)
                         .cornerRadius(6)
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .keyboardShortcut(.cancelAction)
+                .pointingHandCursor()
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 16)
@@ -91,8 +93,10 @@ struct SettingsView: View {
                                         RoundedRectangle(cornerRadius: 6)
                                             .stroke(Theme.border, lineWidth: 1)
                                     )
+                                    .contentShape(Rectangle())
                                 }
                                 .buttonStyle(.plain)
+                                .pointingHandCursor()
                             }
                             .padding(16)
                             
@@ -132,6 +136,7 @@ struct SettingsView: View {
                                             }
                                             .buttonStyle(.plain)
                                             .help("Remove folder")
+                                            .pointingHandCursor()
                                         }
                                         .padding(12)
                                         .background(Theme.surface.opacity(0.5)) // Slightly darker row
@@ -195,9 +200,11 @@ struct SettingsView: View {
                                             RoundedRectangle(cornerRadius: 6)
                                                 .stroke(Theme.border, lineWidth: 1)
                                         )
+                                        .contentShape(Rectangle())
                                 }
                                 .buttonStyle(.plain)
                                 .disabled(viewModel.isCheckingForUpdates)
+                                .pointingHandCursor()
                             }
                             .padding(16)
                         }
@@ -238,6 +245,7 @@ struct SettingsView: View {
                                 .contentShape(Rectangle())
                             }
                             .buttonStyle(.plain)
+                            .pointingHandCursor()
                         }
                     }
                     

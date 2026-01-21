@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit
 
 extension Color {
     init(hex: String) {
@@ -135,5 +136,16 @@ extension View {
     func fadeTransition(_ isVisible: Bool) -> some View {
         self.opacity(isVisible ? 1.0 : 0.0)
             .animation(.easeOut(duration: Theme.animationBase), value: isVisible)
+    }
+
+    /// Changes cursor to pointing hand on hover - use for clickable elements
+    func pointingHandCursor() -> some View {
+        self.onHover { isHovering in
+            if isHovering {
+                NSCursor.pointingHand.push()
+            } else {
+                NSCursor.pop()
+            }
+        }
     }
 }

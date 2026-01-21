@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit
 
 struct ContentView: View {
     @StateObject private var projectListViewModel = ProjectListViewModel()
@@ -91,13 +92,21 @@ struct HeaderButtonStyle: ButtonStyle {
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
+            .contentShape(Rectangle())
             .background(
                 RoundedRectangle(cornerRadius: Theme.radiusSmall)
                     .fill(isHovered ? Theme.surfaceHover : .clear)
             )
             .scaleEffect(configuration.isPressed ? 0.92 : 1.0)
             .animation(.easeOut(duration: 0.1), value: configuration.isPressed)
-            .onHover { isHovered = $0 }
+            .onHover { hovering in
+                isHovered = hovering
+                if hovering {
+                    NSCursor.pointingHand.push()
+                } else {
+                    NSCursor.pop()
+                }
+            }
     }
 }
 
