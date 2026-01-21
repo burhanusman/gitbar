@@ -6,13 +6,13 @@
     <description>Most recent updates to GitBar</description>
     <language>en</language>
     <item>
-      <title>Version 1.0.4</title>
-      <sparkle:version>1.0.4</sparkle:version>
-      <sparkle:shortVersionString>1.0.4</sparkle:shortVersionString>
-      <pubDate>Sun, 18 Jan 2026 13:22:13 +0000</pubDate>
+      <title>Version 1.0.5</title>
+      <sparkle:version>1.0.5</sparkle:version>
+      <sparkle:shortVersionString>1.0.5</sparkle:shortVersionString>
+      <pubDate>Wed, 21 Jan 2026 17:55:08 +0000</pubDate>
       <enclosure
-        url="https://github.com/burhanusman/gitbar/releases/download/v1.0.4/GitBar-v1.0.4.zip"
-        length="269312"
+        url="https://github.com/burhanusman/gitbar/releases/download/v1.0.5/GitBar-v1.0.5.zip"
+        length="430511"
         type="application/octet-stream"/>
     </item>
   </channel>
