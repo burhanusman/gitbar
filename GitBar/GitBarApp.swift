@@ -11,7 +11,7 @@ struct GitBarApp: App {
 
     var body: some Scene {
         Settings {
-            EmptyView()
+            SettingsView()
         }
     }
 }
@@ -24,6 +24,15 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         setupMenuBar()
+
+        // Close any auto-opened windows (Settings scene may auto-open on first launch)
+        DispatchQueue.main.async {
+            for window in NSApp.windows where window.title.contains("Settings") || window.title.contains("GitBar") {
+                if window != self.popover?.contentViewController?.view.window {
+                    window.close()
+                }
+            }
+        }
     }
 
     private func setupMenuBar() {
