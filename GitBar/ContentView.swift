@@ -1,10 +1,16 @@
 import SwiftUI
 import AppKit
 
+enum DetailTab: String, CaseIterable {
+    case changes = "Changes"
+    case history = "History"
+}
+
 struct ContentView: View {
     @StateObject private var projectListViewModel = ProjectListViewModel()
     @State private var showSettings = false
     @State private var hasAppeared = false
+    @State private var selectedTab: DetailTab = .changes
 
     var body: some View {
         VStack(spacing: 0) {
@@ -26,7 +32,18 @@ struct ContentView: View {
                         Theme.background.ignoresSafeArea()
 
                         if let selectedProject = projectListViewModel.selectedProject {
-                            GitStatusView(project: selectedProject)
+                            VStack(spacing: 0) {
+                                // Tab switcher
+                                DetailTabBar(selectedTab: $selectedTab)
+
+                                // Content based on selected tab
+                                switch selectedTab {
+                                case .changes:
+                                    GitStatusView(project: selectedProject)
+                                case .history:
+                                    GitTreeView(project: selectedProject)
+                                }
+                            }
                         } else {
                             SelectProjectEmptyState()
                         }
@@ -152,6 +169,68 @@ struct SelectProjectEmptyState: View {
                 isVisible = true
             }
         }
+    }
+}
+
+// MARK: - Detail Tab Bar
+
+struct DetailTabBar: View {
+    @Binding var selectedTab: DetailTab
+
+    var body: some View {
+        HStack(spacing: Theme.space1) {
+            ForEach(DetailTab.allCases, id: \.self) { tab in
+                TabButton(
+                    title: tab.rawValue,
+                    icon: tab == .changes ? "doc.badge.plus" : "point.3.connected.trianglepath.dotted",
+                    isSelected: selectedTab == tab,
+                    action: {
+                        withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
+                            selectedTab = tab
+                        }
+                    }
+                )
+            }
+
+            Spacer()
+        }
+        .padding(.horizontal, Theme.space4)
+        .padding(.vertical, Theme.space2)
+        .background(Theme.surfaceElevated)
+    }
+}
+
+struct TabButton: View {
+    let title: String
+    let icon: String
+    let isSelected: Bool
+    let action: () -> Void
+
+    @State private var isHovered = false
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: Theme.space2) {
+                Image(systemName: icon)
+                    .font(.system(size: 11, weight: isSelected ? .semibold : .medium))
+
+                Text(title)
+                    .font(.system(size: Theme.fontSM, weight: isSelected ? .semibold : .medium))
+            }
+            .foregroundColor(isSelected ? Theme.accent : (isHovered ? Theme.textSecondary : Theme.textTertiary))
+            .padding(.horizontal, Theme.space3)
+            .padding(.vertical, Theme.space2)
+            .background(
+                RoundedRectangle(cornerRadius: Theme.radiusSmall)
+                    .fill(isSelected ? Theme.accentMuted : (isHovered ? Theme.surfaceHover : .clear))
+            )
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .onHover { isHovered = $0 }
+        .animation(.easeOut(duration: Theme.animationFast), value: isHovered)
+        .animation(.easeOut(duration: Theme.animationFast), value: isSelected)
+        .pointingHandCursor()
     }
 }
 

@@ -24,6 +24,8 @@
 		A100001E229A0001000A0009 /* SparkleUpdateService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100001F229A0001000A0009 /* SparkleUpdateService.swift */; };
 		A1000022229A0001000A000A /* EventMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000021229A0001000A000A /* EventMonitor.swift */; };
 		A1000023229A0001000A000B /* MomentumBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000024229A0001000A000B /* MomentumBar.swift */; };
+		A1000025229A0001000A000C /* GitTreeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000026229A0001000A000C /* GitTreeView.swift */; };
+		A1000027229A0001000A000D /* GitTreeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000028229A0001000A000D /* GitTreeViewModel.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -46,6 +48,8 @@
 		A100001F229A0001000A0009 /* SparkleUpdateService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SparkleUpdateService.swift; sourceTree = "<group>"; };
 		A1000021229A0001000A000A /* EventMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventMonitor.swift; sourceTree = "<group>"; };
 		A1000024229A0001000A000B /* MomentumBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MomentumBar.swift; sourceTree = "<group>"; };
+		A1000026229A0001000A000C /* GitTreeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitTreeView.swift; sourceTree = "<group>"; };
+		A1000028229A0001000A000D /* GitTreeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitTreeViewModel.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -97,6 +101,7 @@
 			children = (
 				A100000F229A0001000A0001 /* ProjectListView.swift */,
 				A1000013229A0001000A0003 /* GitStatusView.swift */,
+				A1000026229A0001000A000C /* GitTreeView.swift */,
 				A100001B229A0001000A0007 /* SettingsView.swift */,
 				A1000024229A0001000A000B /* MomentumBar.swift */,
 			);
@@ -116,6 +121,7 @@
 			children = (
 				A100000D229A0001000A0001 /* ProjectListViewModel.swift */,
 				A1000015229A0001000A0004 /* GitStatusViewModel.swift */,
+				A1000028229A0001000A000D /* GitTreeViewModel.swift */,
 				A1000019229A0001000A0006 /* SettingsViewModel.swift */,
 			);
 			path = ViewModels;
@@ -233,6 +239,8 @@
 				A100001E229A0001000A0009 /* SparkleUpdateService.swift in Sources */,
 				A1000022229A0001000A000A /* EventMonitor.swift in Sources */,
 				A1000023229A0001000A000B /* MomentumBar.swift in Sources */,
+				A1000025229A0001000A000C /* GitTreeView.swift in Sources */,
+				A1000027229A0001000A000D /* GitTreeViewModel.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

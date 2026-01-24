@@ -111,6 +111,68 @@ struct GitStatus: Equatable {
     }
 }
 
+/// Represents a commit with full information for tree visualization
+struct GitCommitInfo: Identifiable, Equatable {
+    let id: String // Same as sha
+    let sha: String
+    let shortSha: String
+    let message: String
+    let authorName: String
+    let authorEmail: String
+    let date: Date
+    let parentShas: [String]
+    let branches: [String]
+    let isHead: Bool
+    let isMerge: Bool
+
+    init(sha: String, shortSha: String, message: String, authorName: String, authorEmail: String, date: Date, parentShas: [String], branches: [String], isHead: Bool, isMerge: Bool) {
+        self.id = sha
+        self.sha = sha
+        self.shortSha = shortSha
+        self.message = message
+        self.authorName = authorName
+        self.authorEmail = authorEmail
+        self.date = date
+        self.parentShas = parentShas
+        self.branches = branches
+        self.isHead = isHead
+        self.isMerge = isMerge
+    }
+
+    /// Returns relative time string like "3m ago", "2h ago", "1d ago"
+    var relativeTime: String {
+        let formatter = RelativeDateTimeFormatter()
+        formatter.unitsStyle = .abbreviated
+        return formatter.localizedString(for: date, relativeTo: Date())
+    }
+}
+
+/// Represents a node in the git graph with position information
+struct GitGraphNode: Identifiable, Equatable {
+    let id: String
+    let commit: GitCommitInfo
+    let column: Int
+    let row: Int
+    let connections: [GitGraphConnection]
+}
+
+/// Represents a connection/line in the git graph
+struct GitGraphConnection: Equatable, Hashable {
+    enum ConnectionType: Equatable, Hashable {
+        case straight      // Vertical line in same column
+        case curveOut      // Branch diverging outward
+        case curveIn       // Branch merging inward
+        case merge         // Merge commit connection
+    }
+
+    let fromColumn: Int
+    let fromRow: Int
+    let toColumn: Int
+    let toRow: Int
+    let type: ConnectionType
+    let branchName: String?
+}
+
 /// Represents a Git worktree entry
 struct GitWorktree: Identifiable, Equatable {
     let id: String
@@ -346,6 +408,48 @@ actor GitService {
         return Date(timeIntervalSince1970: timestamp)
     }
 
+    /// Gets the commit log with graph information for visualization
+    func getCommitLog(at path: String, maxCount: Int = 20) async throws -> [GitCommitInfo] {
+        try validateGitRepository(at: path)
+
+        // Get commit log with parent info and branch refs
+        // Format: hash|short_hash|subject|author_name|author_email|timestamp|parent_hashes|refs
+        let output = try await runGitCommand([
+            "log",
+            "--all",
+            "-n", "\(maxCount)",
+            "--format=%H|%h|%s|%an|%ae|%ct|%P|%D",
+            "--date-order"
+        ], at: path)
+
+        // Get current HEAD
+        let headOutput = try await runGitCommand(["rev-parse", "HEAD"], at: path)
+        let headSha = headOutput.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        return parseCommitLogOutput(output, headSha: headSha)
+    }
+
+    /// Gets all branches with their tip commits
+    func getBranchTips(at path: String) async throws -> [String: String] {
+        try validateGitRepository(at: path)
+
+        let output = try await runGitCommand([
+            "for-each-ref",
+            "--format=%(refname:short)|%(objectname)",
+            "refs/heads"
+        ], at: path)
+
+        var tips: [String: String] = [:]
+        for line in output.components(separatedBy: .newlines) {
+            let trimmed = line.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmed.isEmpty else { continue }
+            let parts = trimmed.components(separatedBy: "|")
+            guard parts.count == 2 else { continue }
+            tips[parts[0]] = parts[1]
+        }
+        return tips
+    }
+
     /// Gets commit activity for the last N days (returns commit count per day)
     func getCommitActivity(at path: String, days: Int = 30) async throws -> [Date: Int] {
         try validateGitRepository(at: path)
@@ -542,6 +646,84 @@ actor GitService {
 
         flush()
         return worktrees
+    }
+
+    /// Parses git log output into commit info objects
+    private func parseCommitLogOutput(_ output: String, headSha: String) -> [GitCommitInfo] {
+        var commits: [GitCommitInfo] = []
+
+        let lines = output.components(separatedBy: .newlines)
+        for line in lines {
+            let trimmed = line.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmed.isEmpty else { continue }
+
+            // Format: hash|short_hash|subject|author_name|author_email|timestamp|parent_hashes|refs
+            let parts = trimmed.components(separatedBy: "|")
+            guard parts.count >= 6 else { continue }
+
+            let sha = parts[0]
+            let shortSha = parts[1]
+            let message = parts[2]
+            let authorName = parts[3]
+            let authorEmail = parts[4]
+            let timestamp = TimeInterval(parts[5]) ?? 0
+            let parentShas = parts.count > 6 ? parts[6].components(separatedBy: " ").filter { !$0.isEmpty } : []
+            let refsString = parts.count > 7 ? parts[7] : ""
+
+            // Parse refs (branches and tags)
+            let branches = parseRefs(refsString)
+
+            let commit = GitCommitInfo(
+                sha: sha,
+                shortSha: shortSha,
+                message: message,
+                authorName: authorName,
+                authorEmail: authorEmail,
+                date: Date(timeIntervalSince1970: timestamp),
+                parentShas: parentShas,
+                branches: branches,
+                isHead: sha == headSha,
+                isMerge: parentShas.count > 1
+            )
+            commits.append(commit)
+        }
+
+        return commits
+    }
+
+    /// Parses refs string from git log into branch names
+    private func parseRefs(_ refsString: String) -> [String] {
+        guard !refsString.isEmpty else { return [] }
+
+        var branches: [String] = []
+        let refs = refsString.components(separatedBy: ", ")
+
+        for ref in refs {
+            let trimmed = ref.trimmingCharacters(in: .whitespacesAndNewlines)
+            if trimmed.isEmpty { continue }
+
+            // Skip HEAD pointer
+            if trimmed == "HEAD" { continue }
+            if trimmed.hasPrefix("HEAD -> ") {
+                let branchName = String(trimmed.dropFirst("HEAD -> ".count))
+                branches.append(branchName)
+                continue
+            }
+
+            // Skip tags for now (could add later)
+            if trimmed.hasPrefix("tag: ") { continue }
+
+            // Remote tracking refs
+            if trimmed.hasPrefix("origin/") {
+                // Skip remote refs, we only want local branches
+                continue
+            }
+
+            // Local branch
+            branches.append(trimmed)
+        }
+
+        return branches
     }
 
     /// Parses `git diff --numstat` output into a dictionary of file path -> line stats
