@@ -225,6 +225,12 @@ class GitStatusViewModel: ObservableObject {
         syncResult = nil
     }
 
+    /// Gets the diff for a file
+    func getDiff(for filePath: String, staged: Bool = false) async throws -> String {
+        guard let path = projectPath else { throw GitError.notAGitRepository }
+        return try await gitService.getDiff(for: filePath, at: path, staged: staged)
+    }
+
     /// Pushes commits to remote
     func push() {
         guard let path = projectPath else { return }

@@ -12,6 +12,9 @@ struct GitStatusView: View {
     @State private var isBranchHovered = false
     @State private var showNewBranchDialog = false
     @State private var newBranchName = ""
+    @State private var selectedFileForDiff: GitFileChange?
+    @State private var diffContent: String = ""
+    @State private var isLoadingDiff = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -85,6 +88,12 @@ struct GitStatusView: View {
             .disabled(newBranchName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
         } message: {
             Text("Enter a name for the new branch. It will be created from the current branch.")
+        }
+        .sheet(item: Binding(
+            get: { selectedFileForDiff },
+            set: { selectedFileForDiff = $0 }
+        )) { file in
+            DiffViewer(filePath: file.path, diff: diffContent)
         }
     }
 
@@ -217,6 +226,32 @@ struct GitStatusView: View {
         }
     }
 
+    private func showDiff(for file: GitFileChange) {
+        guard !isLoadingDiff else { return }
+
+        isLoadingDiff = true
+        selectedFileForDiff = file
+        diffContent = ""
+
+        Task {
+            do {
+                let diff = try await viewModel.getDiff(
+                    for: file.path,
+                    staged: file.isStaged
+                )
+                await MainActor.run {
+                    self.diffContent = diff
+                    self.isLoadingDiff = false
+                }
+            } catch {
+                await MainActor.run {
+                    self.diffContent = "Error loading diff: \(error.localizedDescription)"
+                    self.isLoadingDiff = false
+                }
+            }
+        }
+    }
+
     // MARK: - Changes List
 
     private var changesListView: some View {
@@ -230,7 +265,8 @@ struct GitStatusView: View {
                         files: viewModel.stagedFiles,
                         accentColor: Theme.success,
                         onUnstage: { viewModel.unstageFile($0) },
-                        onUnstageAll: { viewModel.unstageAll() }
+                        onUnstageAll: { viewModel.unstageAll() },
+                        onFileClick: { showDiff(for: $0) }
                     )
                 }
 
@@ -244,7 +280,8 @@ struct GitStatusView: View {
                         onStage: { viewModel.stageFile($0) },
                         onDiscard: { fileToDiscard = $0 },
                         onStageAll: { viewModel.stageAll() },
-                        onDiscardAll: { showDiscardAllConfirmation = true }
+                        onDiscardAll: { showDiscardAllConfirmation = true },
+                        onFileClick: { showDiff(for: $0) }
                     )
                 }
 
@@ -256,7 +293,8 @@ struct GitStatusView: View {
                         files: viewModel.untrackedFiles,
                         accentColor: Theme.textTertiary,
                         onStage: { viewModel.stageFile($0) },
-                        onStageAll: { viewModel.stageAll() }
+                        onStageAll: { viewModel.stageAll() },
+                        onFileClick: { showDiff(for: $0) }
                     )
                 }
 
@@ -412,6 +450,7 @@ struct FileGroupSection: View {
     var onStageAll: (() -> Void)? = nil
     var onUnstageAll: (() -> Void)? = nil
     var onDiscardAll: (() -> Void)? = nil
+    var onFileClick: ((GitFileChange) -> Void)? = nil
 
     var body: some View {
         VStack(alignment: .leading, spacing: Theme.space3) {
@@ -456,7 +495,8 @@ struct FileGroupSection: View {
                         accentColor: accentColor,
                         onStage: onStage,
                         onUnstage: onUnstage,
-                        onDiscard: onDiscard
+                        onDiscard: onDiscard,
+                        onClick: onFileClick
                     )
 
                     if file.path != files.last?.path {
@@ -510,6 +550,7 @@ struct FileRowItem: View {
     let onStage: ((String) -> Void)?
     let onUnstage: ((String) -> Void)?
     let onDiscard: ((String) -> Void)?
+    let onClick: ((GitFileChange) -> Void)?
 
     @State private var isHovered = false
 
@@ -574,6 +615,9 @@ struct FileRowItem: View {
         .contentShape(Rectangle())
         .onHover { isHovered = $0 }
         .animation(.easeOut(duration: Theme.animationFast), value: isHovered)
+        .onTapGesture {
+            onClick?(file)
+        }
         .pointingHandCursor()
     }
 

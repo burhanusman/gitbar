@@ -36,7 +36,9 @@ struct GitLineStats: Equatable {
 }
 
 /// Represents a file change from git status
-struct GitFileChange: Equatable {
+struct GitFileChange: Equatable, Identifiable {
+    var id: String { path }
+
     enum Status: String {
         case modified = "M"
         case added = "A"
@@ -375,6 +377,17 @@ actor GitService {
     func restoreFile(_ filePath: String, at repoPath: String) async throws {
         try validateGitRepository(at: repoPath)
         _ = try await runGitCommand(["restore", filePath], at: repoPath)
+    }
+
+    /// Gets the diff for a file
+    func getDiff(for filePath: String, at repoPath: String, staged: Bool = false) async throws -> String {
+        try validateGitRepository(at: repoPath)
+        var args = ["diff"]
+        if staged {
+            args.append("--cached")
+        }
+        args.append(filePath)
+        return try await runGitCommand(args, at: repoPath)
     }
 
     /// Stages all changes using git add .
