@@ -321,6 +321,12 @@ actor GitService {
         _ = try await runGitCommand(["checkout", branch], at: path)
     }
 
+    /// Creates a new branch and checks it out
+    func createAndCheckoutBranch(_ branch: String, at path: String) async throws {
+        try validateGitRepository(at: path)
+        _ = try await runGitCommand(["checkout", "-b", branch], at: path)
+    }
+
     /// Lists worktrees for a repository
     func getWorktrees(at path: String) async throws -> [GitWorktree] {
         try validateGitRepository(at: path)

@@ -106,6 +106,38 @@ class GitStatusViewModel: ObservableObject {
         }
     }
 
+    func createAndCheckoutBranch(_ branch: String) {
+        guard let path = projectPath else { return }
+        guard !branch.isEmpty else { return }
+        guard !isSwitchingBranch else { return }
+
+        isSwitchingBranch = true
+        error = nil
+
+        Task {
+            do {
+                try await gitService.createAndCheckoutBranch(branch, at: path)
+
+                async let status = gitService.getStatus(at: path)
+                async let branches = gitService.getLocalBranches(at: path)
+                async let worktrees = gitService.getWorktrees(at: path)
+
+                let (resolvedStatus, resolvedBranches, resolvedWorktrees) = try await (status, branches, worktrees)
+                self.gitStatus = resolvedStatus
+                self.branches = resolvedBranches.sorted {
+                    $0.localizedCaseInsensitiveCompare($1) == .orderedAscending
+                }
+                self.worktrees = resolvedWorktrees.sorted {
+                    $0.path.localizedStandardCompare($1.path) == .orderedAscending
+                }
+            } catch {
+                self.error = error
+            }
+
+            self.isSwitchingBranch = false
+        }
+    }
+
     func switchToWorktree(at path: String) {
         loadStatus(for: path)
     }

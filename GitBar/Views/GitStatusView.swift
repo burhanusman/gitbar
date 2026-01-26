@@ -10,6 +10,8 @@ struct GitStatusView: View {
     @State private var showDiscardAllConfirmation = false
     @State private var showCopiedFeedback = false
     @State private var isBranchHovered = false
+    @State private var showNewBranchDialog = false
+    @State private var newBranchName = ""
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -67,6 +69,22 @@ struct GitStatusView: View {
             } else {
                 Text("All uncommitted changes will be permanently lost.")
             }
+        }
+        .alert("New Branch", isPresented: $showNewBranchDialog) {
+            TextField("Branch name", text: $newBranchName)
+            Button("Cancel", role: .cancel) {
+                newBranchName = ""
+            }
+            Button("Create") {
+                let branchName = newBranchName.trimmingCharacters(in: .whitespacesAndNewlines)
+                if !branchName.isEmpty {
+                    viewModel.createAndCheckoutBranch(branchName)
+                }
+                newBranchName = ""
+            }
+            .disabled(newBranchName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+        } message: {
+            Text("Enter a name for the new branch. It will be created from the current branch.")
         }
     }
 
@@ -134,6 +152,13 @@ struct GitStatusView: View {
                     .disabled(viewModel.isSwitchingBranch)
                 }
             }
+
+            Divider()
+
+            Button(action: { showNewBranchDialog = true }) {
+                Label("New Branch...", systemImage: "plus")
+            }
+            .disabled(viewModel.isSwitchingBranch)
         } label: {
             HStack(spacing: 6) {
                 Text(viewModel.gitStatus?.currentBranch ?? "...")
