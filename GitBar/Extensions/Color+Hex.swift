@@ -67,6 +67,16 @@ struct Theme {
     static let borderSubtle = Color(hex: "#1E2330").opacity(0.6)
     static let borderFocus = Color(hex: "#3B82F6").opacity(0.5)
 
+    // Syntax Highlighting - Softer, muted palette (easier on eyes)
+    static let syntaxKeyword = Color(hex: "#C586C0")   // Muted pink - keywords
+    static let syntaxString = Color(hex: "#CE9178")    // Soft orange - strings
+    static let syntaxComment = Color(hex: "#6A737D")   // Subtle gray - comments
+    static let syntaxNumber = Color(hex: "#B5CEA8")    // Soft green - numbers
+    static let syntaxType = Color(hex: "#9CDCFE")      // Light blue - types
+    static let syntaxFunction = Color(hex: "#DCDCAA")  // Muted yellow - functions
+    static let syntaxOperator = Color(hex: "#D4D4D4")  // Light gray - operators
+    static let syntaxProperty = Color(hex: "#9CDCFE")  // Light blue - properties
+
     // MARK: - Spacing Scale (4px base)
 
     static let space1: CGFloat = 4

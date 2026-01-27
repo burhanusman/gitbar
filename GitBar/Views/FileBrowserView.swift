@@ -76,9 +76,11 @@ struct FileBrowserView: View {
     // MARK: - File Tree
 
     private var fileTreeView: some View {
-        ScrollView {
+        let nodes = viewModel.visibleNodes()
+
+        return ScrollView {
             LazyVStack(spacing: 0) {
-                ForEach(viewModel.visibleNodes(), id: \.node.id) { item in
+                ForEach(Array(nodes.enumerated()), id: \.element.node.id) { index, item in
                     FileTreeRow(
                         node: item.node,
                         depth: item.depth,
@@ -93,7 +95,7 @@ struct FileBrowserView: View {
                         }
                     )
 
-                    if item.node.id != viewModel.visibleNodes().last?.node.id {
+                    if index < nodes.count - 1 {
                         Divider()
                             .background(Theme.border.opacity(0.5))
                     }

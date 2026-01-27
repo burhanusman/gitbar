@@ -38,6 +38,10 @@ struct FileEditorView: View {
         .onAppear {
             viewModel.loadFile(at: filePath, repoPath: repoPath)
         }
+        .onChange(of: viewModel.content) { _ in
+            // Debounced re-highlighting on content change
+            viewModel.highlightContent()
+        }
         .alert("Unsaved Changes", isPresented: $showUnsavedChangesAlert) {
             Button("Discard", role: .destructive) {
                 dismiss()
@@ -60,7 +64,7 @@ struct FileEditorView: View {
         HStack(spacing: Theme.space3) {
             // File icon and path
             HStack(spacing: Theme.space2) {
-                Image(systemName: "doc.text")
+                Image(systemName: viewModel.isMarkdownFile ? "doc.richtext" : "doc.text")
                     .font(.system(size: 14, weight: .medium))
                     .foregroundColor(Theme.textSecondary)
 
@@ -79,6 +83,11 @@ struct FileEditorView: View {
             }
 
             Spacer()
+
+            // Preview toggle for markdown files
+            if viewModel.isMarkdownFile {
+                previewToggleButton
+            }
 
             // Action buttons
             HStack(spacing: Theme.space2) {
@@ -162,18 +171,57 @@ struct FileEditorView: View {
         .background(Theme.surfaceElevated)
     }
 
+    // MARK: - Preview Toggle
+
+    private var previewToggleButton: some View {
+        HStack(spacing: 2) {
+            ForEach(EditorMode.allCases, id: \.self) { mode in
+                Button(action: {
+                    withAnimation(.easeInOut(duration: 0.15)) {
+                        viewModel.editorMode = mode
+                    }
+                }) {
+                    HStack(spacing: 4) {
+                        Image(systemName: mode == .edit ? "pencil" : "eye")
+                            .font(.system(size: 10, weight: .medium))
+                        Text(mode.rawValue)
+                            .font(.system(size: Theme.fontXS, weight: .medium))
+                    }
+                    .foregroundColor(viewModel.editorMode == mode ? Theme.textPrimary : Theme.textMuted)
+                    .padding(.horizontal, Theme.space2)
+                    .padding(.vertical, 4)
+                    .background(viewModel.editorMode == mode ? Theme.surfaceActive : Color.clear)
+                    .cornerRadius(4)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(2)
+        .background(Theme.surface)
+        .cornerRadius(6)
+        .help("Toggle preview (Cmd+Shift+P)")
+    }
+
     // MARK: - Editor
 
     private var editorView: some View {
-        HStack(alignment: .top, spacing: 0) {
-            // Line numbers gutter
-            lineNumbersGutter
+        Group {
+            if viewModel.isMarkdownFile && viewModel.editorMode == .preview {
+                // Markdown preview mode
+                MarkdownPreviewView(content: viewModel.content)
+            } else {
+                // Code editor with syntax highlighting
+                HStack(alignment: .top, spacing: 0) {
+                    // Line numbers gutter
+                    lineNumbersGutter
 
-            Divider()
-                .background(Theme.border)
+                    Divider()
+                        .background(Theme.border)
 
-            // Text editor
-            textEditorView
+                    // Text editor with syntax highlighting
+                    textEditorView
+                }
+            }
         }
         .background(Theme.background)
     }
@@ -196,8 +244,11 @@ struct FileEditorView: View {
     }
 
     private var textEditorView: some View {
-        CodeTextEditor(text: $viewModel.content)
-            .background(Theme.background)
+        CodeTextEditor(
+            text: $viewModel.content,
+            highlightedContent: viewModel.highlightedContent
+        )
+        .background(Theme.background)
     }
 
     // MARK: - Footer
@@ -239,6 +290,17 @@ struct FileEditorView: View {
             }
 
             Spacer()
+
+            // Language indicator
+            if let ext = viewModel.fileExtension {
+                Text(ext.uppercased())
+                    .font(.system(size: Theme.fontXS, weight: .medium))
+                    .foregroundColor(Theme.textMuted)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(Theme.surface)
+                    .cornerRadius(4)
+            }
 
             // Line count
             Text("\(viewModel.lineCount) lines")
@@ -301,10 +363,11 @@ struct FileEditorView: View {
     }
 }
 
-// MARK: - Code Text Editor (NSTextView wrapper)
+// MARK: - Code Text Editor (NSTextView wrapper with syntax highlighting)
 
 struct CodeTextEditor: NSViewRepresentable {
     @Binding var text: String
+    var highlightedContent: NSAttributedString?
 
     func makeNSView(context: Context) -> NSScrollView {
         let scrollView = NSScrollView()
@@ -321,13 +384,13 @@ struct CodeTextEditor: NSViewRepresentable {
         textView.isEditable = true
         textView.isSelectable = true
         textView.allowsUndo = true
-        textView.isRichText = false
+        textView.isRichText = true  // Enable rich text for syntax highlighting
         textView.usesFontPanel = false
         textView.drawsBackground = false
         textView.backgroundColor = .clear
 
-        // Font
-        textView.font = NSFont.monospacedSystemFont(ofSize: 11, weight: .regular)
+        // Font - use lighter weight for better readability
+        textView.font = NSFont.monospacedSystemFont(ofSize: 12, weight: .light)
 
         // Text color
         textView.textColor = NSColor(Theme.textPrimary)
@@ -356,12 +419,34 @@ struct CodeTextEditor: NSViewRepresentable {
     func updateNSView(_ scrollView: NSScrollView, context: Context) {
         guard let textView = scrollView.documentView as? NSTextView else { return }
 
-        // Only update if text has changed from external source
-        if textView.string != text {
+        // Check if the text content has changed from external source
+        let currentString = textView.string
+        let textChanged = currentString != text
+
+        if textChanged {
+            // Save cursor position
             let selectedRange = textView.selectedRange()
+
+            // Update text
             textView.string = text
-            // Preserve cursor position if possible
-            if selectedRange.location <= text.count {
+
+            // Restore cursor position if possible
+            if selectedRange.location <= text.utf16.count {
+                textView.setSelectedRange(selectedRange)
+            }
+        }
+
+        // Apply syntax highlighting if available
+        if let highlighted = highlightedContent,
+           highlighted.string == textView.string {
+            // Save selection
+            let selectedRange = textView.selectedRange()
+
+            // Apply highlighted content to text storage
+            textView.textStorage?.setAttributedString(highlighted)
+
+            // Restore selection
+            if selectedRange.location <= textView.string.utf16.count {
                 textView.setSelectedRange(selectedRange)
             }
         }

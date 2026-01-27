@@ -1,10 +1,17 @@
 import Foundation
 import SwiftUI
+import AppKit
 import Combine
 
 /// Notification posted when a file is saved
 extension Notification.Name {
     static let fileDidSave = Notification.Name("fileDidSave")
+}
+
+/// Editor display mode
+enum EditorMode: String, CaseIterable {
+    case edit = "Edit"
+    case preview = "Preview"
 }
 
 /// ViewModel for managing the file editor state
@@ -20,8 +27,14 @@ class FileEditorViewModel: ObservableObject {
     @Published var fileName: String = ""
     @Published var cursorPosition: CursorPosition = CursorPosition(line: 1, column: 1)
 
+    // Syntax highlighting & preview
+    @Published var highlightedContent: NSAttributedString?
+    @Published var editorMode: EditorMode = .edit
+    @Published var isHighlighting = false
+
     private let fileService = FileService()
     private var repoPath: String?
+    private var highlightTask: Task<Void, Never>?
 
     /// Whether there are unsaved changes
     var hasUnsavedChanges: Bool {
@@ -47,6 +60,8 @@ class FileEditorViewModel: ObservableObject {
                 self.content = fileContent
                 self.originalContent = fileContent
                 self.isLoading = false
+                // Trigger initial syntax highlighting
+                self.highlightContent()
             } catch {
                 self.error = error
                 self.isLoading = false
@@ -106,6 +121,42 @@ class FileEditorViewModel: ObservableObject {
     /// Returns a descriptive encoding string
     var encodingDescription: String {
         "UTF-8"
+    }
+
+    /// Whether the current file is a markdown file
+    var isMarkdownFile: Bool {
+        guard let ext = fileExtension else { return false }
+        return ext == "md" || ext == "markdown"
+    }
+
+    /// Triggers syntax highlighting for the current content
+    func highlightContent() {
+        // Cancel any in-flight highlighting
+        highlightTask?.cancel()
+
+        let text = content
+        let language = fileExtension
+
+        highlightTask = Task {
+            isHighlighting = true
+
+            let font = NSFont.monospacedSystemFont(ofSize: 12, weight: .light)
+            let highlighted = await SyntaxHighlightService.shared.highlight(
+                text: text,
+                language: language,
+                font: font
+            )
+
+            if !Task.isCancelled {
+                self.highlightedContent = highlighted
+                self.isHighlighting = false
+            }
+        }
+    }
+
+    /// Toggles between edit and preview mode (for markdown files)
+    func togglePreviewMode() {
+        editorMode = editorMode == .edit ? .preview : .edit
     }
 }
 
