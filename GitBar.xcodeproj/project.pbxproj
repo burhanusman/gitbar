@@ -27,6 +27,13 @@
 		A1000025229A0001000A000C /* GitTreeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000026229A0001000A000C /* GitTreeView.swift */; };
 		A1000027229A0001000A000D /* GitTreeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000028229A0001000A000D /* GitTreeViewModel.swift */; };
 		8568EFE90CB64C688F422773 /* DiffViewer.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFCB2ED3A58D4B1FA26D8880 /* DiffViewer.swift */; };
+		B1000001229A0001000B0001 /* FileNode.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000002229A0001000B0001 /* FileNode.swift */; };
+		B1000003229A0001000B0001 /* FileService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000004229A0001000B0001 /* FileService.swift */; };
+		B1000005229A0001000B0001 /* FileBrowserViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000006229A0001000B0001 /* FileBrowserViewModel.swift */; };
+		B1000007229A0001000B0001 /* FileEditorViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000008229A0001000B0001 /* FileEditorViewModel.swift */; };
+		B1000009229A0001000B0001 /* FileTreeRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000A229A0001000B0001 /* FileTreeRow.swift */; };
+		B100000B229A0001000B0001 /* FileBrowserView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000C229A0001000B0001 /* FileBrowserView.swift */; };
+		B100000D229A0001000B0001 /* FileEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000E229A0001000B0001 /* FileEditorView.swift */; };
 	/* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -52,6 +59,13 @@
 		A1000026229A0001000A000C /* GitTreeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitTreeView.swift; sourceTree = "<group>"; };
 		A1000028229A0001000A000D /* GitTreeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitTreeViewModel.swift; sourceTree = "<group>"; };
 		FFCB2ED3A58D4B1FA26D8880 /* DiffViewer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiffViewer.swift; sourceTree = "<group>"; };
+		B1000002229A0001000B0001 /* FileNode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileNode.swift; sourceTree = "<group>"; };
+		B1000004229A0001000B0001 /* FileService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileService.swift; sourceTree = "<group>"; };
+		B1000006229A0001000B0001 /* FileBrowserViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileBrowserViewModel.swift; sourceTree = "<group>"; };
+		B1000008229A0001000B0001 /* FileEditorViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileEditorViewModel.swift; sourceTree = "<group>"; };
+		B100000A229A0001000B0001 /* FileTreeRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileTreeRow.swift; sourceTree = "<group>"; };
+		B100000C229A0001000B0001 /* FileBrowserView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileBrowserView.swift; sourceTree = "<group>"; };
+		B100000E229A0001000B0001 /* FileEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileEditorView.swift; sourceTree = "<group>"; };
 	/* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -101,12 +115,15 @@
 		A10000E3229A0001000A0001 /* Views */ = {
 			isa = PBXGroup;
 			children = (
-								FFCB2ED3A58D4B1FA26D8880 /* DiffViewer.swift */,
-A100000F229A0001000A0001 /* ProjectListView.swift */,
+				FFCB2ED3A58D4B1FA26D8880 /* DiffViewer.swift */,
+				A100000F229A0001000A0001 /* ProjectListView.swift */,
 				A1000013229A0001000A0003 /* GitStatusView.swift */,
 				A1000026229A0001000A000C /* GitTreeView.swift */,
 				A100001B229A0001000A0007 /* SettingsView.swift */,
 				A1000024229A0001000A000B /* MomentumBar.swift */,
+				B100000A229A0001000B0001 /* FileTreeRow.swift */,
+				B100000C229A0001000B0001 /* FileBrowserView.swift */,
+				B100000E229A0001000B0001 /* FileEditorView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -115,6 +132,7 @@ A100000F229A0001000A0001 /* ProjectListView.swift */,
 			isa = PBXGroup;
 			children = (
 				A100000B229A0001000A0001 /* Project.swift */,
+				B1000002229A0001000B0001 /* FileNode.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -126,6 +144,8 @@ A100000F229A0001000A0001 /* ProjectListView.swift */,
 				A1000015229A0001000A0004 /* GitStatusViewModel.swift */,
 				A1000028229A0001000A000D /* GitTreeViewModel.swift */,
 				A1000019229A0001000A0006 /* SettingsViewModel.swift */,
+				B1000006229A0001000B0001 /* FileBrowserViewModel.swift */,
+				B1000008229A0001000B0001 /* FileEditorViewModel.swift */,
 			);
 			path = ViewModels;
 			sourceTree = "<group>";
@@ -138,6 +158,7 @@ A100000F229A0001000A0001 /* ProjectListView.swift */,
 				A1000017229A0001000A0005 /* SettingsService.swift */,
 				A100001F229A0001000A0009 /* SparkleUpdateService.swift */,
 				A1000021229A0001000A000A /* EventMonitor.swift */,
+				B1000004229A0001000B0001 /* FileService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -245,6 +266,13 @@ A1000003229A0001000A0001 /* ContentView.swift in Sources */,
 				A1000023229A0001000A000B /* MomentumBar.swift in Sources */,
 				A1000025229A0001000A000C /* GitTreeView.swift in Sources */,
 				A1000027229A0001000A000D /* GitTreeViewModel.swift in Sources */,
+				B1000001229A0001000B0001 /* FileNode.swift in Sources */,
+				B1000003229A0001000B0001 /* FileService.swift in Sources */,
+				B1000005229A0001000B0001 /* FileBrowserViewModel.swift in Sources */,
+				B1000007229A0001000B0001 /* FileEditorViewModel.swift in Sources */,
+				B1000009229A0001000B0001 /* FileTreeRow.swift in Sources */,
+				B100000B229A0001000B0001 /* FileBrowserView.swift in Sources */,
+				B100000D229A0001000B0001 /* FileEditorView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

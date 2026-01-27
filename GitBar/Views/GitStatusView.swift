@@ -15,6 +15,7 @@ struct GitStatusView: View {
     @State private var selectedFileForDiff: GitFileChange?
     @State private var diffContent: String = ""
     @State private var isLoadingDiff = false
+    @State private var fileToEdit: String?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -93,7 +94,23 @@ struct GitStatusView: View {
             get: { selectedFileForDiff },
             set: { selectedFileForDiff = $0 }
         )) { file in
-            DiffViewer(filePath: file.path, diff: diffContent)
+            DiffViewer(filePath: file.path, diff: diffContent, onEdit: {
+                // Delay to let the DiffViewer sheet dismiss first
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    fileToEdit = (project.path as NSString).appendingPathComponent(file.path)
+                }
+            })
+        }
+        .sheet(isPresented: Binding(
+            get: { fileToEdit != nil },
+            set: { if !$0 { fileToEdit = nil } }
+        )) {
+            if let path = fileToEdit {
+                FileEditorView(filePath: path, repoPath: project.path)
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .fileDidSave)) { _ in
+            viewModel.refresh()
         }
     }
 
@@ -265,6 +282,7 @@ struct GitStatusView: View {
                         files: viewModel.stagedFiles,
                         accentColor: Theme.success,
                         onUnstage: { viewModel.unstageFile($0) },
+                        onEdit: { fileToEdit = (project.path as NSString).appendingPathComponent($0) },
                         onUnstageAll: { viewModel.unstageAll() },
                         onFileClick: { showDiff(for: $0) }
                     )
@@ -279,6 +297,7 @@ struct GitStatusView: View {
                         accentColor: Theme.warning,
                         onStage: { viewModel.stageFile($0) },
                         onDiscard: { fileToDiscard = $0 },
+                        onEdit: { fileToEdit = (project.path as NSString).appendingPathComponent($0) },
                         onStageAll: { viewModel.stageAll() },
                         onDiscardAll: { showDiscardAllConfirmation = true },
                         onFileClick: { showDiff(for: $0) }
@@ -293,6 +312,7 @@ struct GitStatusView: View {
                         files: viewModel.untrackedFiles,
                         accentColor: Theme.textTertiary,
                         onStage: { viewModel.stageFile($0) },
+                        onEdit: { fileToEdit = (project.path as NSString).appendingPathComponent($0) },
                         onStageAll: { viewModel.stageAll() },
                         onFileClick: { showDiff(for: $0) }
                     )
@@ -447,6 +467,7 @@ struct FileGroupSection: View {
     var onStage: ((String) -> Void)? = nil
     var onUnstage: ((String) -> Void)? = nil
     var onDiscard: ((String) -> Void)? = nil
+    var onEdit: ((String) -> Void)? = nil
     var onStageAll: (() -> Void)? = nil
     var onUnstageAll: (() -> Void)? = nil
     var onDiscardAll: (() -> Void)? = nil
@@ -496,6 +517,7 @@ struct FileGroupSection: View {
                         onStage: onStage,
                         onUnstage: onUnstage,
                         onDiscard: onDiscard,
+                        onEdit: onEdit,
                         onClick: onFileClick
                     )
 
@@ -550,6 +572,7 @@ struct FileRowItem: View {
     let onStage: ((String) -> Void)?
     let onUnstage: ((String) -> Void)?
     let onDiscard: ((String) -> Void)?
+    let onEdit: ((String) -> Void)?
     let onClick: ((GitFileChange) -> Void)?
 
     @State private var isHovered = false
@@ -592,6 +615,11 @@ struct FileRowItem: View {
 
                     // Action buttons
                     HStack(spacing: Theme.space2) {
+                        // Edit button
+                        if let onEdit = onEdit {
+                            FileActionButton(icon: "pencil", action: { onEdit(file.path) })
+                        }
+
                         if let onDiscard = onDiscard {
                             FileActionButton(icon: "trash", action: { onDiscard(file.path) })
                         }

@@ -4,8 +4,10 @@ import SwiftUI
 struct DiffViewer: View {
     let filePath: String
     let diff: String
+    var onEdit: (() -> Void)? = nil
 
     @Environment(\.dismiss) private var dismiss
+    @State private var isEditHovered = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -21,6 +23,30 @@ struct DiffViewer: View {
                     .lineLimit(1)
 
                 Spacer()
+
+                // Edit button
+                if let onEdit = onEdit {
+                    Button(action: {
+                        dismiss()
+                        onEdit()
+                    }) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "pencil")
+                                .font(.system(size: 11, weight: .medium))
+                            Text("Edit")
+                                .font(.system(size: Theme.fontSM, weight: .medium))
+                        }
+                        .foregroundColor(isEditHovered ? Theme.textPrimary : Theme.textSecondary)
+                        .padding(.horizontal, Theme.space3)
+                        .padding(.vertical, 6)
+                        .background(isEditHovered ? Theme.surfaceActive : Theme.surface)
+                        .cornerRadius(Theme.radiusSmall)
+                    }
+                    .buttonStyle(.plain)
+                    .onHover { isEditHovered = $0 }
+                    .help("Edit file")
+                    .pointingHandCursor()
+                }
 
                 Button(action: { dismiss() }) {
                     Image(systemName: "xmark")

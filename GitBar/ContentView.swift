@@ -4,6 +4,7 @@ import AppKit
 enum DetailTab: String, CaseIterable {
     case changes = "Changes"
     case history = "History"
+    case files = "Files"
 }
 
 struct ContentView: View {
@@ -42,6 +43,8 @@ struct ContentView: View {
                                     GitStatusView(project: selectedProject)
                                 case .history:
                                     GitTreeView(project: selectedProject)
+                                case .files:
+                                    FileBrowserView(project: selectedProject)
                                 }
                             }
                         } else {
@@ -177,12 +180,23 @@ struct SelectProjectEmptyState: View {
 struct DetailTabBar: View {
     @Binding var selectedTab: DetailTab
 
+    private func iconForTab(_ tab: DetailTab) -> String {
+        switch tab {
+        case .changes:
+            return "doc.badge.plus"
+        case .history:
+            return "point.3.connected.trianglepath.dotted"
+        case .files:
+            return "folder"
+        }
+    }
+
     var body: some View {
         HStack(spacing: Theme.space1) {
             ForEach(DetailTab.allCases, id: \.self) { tab in
                 TabButton(
                     title: tab.rawValue,
-                    icon: tab == .changes ? "doc.badge.plus" : "point.3.connected.trianglepath.dotted",
+                    icon: iconForTab(tab),
                     isSelected: selectedTab == tab,
                     action: {
                         withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
