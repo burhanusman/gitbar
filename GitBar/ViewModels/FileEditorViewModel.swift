@@ -2,6 +2,9 @@ import Foundation
 import SwiftUI
 import AppKit
 import Combine
+import os.log
+
+private let logger = Logger(subsystem: "com.gitbar.app", category: "FileEditor")
 
 /// Notification posted when a file is saved
 extension Notification.Name {
@@ -35,6 +38,11 @@ class FileEditorViewModel: ObservableObject {
     private let fileService = FileService()
     private var repoPath: String?
     private var highlightTask: Task<Void, Never>?
+    private var highlightTimer: Timer?
+
+    /// Maximum file size (in characters) to apply syntax highlighting
+    /// Files larger than this will use plain text to avoid performance issues
+    private let maxHighlightSize = 15_000  // ~15KB
 
     /// Whether there are unsaved changes
     var hasUnsavedChanges: Bool {
@@ -48,6 +56,7 @@ class FileEditorViewModel: ObservableObject {
 
     /// Loads a file for editing
     func loadFile(at path: String, repoPath: String? = nil) {
+        logger.info("✏️ loadFile START: \(path)")
         self.filePath = path
         self.fileName = (path as NSString).lastPathComponent
         self.repoPath = repoPath
@@ -56,13 +65,18 @@ class FileEditorViewModel: ObservableObject {
 
         Task {
             do {
+                logger.debug("✏️ reading file...")
                 let fileContent = try await fileService.readFile(at: path)
+                logger.debug("✏️ file loaded: \(fileContent.count) chars")
                 self.content = fileContent
                 self.originalContent = fileContent
                 self.isLoading = false
                 // Trigger initial syntax highlighting
+                logger.debug("✏️ triggering highlight...")
                 self.highlightContent()
+                logger.info("✏️ loadFile DONE")
             } catch {
+                logger.error("✏️ loadFile ERROR: \(error.localizedDescription)")
                 self.error = error
                 self.isLoading = false
             }
@@ -129,18 +143,44 @@ class FileEditorViewModel: ObservableObject {
         return ext == "md" || ext == "markdown"
     }
 
+    /// Schedules syntax highlighting with debounce to avoid freezing during rapid typing
+    /// Call this instead of highlightContent() when the user is actively editing
+    func scheduleHighlighting() {
+        // Cancel any pending timer
+        highlightTimer?.invalidate()
+
+        // Schedule highlighting 500ms after the last keystroke
+        highlightTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: false) { [weak self] _ in
+            Task { @MainActor in
+                self?.highlightContent()
+            }
+        }
+    }
+
     /// Triggers syntax highlighting for the current content
+    /// For large files, highlighting is skipped to maintain responsiveness
     func highlightContent() {
         // Cancel any in-flight highlighting
         highlightTask?.cancel()
+        highlightTimer?.invalidate()
 
         let text = content
         let language = fileExtension
+        logger.debug("✏️ highlightContent: \(text.count) chars, lang=\(language ?? "nil")")
+
+        // Skip highlighting for large files to maintain responsiveness
+        guard text.count < maxHighlightSize else {
+            logger.debug("✏️ file too large (\(text.count) chars), skipping highlighting")
+            highlightedContent = nil
+            isHighlighting = false
+            return
+        }
 
         highlightTask = Task {
             isHighlighting = true
 
             let font = NSFont.monospacedSystemFont(ofSize: 12, weight: .light)
+            logger.debug("✏️ calling SyntaxHighlightService...")
             let highlighted = await SyntaxHighlightService.shared.highlight(
                 text: text,
                 language: language,
@@ -148,8 +188,11 @@ class FileEditorViewModel: ObservableObject {
             )
 
             if !Task.isCancelled {
+                logger.debug("✏️ highlight complete, updating UI")
                 self.highlightedContent = highlighted
                 self.isHighlighting = false
+            } else {
+                logger.debug("✏️ highlight cancelled")
             }
         }
     }

@@ -1,5 +1,8 @@
 import SwiftUI
 import AppKit
+import os.log
+
+private let logger = Logger(subsystem: "com.gitbar.app", category: "App")
 
 extension Notification.Name {
     static let openSettings = Notification.Name("GitBar.openSettings")
@@ -23,6 +26,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     private var eventMonitor: EventMonitor?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        logger.info("🚀 GitBar app launched")
         setupMenuBar()
 
         // Close any auto-opened windows (Settings scene may auto-open on first launch)
@@ -137,8 +141,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         guard let button = statusItem?.button, let popover = popover else { return }
 
         if popover.isShown {
+            logger.debug("📦 Closing popover")
             closePopover(sender)
         } else {
+            logger.debug("📦 Opening popover")
             popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
             NSApp.activate(ignoringOtherApps: true)
             eventMonitor?.start()

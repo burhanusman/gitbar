@@ -1,4 +1,7 @@
 import Foundation
+import os.log
+
+private let logger = Logger(subsystem: "com.gitbar.app", category: "FileService")
 
 /// Errors that can occur during file operations
 enum FileServiceError: Error, LocalizedError {
@@ -67,6 +70,9 @@ actor FileService {
 
     /// Lists the contents of a directory and returns FileNode objects
     func listDirectory(at path: String, includeHidden: Bool = false) async throws -> [FileNode] {
+        logger.debug("📂 listDirectory START: \(path)")
+        let startTime = CFAbsoluteTimeGetCurrent()
+
         var isDirectory: ObjCBool = false
         guard fileManager.fileExists(atPath: path, isDirectory: &isDirectory),
               isDirectory.boolValue else {
@@ -74,6 +80,7 @@ actor FileService {
         }
 
         let contents = try fileManager.contentsOfDirectory(atPath: path)
+        logger.debug("📂 found \(contents.count) items in directory")
 
         var nodes: [FileNode] = []
 
@@ -102,12 +109,16 @@ actor FileService {
         }
 
         // Sort: directories first, then alphabetically
-        return nodes.sorted { lhs, rhs in
+        let sorted = nodes.sorted { lhs, rhs in
             if lhs.isDirectory != rhs.isDirectory {
                 return lhs.isDirectory
             }
             return lhs.name.localizedCaseInsensitiveCompare(rhs.name) == .orderedAscending
         }
+
+        let elapsed = CFAbsoluteTimeGetCurrent() - startTime
+        logger.debug("📂 listDirectory DONE: \(sorted.count) nodes in \(String(format: "%.3f", elapsed))s")
+        return sorted
     }
 
     /// Recursively lists directory contents up to a specified depth
@@ -137,6 +148,9 @@ actor FileService {
 
     /// Reads the content of a file as a string
     func readFile(at path: String) async throws -> String {
+        logger.debug("📄 readFile START: \(path)")
+        let startTime = CFAbsoluteTimeGetCurrent()
+
         guard fileManager.fileExists(atPath: path) else {
             throw FileServiceError.fileNotFound(path)
         }
@@ -150,6 +164,7 @@ actor FileService {
         // Check file size
         let attributes = try fileManager.attributesOfItem(atPath: path)
         if let size = attributes[.size] as? Int, size > maxFileSize {
+            logger.warning("📄 file too large: \(size) bytes")
             throw FileServiceError.fileTooLarge(path, size)
         }
 
@@ -162,14 +177,20 @@ actor FileService {
         guard let content = String(data: data, encoding: .utf8) else {
             // Try other encodings
             if let content = String(data: data, encoding: .ascii) {
+                let elapsed = CFAbsoluteTimeGetCurrent() - startTime
+                logger.debug("📄 readFile DONE (ASCII): \(content.count) chars in \(String(format: "%.3f", elapsed))s")
                 return content
             }
             if let content = String(data: data, encoding: .isoLatin1) {
+                let elapsed = CFAbsoluteTimeGetCurrent() - startTime
+                logger.debug("📄 readFile DONE (Latin1): \(content.count) chars in \(String(format: "%.3f", elapsed))s")
                 return content
             }
             throw FileServiceError.binaryFile(path)
         }
 
+        let elapsed = CFAbsoluteTimeGetCurrent() - startTime
+        logger.debug("📄 readFile DONE (UTF8): \(content.count) chars in \(String(format: "%.3f", elapsed))s")
         return content
     }
 

@@ -1,5 +1,8 @@
 import Foundation
 import SwiftUI
+import os.log
+
+private let logger = Logger(subsystem: "com.gitbar.app", category: "FileBrowser")
 
 /// ViewModel for managing the file browser state
 @MainActor
@@ -16,13 +19,16 @@ class FileBrowserViewModel: ObservableObject {
 
     /// Loads the root directory for the given repo path
     func loadDirectory(at path: String) {
+        logger.info("📁 loadDirectory START: \(path)")
         repoPath = path
         isLoading = true
         error = nil
 
         Task {
             do {
+                logger.debug("📁 listDirectory calling FileService...")
                 let nodes = try await fileService.listDirectory(at: path)
+                logger.debug("📁 listDirectory returned \(nodes.count) nodes")
                 self.rootNode = FileNode(
                     name: (path as NSString).lastPathComponent,
                     path: path,
@@ -30,7 +36,9 @@ class FileBrowserViewModel: ObservableObject {
                     children: nodes
                 )
                 self.isLoading = false
+                logger.info("📁 loadDirectory DONE")
             } catch {
+                logger.error("📁 loadDirectory ERROR: \(error.localizedDescription)")
                 self.error = error
                 self.isLoading = false
             }
@@ -45,15 +53,19 @@ class FileBrowserViewModel: ObservableObject {
 
     /// Toggles the expansion state of a directory node
     func toggleExpand(for node: FileNode) {
+        logger.debug("📁 toggleExpand: \(node.name)")
         guard node.isDirectory else { return }
 
         if expandedPaths.contains(node.path) {
             expandedPaths.remove(node.path)
+            logger.debug("📁 collapsed: \(node.name)")
         } else {
             expandedPaths.insert(node.path)
+            logger.debug("📁 expanded: \(node.name)")
 
             // Load children if not already loaded
             if findNode(at: node.path)?.children == nil {
+                logger.debug("📁 loading children for: \(node.name)")
                 loadChildren(for: node.path)
             }
         }
@@ -136,6 +148,10 @@ class FileBrowserViewModel: ObservableObject {
 
     /// Returns the flattened list of visible nodes for display
     func visibleNodes(from node: FileNode? = nil, depth: Int = 0) -> [(node: FileNode, depth: Int)] {
+        // Only log at top level to avoid spam
+        if depth == 0 {
+            logger.debug("📁 visibleNodes called")
+        }
         guard let node = node ?? rootNode else { return [] }
         guard let children = node.children else { return [] }
 
@@ -149,6 +165,9 @@ class FileBrowserViewModel: ObservableObject {
             }
         }
 
+        if depth == 0 {
+            logger.debug("📁 visibleNodes returning \(result.count) items")
+        }
         return result
     }
 

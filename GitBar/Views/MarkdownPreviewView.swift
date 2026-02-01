@@ -5,23 +5,48 @@ struct MarkdownPreviewView: View {
     let content: String
 
     @State private var blocks: [MarkdownBlock] = []
+    @State private var isLoading = true
 
     var body: some View {
         ScrollView {
-            LazyVStack(alignment: .leading, spacing: Theme.space4) {
-                ForEach(blocks) { block in
-                    renderBlock(block)
+            if isLoading {
+                VStack {
+                    ProgressView()
+                        .scaleEffect(0.8)
+                    Text("Parsing markdown...")
+                        .font(.system(size: Theme.fontSM))
+                        .foregroundColor(Theme.textMuted)
                 }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .padding(.top, 100)
+            } else {
+                LazyVStack(alignment: .leading, spacing: Theme.space4) {
+                    ForEach(blocks) { block in
+                        renderBlock(block)
+                    }
+                }
+                .padding(Theme.space4)
             }
-            .padding(Theme.space4)
         }
         .background(Theme.background)
-        .onAppear {
-            blocks = MarkdownParser.parse(content)
+        .task {
+            await parseContent(content)
         }
         .onChange(of: content) { newValue in
-            blocks = MarkdownParser.parse(newValue)
+            Task {
+                await parseContent(newValue)
+            }
         }
+    }
+
+    private func parseContent(_ text: String) async {
+        isLoading = true
+        // Run parsing off the main thread
+        let parsed = await Task.detached(priority: .userInitiated) {
+            MarkdownParser.parse(text)
+        }.value
+        blocks = parsed
+        isLoading = false
     }
 
     @ViewBuilder

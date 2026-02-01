@@ -38,10 +38,6 @@ struct FileEditorView: View {
         .onAppear {
             viewModel.loadFile(at: filePath, repoPath: repoPath)
         }
-        .onChange(of: viewModel.content) { _ in
-            // Debounced re-highlighting on content change
-            viewModel.highlightContent()
-        }
         .alert("Unsaved Changes", isPresented: $showUnsavedChangesAlert) {
             Button("Discard", role: .destructive) {
                 dismiss()
@@ -246,7 +242,8 @@ struct FileEditorView: View {
     private var textEditorView: some View {
         CodeTextEditor(
             text: $viewModel.content,
-            highlightedContent: viewModel.highlightedContent
+            highlightedContent: viewModel.highlightedContent,
+            onTextChange: { viewModel.scheduleHighlighting() }
         )
         .background(Theme.background)
     }
@@ -368,6 +365,7 @@ struct FileEditorView: View {
 struct CodeTextEditor: NSViewRepresentable {
     @Binding var text: String
     var highlightedContent: NSAttributedString?
+    var onTextChange: (() -> Void)?
 
     func makeNSView(context: Context) -> NSScrollView {
         let scrollView = NSScrollView()
@@ -427,8 +425,10 @@ struct CodeTextEditor: NSViewRepresentable {
             // Save cursor position
             let selectedRange = textView.selectedRange()
 
-            // Update text
+            // Guard to prevent textDidChange from feeding back into SwiftUI
+            context.coordinator.isProgrammaticUpdate = true
             textView.string = text
+            context.coordinator.isProgrammaticUpdate = false
 
             // Restore cursor position if possible
             if selectedRange.location <= text.utf16.count {
@@ -442,8 +442,10 @@ struct CodeTextEditor: NSViewRepresentable {
             // Save selection
             let selectedRange = textView.selectedRange()
 
-            // Apply highlighted content to text storage
+            // Set guard flag to prevent textDidChange from triggering re-highlighting
+            context.coordinator.isProgrammaticUpdate = true
             textView.textStorage?.setAttributedString(highlighted)
+            context.coordinator.isProgrammaticUpdate = false
 
             // Restore selection
             if selectedRange.location <= textView.string.utf16.count {
@@ -458,14 +460,18 @@ struct CodeTextEditor: NSViewRepresentable {
 
     class Coordinator: NSObject, NSTextViewDelegate {
         var parent: CodeTextEditor
+        /// Guard flag to prevent feedback loop when programmatically updating text/attributes
+        var isProgrammaticUpdate = false
 
         init(_ parent: CodeTextEditor) {
             self.parent = parent
         }
 
         func textDidChange(_ notification: Notification) {
+            guard !isProgrammaticUpdate else { return }
             guard let textView = notification.object as? NSTextView else { return }
             parent.text = textView.string
+            parent.onTextChange?()
         }
     }
 }

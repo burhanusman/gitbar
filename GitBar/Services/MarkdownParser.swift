@@ -56,20 +56,35 @@ enum InlineFormat {
 /// Service for parsing markdown text into blocks
 struct MarkdownParser {
 
+    // MARK: - Cached Regex Patterns (compiled once)
+
+    private static let headingRegex = try? NSRegularExpression(pattern: #"^(#{1,6})\s+(.+)$"#)
+    private static let horizontalRuleRegex = try? NSRegularExpression(pattern: #"^[-*_]{3,}$"#)
+    private static let unorderedListRegex = try? NSRegularExpression(pattern: #"^[-*+]\s+"#)
+    private static let unorderedListItemRegex = try? NSRegularExpression(pattern: #"^[-*+]\s+(.+)$"#)
+    private static let orderedListRegex = try? NSRegularExpression(pattern: #"^\d+\.\s+"#)
+    private static let orderedListItemRegex = try? NSRegularExpression(pattern: #"^\d+\.\s+(.+)$"#)
+    private static let imageRegex = try? NSRegularExpression(pattern: #"^!\[([^\]]*)\]\(([^)]+)\)$"#)
+
+    // Inline patterns
+    private static let boldItalicRegex = try? NSRegularExpression(pattern: #"^\*\*\*([^*]+)\*\*\*"#)
+    private static let boldRegex = try? NSRegularExpression(pattern: #"^\*\*([^*]+)\*\*"#)
+    private static let boldUnderscoreRegex = try? NSRegularExpression(pattern: #"^__([^_]+)__"#)
+    private static let italicRegex = try? NSRegularExpression(pattern: #"^\*([^*]+)\*"#)
+    private static let italicUnderscoreRegex = try? NSRegularExpression(pattern: #"^_([^_]+)_"#)
+    private static let inlineCodeRegex = try? NSRegularExpression(pattern: #"^`([^`]+)`"#)
+    private static let linkRegex = try? NSRegularExpression(pattern: #"^\[([^\]]+)\]\(([^)]+)\)"#)
+
     // MARK: - Regex Helpers
 
-    private static func matches(_ pattern: String, in text: String) -> Bool {
-        guard let regex = try? NSRegularExpression(pattern: pattern, options: []) else {
-            return false
-        }
+    private static func matches(_ regex: NSRegularExpression?, in text: String) -> Bool {
+        guard let regex = regex else { return false }
         let range = NSRange(text.startIndex..., in: text)
         return regex.firstMatch(in: text, options: [], range: range) != nil
     }
 
-    private static func captureGroups(_ pattern: String, in text: String) -> [String]? {
-        guard let regex = try? NSRegularExpression(pattern: pattern, options: []) else {
-            return nil
-        }
+    private static func captureGroups(_ regex: NSRegularExpression?, in text: String) -> [String]? {
+        guard let regex = regex else { return nil }
         let range = NSRange(text.startIndex..., in: text)
         guard let match = regex.firstMatch(in: text, options: [], range: range) else {
             return nil
@@ -124,7 +139,7 @@ struct MarkdownParser {
             }
 
             // Heading: ^(#{1,6})\s+(.+)$
-            if let groups = captureGroups(#"^(#{1,6})\s+(.+)$"#, in: trimmed), groups.count >= 3 {
+            if let groups = captureGroups(headingRegex, in: trimmed), groups.count >= 3 {
                 let level = groups[1].count
                 let text = groups[2]
                 blocks.append(.heading(level: level, text: text))
@@ -133,7 +148,7 @@ struct MarkdownParser {
             }
 
             // Horizontal rule: ^[-*_]{3,}$
-            if matches(#"^[-*_]{3,}$"#, in: trimmed) {
+            if matches(horizontalRuleRegex, in: trimmed) {
                 blocks.append(.horizontalRule)
                 index += 1
                 continue
@@ -160,11 +175,11 @@ struct MarkdownParser {
             }
 
             // Unordered list: ^[-*+]\s+
-            if matches(#"^[-*+]\s+"#, in: trimmed) {
+            if matches(unorderedListRegex, in: trimmed) {
                 var items: [String] = []
                 while index < lines.count {
                     let listLine = lines[index].trimmingCharacters(in: .whitespaces)
-                    if let groups = captureGroups(#"^[-*+]\s+(.+)$"#, in: listLine), groups.count >= 2 {
+                    if let groups = captureGroups(unorderedListItemRegex, in: listLine), groups.count >= 2 {
                         items.append(groups[1])
                         index += 1
                     } else if listLine.isEmpty {
@@ -179,11 +194,11 @@ struct MarkdownParser {
             }
 
             // Ordered list: ^\d+\.\s+
-            if matches(#"^\d+\.\s+"#, in: trimmed) {
+            if matches(orderedListRegex, in: trimmed) {
                 var items: [String] = []
                 while index < lines.count {
                     let listLine = lines[index].trimmingCharacters(in: .whitespaces)
-                    if let groups = captureGroups(#"^\d+\.\s+(.+)$"#, in: listLine), groups.count >= 2 {
+                    if let groups = captureGroups(orderedListItemRegex, in: listLine), groups.count >= 2 {
                         items.append(groups[1])
                         index += 1
                     } else if listLine.isEmpty {
@@ -198,7 +213,7 @@ struct MarkdownParser {
             }
 
             // Image (standalone): ^!\[([^\]]*)\]\(([^)]+)\)$
-            if let groups = captureGroups(#"^!\[([^\]]*)\]\(([^)]+)\)$"#, in: trimmed), groups.count >= 3 {
+            if let groups = captureGroups(imageRegex, in: trimmed), groups.count >= 3 {
                 blocks.append(.image(alt: groups[1], url: groups[2]))
                 index += 1
                 continue
@@ -215,9 +230,9 @@ struct MarkdownParser {
                    pTrimmed.hasPrefix("#") ||
                    pTrimmed.hasPrefix("```") ||
                    pTrimmed.hasPrefix(">") ||
-                   matches(#"^[-*+]\s+"#, in: pTrimmed) ||
-                   matches(#"^\d+\.\s+"#, in: pTrimmed) ||
-                   matches(#"^[-*_]{3,}$"#, in: pTrimmed) {
+                   matches(unorderedListRegex, in: pTrimmed) ||
+                   matches(orderedListRegex, in: pTrimmed) ||
+                   matches(horizontalRuleRegex, in: pTrimmed) {
                     break
                 }
 
@@ -233,54 +248,59 @@ struct MarkdownParser {
         return blocks
     }
 
-    /// Parses inline formatting in text
+    /// Parses inline formatting in text (optimized with cached regexes)
     static func parseInline(_ text: String) -> [InlineFormat] {
+        // For very long text, skip inline parsing to avoid performance issues
+        guard text.count < 5000 else {
+            return [.plain(text)]
+        }
+
         var formats: [InlineFormat] = []
         var remaining = text
 
         while !remaining.isEmpty {
             // Bold + Italic (***text*** or ___text___)
-            if let groups = captureGroups(#"^\*\*\*([^*]+)\*\*\*"#, in: remaining), groups.count >= 2 {
+            if let groups = captureGroups(boldItalicRegex, in: remaining), groups.count >= 2 {
                 formats.append(.boldItalic(groups[1]))
                 remaining = String(remaining.dropFirst(groups[0].count))
                 continue
             }
 
             // Bold (**text** or __text__)
-            if let groups = captureGroups(#"^\*\*([^*]+)\*\*"#, in: remaining), groups.count >= 2 {
+            if let groups = captureGroups(boldRegex, in: remaining), groups.count >= 2 {
                 formats.append(.bold(groups[1]))
                 remaining = String(remaining.dropFirst(groups[0].count))
                 continue
             }
 
-            if let groups = captureGroups(#"^__([^_]+)__"#, in: remaining), groups.count >= 2 {
+            if let groups = captureGroups(boldUnderscoreRegex, in: remaining), groups.count >= 2 {
                 formats.append(.bold(groups[1]))
                 remaining = String(remaining.dropFirst(groups[0].count))
                 continue
             }
 
             // Italic (*text* or _text_)
-            if let groups = captureGroups(#"^\*([^*]+)\*"#, in: remaining), groups.count >= 2 {
+            if let groups = captureGroups(italicRegex, in: remaining), groups.count >= 2 {
                 formats.append(.italic(groups[1]))
                 remaining = String(remaining.dropFirst(groups[0].count))
                 continue
             }
 
-            if let groups = captureGroups(#"^_([^_]+)_"#, in: remaining), groups.count >= 2 {
+            if let groups = captureGroups(italicUnderscoreRegex, in: remaining), groups.count >= 2 {
                 formats.append(.italic(groups[1]))
                 remaining = String(remaining.dropFirst(groups[0].count))
                 continue
             }
 
             // Inline code (`code`)
-            if let groups = captureGroups(#"^`([^`]+)`"#, in: remaining), groups.count >= 2 {
+            if let groups = captureGroups(inlineCodeRegex, in: remaining), groups.count >= 2 {
                 formats.append(.code(groups[1]))
                 remaining = String(remaining.dropFirst(groups[0].count))
                 continue
             }
 
             // Link [text](url)
-            if let groups = captureGroups(#"^\[([^\]]+)\]\(([^)]+)\)"#, in: remaining), groups.count >= 3 {
+            if let groups = captureGroups(linkRegex, in: remaining), groups.count >= 3 {
                 formats.append(.link(text: groups[1], url: groups[2]))
                 remaining = String(remaining.dropFirst(groups[0].count))
                 continue
