@@ -33,6 +33,8 @@
 		B1000007229A0001000B0001 /* FileEditorViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000008229A0001000B0001 /* FileEditorViewModel.swift */; };
 		B1000009229A0001000B0001 /* FileTreeRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000A229A0001000B0001 /* FileTreeRow.swift */; };
 		B100000B229A0001000B0001 /* FileBrowserView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000C229A0001000B0001 /* FileBrowserView.swift */; };
+		B100001B229A0001000B0001 /* MarkdownBrowserView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100001A229A0001000B0001 /* MarkdownBrowserView.swift */; };
+		B100001D229A0001000B0001 /* MarkdownBrowserViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100001C229A0001000B0001 /* MarkdownBrowserViewModel.swift */; };
 		B100000D229A0001000B0001 /* FileEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000E229A0001000B0001 /* FileEditorView.swift */; };
 		C1000001229A0001000C0001 /* SyntaxHighlightService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1000002229A0001000C0001 /* SyntaxHighlightService.swift */; };
 		C1000003229A0001000C0001 /* MarkdownParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1000004229A0001000C0001 /* MarkdownParser.swift */; };
@@ -65,9 +67,11 @@
 		B1000002229A0001000B0001 /* FileNode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileNode.swift; sourceTree = "<group>"; };
 		B1000004229A0001000B0001 /* FileService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileService.swift; sourceTree = "<group>"; };
 		B1000006229A0001000B0001 /* FileBrowserViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileBrowserViewModel.swift; sourceTree = "<group>"; };
+		B100001C229A0001000B0001 /* MarkdownBrowserViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownBrowserViewModel.swift; sourceTree = "<group>"; };
 		B1000008229A0001000B0001 /* FileEditorViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileEditorViewModel.swift; sourceTree = "<group>"; };
 		B100000A229A0001000B0001 /* FileTreeRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileTreeRow.swift; sourceTree = "<group>"; };
 		B100000C229A0001000B0001 /* FileBrowserView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileBrowserView.swift; sourceTree = "<group>"; };
+		B100001A229A0001000B0001 /* MarkdownBrowserView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownBrowserView.swift; sourceTree = "<group>"; };
 		B100000E229A0001000B0001 /* FileEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileEditorView.swift; sourceTree = "<group>"; };
 		C1000002229A0001000C0001 /* SyntaxHighlightService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyntaxHighlightService.swift; sourceTree = "<group>"; };
 		C1000004229A0001000C0001 /* MarkdownParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownParser.swift; sourceTree = "<group>"; };
@@ -129,6 +133,7 @@
 				A1000024229A0001000A000B /* MomentumBar.swift */,
 				B100000A229A0001000B0001 /* FileTreeRow.swift */,
 				B100000C229A0001000B0001 /* FileBrowserView.swift */,
+				B100001A229A0001000B0001 /* MarkdownBrowserView.swift */,
 				B100000E229A0001000B0001 /* FileEditorView.swift */,
 				C1000006229A0001000C0001 /* MarkdownPreviewView.swift */,
 			);
@@ -152,6 +157,7 @@
 				A1000028229A0001000A000D /* GitTreeViewModel.swift */,
 				A1000019229A0001000A0006 /* SettingsViewModel.swift */,
 				B1000006229A0001000B0001 /* FileBrowserViewModel.swift */,
+				B100001C229A0001000B0001 /* MarkdownBrowserViewModel.swift */,
 				B1000008229A0001000B0001 /* FileEditorViewModel.swift */,
 			);
 			path = ViewModels;
@@ -287,6 +293,8 @@ A1000003229A0001000A0001 /* ContentView.swift in Sources */,
 				B1000007229A0001000B0001 /* FileEditorViewModel.swift in Sources */,
 				B1000009229A0001000B0001 /* FileTreeRow.swift in Sources */,
 				B100000B229A0001000B0001 /* FileBrowserView.swift in Sources */,
+				B100001B229A0001000B0001 /* MarkdownBrowserView.swift in Sources */,
+				B100001D229A0001000B0001 /* MarkdownBrowserViewModel.swift in Sources */,
 				B100000D229A0001000B0001 /* FileEditorView.swift in Sources */,
 				C1000001229A0001000C0001 /* SyntaxHighlightService.swift in Sources */,
 				C1000003229A0001000C0001 /* MarkdownParser.swift in Sources */,

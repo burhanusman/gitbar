@@ -5,6 +5,7 @@ enum DetailTab: String, CaseIterable {
     case changes = "Changes"
     case history = "History"
     case files = "Files"
+    case mdFiles = ".md Files"
 }
 
 struct ContentView: View {
@@ -45,6 +46,8 @@ struct ContentView: View {
                                     GitTreeView(project: selectedProject)
                                 case .files:
                                     FileBrowserView(project: selectedProject)
+                                case .mdFiles:
+                                    MarkdownBrowserView(project: selectedProject)
                                 }
                             }
                         } else {
@@ -188,6 +191,8 @@ struct DetailTabBar: View {
             return "point.3.connected.trianglepath.dotted"
         case .files:
             return "folder"
+        case .mdFiles:
+            return "doc.richtext"
         }
     }
 

@@ -5,6 +5,7 @@ import AppKit
 struct FileEditorView: View {
     let filePath: String
     let repoPath: String
+    var initialMode: EditorMode = .edit
 
     @StateObject private var viewModel = FileEditorViewModel()
     @Environment(\.dismiss) private var dismiss
@@ -37,6 +38,7 @@ struct FileEditorView: View {
         .background(Theme.background)
         .onAppear {
             viewModel.loadFile(at: filePath, repoPath: repoPath)
+            viewModel.editorMode = initialMode
         }
         .alert("Unsaved Changes", isPresented: $showUnsavedChangesAlert) {
             Button("Discard", role: .destructive) {
