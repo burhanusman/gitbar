@@ -417,8 +417,22 @@ class ProjectListViewModel: ObservableObject {
         autoRefreshTask = nil
     }
 
-    /// Refreshes status for all projects without disrupting user interaction
+    /// Refreshes status for all projects without disrupting user interaction.
+    /// Also checks for newly added Claude/Codex projects and reloads if needed.
     private func refreshStatusSilently() async {
+        // Check if new projects have been added since last load
+        let currentPaths = Set(sections.flatMap { $0.projects.map(\.path) })
+        let discoveredPaths = Set(discoveryService.discoverProjects().map(\.path))
+        let repoFolderPaths = Set(SettingsService.shared.repoFolders.flatMap { discoverGitRepositories(in: $0) })
+        let allLatestPaths = discoveredPaths.union(repoFolderPaths)
+
+        if allLatestPaths != currentPaths {
+            // Project list changed — do a full reload to pick up additions/removals
+            loadProjects()
+            return
+        }
+
+        // No project changes — just refresh git status
         for sectionIndex in sections.indices {
             for projectIndex in sections[sectionIndex].projects.indices {
                 guard !Task.isCancelled else { break }
