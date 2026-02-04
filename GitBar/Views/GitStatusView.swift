@@ -495,7 +495,7 @@ struct FileGroupSection: View {
                 // Bulk actions
                 HStack(spacing: Theme.space1) {
                     if let onDiscardAll = onDiscardAll {
-                        IconButton(icon: "trash", action: onDiscardAll, help: "Discard all")
+                        IconButton(icon: "arrow.uturn.backward", action: onDiscardAll, help: "Discard all changes")
                     }
 
                     if let onUnstageAll = onUnstageAll {
@@ -617,15 +617,16 @@ struct FileRowItem: View {
                     HStack(spacing: Theme.space2) {
                         // Edit button
                         if let onEdit = onEdit {
-                            FileActionButton(icon: "pencil", action: { onEdit(file.path) })
+                            FileActionButton(icon: "pencil", help: "Edit file", action: { onEdit(file.path) })
                         }
 
                         if let onDiscard = onDiscard {
-                            FileActionButton(icon: "trash", action: { onDiscard(file.path) })
+                            FileActionButton(icon: "arrow.uturn.backward", help: "Discard changes", action: { onDiscard(file.path) })
                         }
 
                         FileActionButton(
                             icon: onStage != nil ? "plus" : "minus",
+                            help: onStage != nil ? "Stage" : "Unstage",
                             action: {
                                 if let onStage = onStage { onStage(file.path) }
                                 if let onUnstage = onUnstage { onUnstage(file.path) }
@@ -682,6 +683,7 @@ struct FileRowItem: View {
 
 struct FileActionButton: View {
     let icon: String
+    var help: String = ""
     let action: () -> Void
 
     @State private var isHovered = false
@@ -697,6 +699,7 @@ struct FileActionButton: View {
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .help(help)
         .onHover { isHovered = $0 }
         .animation(.easeOut(duration: Theme.animationFast), value: isHovered)
         .pointingHandCursor()
