@@ -16,6 +16,8 @@ class ProjectListViewModel: ObservableObject {
     @Published var selectedProject: Project?
     @Published var isAutoRefreshEnabled = true
     @Published var sortMode: ProjectSortMode = SettingsService.shared.projectSortMode
+    @Published var expandedWorktreeProjects: Set<String> = []
+    @Published var selectedWorktreePath: String?
 
     private let discoveryService: ClaudeProjectDiscoveryService
     private let gitService: GitService
@@ -87,104 +89,114 @@ class ProjectListViewModel: ObservableObject {
     /// Loads projects and checks their git status
     func loadProjects() {
         loadProjectsTask?.cancel()
-        let discoveredProjects = discoveryService.discoverProjects()
-        let repoFolders = SettingsService.shared.repoFolders
 
         let previousExpansion = Dictionary(uniqueKeysWithValues: sections.map { ($0.id, $0.isExpanded) })
         // Use current selection, or fall back to persisted last selection
         let previouslySelectedPath = selectedProject?.path ?? SettingsService.shared.lastSelectedProjectPath
+        let repoFolders = SettingsService.shared.repoFolders
 
-        // Phase 1: Immediately show projects with default values (no git status yet)
-        var newSections: [ProjectSection] = []
-        var allDiscoveredPaths: Set<String> = []
+        // Capture references needed for background work
+        let discoveryService = self.discoveryService
 
-        // Separate Claude and Codex projects
-        let claudeProjects = discoveredProjects.filter { $0.source == .claude }
-        let codexProjects = discoveredProjects.filter { $0.source == .codex }
+        loadProjectsTask = Task {
+            // Phase 1: Discover projects off the main thread (file I/O)
+            let (newSections, _) = await Task.detached(priority: .userInitiated) {
+                let discoveredProjects = discoveryService.discoverProjects()
 
-        // Track paths to detect duplicates - prefer Claude over Codex
-        var pathToSource: [String: ProjectSource] = [:]
-        for project in claudeProjects {
-            pathToSource[project.path] = .claude
-        }
-        for project in codexProjects where pathToSource[project.path] == nil {
-            pathToSource[project.path] = .codex
-        }
+                var newSections: [ProjectSection] = []
+                var allDiscoveredPaths: Set<String> = []
 
-        // Claude section - create projects with default values
-        var loadedClaudeProjects: [Project] = []
-        for claudeProject in claudeProjects {
-            guard pathToSource[claudeProject.path] == .claude else { continue }
-            allDiscoveredPaths.insert(claudeProject.path)
-            loadedClaudeProjects.append(Project(from: claudeProject, hasUncommittedChanges: false, commitActivity: .empty, lastActivityDate: nil))
-        }
-        loadedClaudeProjects = sortProjects(loadedClaudeProjects)
+                // Separate Claude and Codex projects
+                let claudeProjects = discoveredProjects.filter { $0.source == .claude }
+                let codexProjects = discoveredProjects.filter { $0.source == .codex }
 
-        if !loadedClaudeProjects.isEmpty {
-            newSections.append(
-                ProjectSection(
-                    id: "claude",
-                    title: "Claude",
-                    isExpanded: previousExpansion["claude"] ?? true,
-                    projects: loadedClaudeProjects
-                )
-            )
-        }
+                // Track paths to detect duplicates - prefer Claude over Codex
+                var pathToSource: [String: ProjectSource] = [:]
+                for project in claudeProjects {
+                    pathToSource[project.path] = .claude
+                }
+                for project in codexProjects where pathToSource[project.path] == nil {
+                    pathToSource[project.path] = .codex
+                }
 
-        // Codex section - create projects with default values
-        var loadedCodexProjects: [Project] = []
-        for codexProject in codexProjects {
-            guard pathToSource[codexProject.path] == .codex else { continue }
-            allDiscoveredPaths.insert(codexProject.path)
-            loadedCodexProjects.append(Project(from: codexProject, hasUncommittedChanges: false, commitActivity: .empty, lastActivityDate: nil))
-        }
-        loadedCodexProjects = sortProjects(loadedCodexProjects)
+                // Claude section
+                var loadedClaudeProjects: [Project] = []
+                for claudeProject in claudeProjects {
+                    guard pathToSource[claudeProject.path] == .claude else { continue }
+                    allDiscoveredPaths.insert(claudeProject.path)
+                    loadedClaudeProjects.append(Project(from: claudeProject, hasUncommittedChanges: false, commitActivity: .empty, lastActivityDate: nil))
+                }
 
-        if !loadedCodexProjects.isEmpty {
-            newSections.append(
-                ProjectSection(
-                    id: "codex",
-                    title: "Codex",
-                    isExpanded: previousExpansion["codex"] ?? true,
-                    projects: loadedCodexProjects
-                )
-            )
-        }
+                if !loadedClaudeProjects.isEmpty {
+                    newSections.append(
+                        ProjectSection(
+                            id: "claude",
+                            title: "Claude",
+                            isExpanded: previousExpansion["claude"] ?? true,
+                            projects: loadedClaudeProjects
+                        )
+                    )
+                }
 
-        // User folders - create projects with default values
-        for folderPath in repoFolders {
-            let repoPaths = discoverGitRepositories(in: folderPath).filter { !allDiscoveredPaths.contains($0) }
-            var loadedFolderProjects: [Project] = []
+                // Codex section
+                var loadedCodexProjects: [Project] = []
+                for codexProject in codexProjects {
+                    guard pathToSource[codexProject.path] == .codex else { continue }
+                    allDiscoveredPaths.insert(codexProject.path)
+                    loadedCodexProjects.append(Project(from: codexProject, hasUncommittedChanges: false, commitActivity: .empty, lastActivityDate: nil))
+                }
 
-            for repoPath in repoPaths {
-                let repoName = URL(fileURLWithPath: repoPath).lastPathComponent
-                loadedFolderProjects.append(Project(name: repoName, path: repoPath, source: .folder, hasUncommittedChanges: false, commitActivity: .empty, lastActivityDate: nil))
+                if !loadedCodexProjects.isEmpty {
+                    newSections.append(
+                        ProjectSection(
+                            id: "codex",
+                            title: "Codex",
+                            isExpanded: previousExpansion["codex"] ?? true,
+                            projects: loadedCodexProjects
+                        )
+                    )
+                }
+
+                // User folders
+                for folderPath in repoFolders {
+                    let repoPaths = ProjectListViewModel.discoverGitRepositories(in: folderPath).filter { !allDiscoveredPaths.contains($0) }
+                    var loadedFolderProjects: [Project] = []
+
+                    for repoPath in repoPaths {
+                        let repoName = URL(fileURLWithPath: repoPath).lastPathComponent
+                        loadedFolderProjects.append(Project(name: repoName, path: repoPath, source: .folder, hasUncommittedChanges: false, commitActivity: .empty, lastActivityDate: nil))
+                    }
+
+                    let sectionId = "folder:\(folderPath)"
+                    newSections.append(
+                        ProjectSection(
+                            id: sectionId,
+                            title: URL(fileURLWithPath: folderPath).lastPathComponent,
+                            isExpanded: previousExpansion[sectionId] ?? true,
+                            projects: loadedFolderProjects
+                        )
+                    )
+                }
+
+                return (newSections, allDiscoveredPaths)
+            }.value
+
+            guard !Task.isCancelled else { return }
+
+            // Sort and update UI on main thread
+            var sortedSections = newSections
+            for i in sortedSections.indices {
+                sortedSections[i].projects = sortProjects(sortedSections[i].projects)
+            }
+            sections = sortedSections
+
+            // Preserve selection if possible
+            if let previouslySelectedPath,
+               let project = findProject(withPath: previouslySelectedPath, in: sortedSections) {
+                selectedProject = project
             }
 
-            loadedFolderProjects = sortProjects(loadedFolderProjects)
-
-            let sectionId = "folder:\(folderPath)"
-            newSections.append(
-                ProjectSection(
-                    id: sectionId,
-                    title: URL(fileURLWithPath: folderPath).lastPathComponent,
-                    isExpanded: previousExpansion[sectionId] ?? true,
-                    projects: loadedFolderProjects
-                )
-            )
-        }
-
-        // Update UI immediately with projects (no git status yet)
-        sections = newSections
-
-        // Preserve selection if possible
-        if let previouslySelectedPath,
-           let project = findProject(withPath: previouslySelectedPath, in: newSections) {
-            selectedProject = project
-        }
-
-        // Phase 2: Load git status in background and update projects as results come in
-        loadProjectsTask = Task {
+            // Phase 2: Load git status in background and update projects as results come in
             await loadGitStatusForAllProjects()
         }
     }
@@ -200,12 +212,14 @@ class ProjectListViewModel: ObservableObject {
                 async let hasChanges = checkForUncommittedChanges(at: path)
                 async let activity = getCommitActivity(at: path)
                 async let lastActivity = getLastCommitDate(at: path)
+                async let worktreeInfos = loadWorktreeInfo(for: path)
 
                 // Update the project with loaded values
-                let (changes, act, lastAct) = await (hasChanges, activity, lastActivity)
+                let (changes, act, lastAct, wts) = await (hasChanges, activity, lastActivity, worktreeInfos)
                 sections[sectionIndex].projects[projectIndex].hasUncommittedChanges = changes
                 sections[sectionIndex].projects[projectIndex].commitActivity = act
                 sections[sectionIndex].projects[projectIndex].lastActivityDate = lastAct
+                sections[sectionIndex].projects[projectIndex].worktrees = wts
             }
         }
 
@@ -215,10 +229,71 @@ class ProjectListViewModel: ObservableObject {
         }
     }
 
+    /// Loads worktree info for a project, including uncommitted changes per worktree
+    private func loadWorktreeInfo(for projectPath: String) async -> [WorktreeInfo] {
+        do {
+            let worktrees = try await gitService.getWorktrees(at: projectPath)
+            guard worktrees.count > 1 else { return [] }
+
+            var infos: [WorktreeInfo] = []
+            for (index, wt) in worktrees.enumerated() {
+                let hasChanges: Bool
+                do {
+                    hasChanges = try await gitService.hasUncommittedChanges(at: wt.path)
+                } catch {
+                    hasChanges = false
+                }
+                let agentLabel = SettingsService.shared.agentLabel(forWorktreePath: wt.path)
+                infos.append(WorktreeInfo(
+                    path: wt.path,
+                    branch: wt.branch,
+                    head: wt.head,
+                    isDetached: wt.isDetached,
+                    isMain: index == 0,
+                    hasUncommittedChanges: hasChanges,
+                    agentLabel: agentLabel
+                ))
+            }
+            return infos
+        } catch {
+            return []
+        }
+    }
+
     /// Selects a project and persists the selection
     func selectProject(_ project: Project) {
         selectedProject = project
         SettingsService.shared.lastSelectedProjectPath = project.path
+        // Reset worktree selection to the project's active worktree or nil
+        selectedWorktreePath = project.activeWorktreePath
+        SettingsService.shared.lastSelectedWorktreePath = selectedWorktreePath
+    }
+
+    /// Selects a specific worktree within a project
+    func selectWorktree(_ worktree: WorktreeInfo, in project: Project) {
+        selectedWorktreePath = worktree.path
+        SettingsService.shared.lastSelectedWorktreePath = worktree.path
+
+        // Update the project's activeWorktreePath
+        if let sectionIndex = sections.firstIndex(where: { $0.projects.contains(where: { $0.id == project.id }) }),
+           let projectIndex = sections[sectionIndex].projects.firstIndex(where: { $0.id == project.id }) {
+            sections[sectionIndex].projects[projectIndex].activeWorktreePath = worktree.path
+        }
+
+        // Also select the project if not already selected
+        if selectedProject?.id != project.id {
+            selectedProject = project
+            SettingsService.shared.lastSelectedProjectPath = project.path
+        }
+    }
+
+    /// Toggles worktree expansion for a project
+    func toggleWorktreeExpansion(for projectId: String) {
+        if expandedWorktreeProjects.contains(projectId) {
+            expandedWorktreeProjects.remove(projectId)
+        } else {
+            expandedWorktreeProjects.insert(projectId)
+        }
     }
 
     /// Returns a flat list of all visible projects (from expanded sections only)
@@ -308,7 +383,7 @@ class ProjectListViewModel: ObservableObject {
         return nil
     }
 
-    private func discoverGitRepositories(in folderPath: String, maxDepth: Int = 4) -> [String] {
+    nonisolated private static func discoverGitRepositories(in folderPath: String, maxDepth: Int = 4) -> [String] {
         let fileManager = FileManager.default
         let rootURL = URL(fileURLWithPath: folderPath).standardizedFileURL
 
@@ -388,8 +463,10 @@ class ProjectListViewModel: ObservableObject {
                     let path = sections[sectionIndex].projects[projectIndex].path
                     async let hasChanges = checkForUncommittedChanges(at: path)
                     async let activity = getCommitActivity(at: path)
+                    async let worktreeInfos = loadWorktreeInfo(for: path)
                     sections[sectionIndex].projects[projectIndex].hasUncommittedChanges = await hasChanges
                     sections[sectionIndex].projects[projectIndex].commitActivity = await activity
+                    sections[sectionIndex].projects[projectIndex].worktrees = await worktreeInfos
                 }
             }
         }
@@ -422,9 +499,14 @@ class ProjectListViewModel: ObservableObject {
     private func refreshStatusSilently() async {
         // Check if new projects have been added since last load
         let currentPaths = Set(sections.flatMap { $0.projects.map(\.path) })
-        let discoveredPaths = Set(discoveryService.discoverProjects().map(\.path))
-        let repoFolderPaths = Set(SettingsService.shared.repoFolders.flatMap { discoverGitRepositories(in: $0) })
-        let allLatestPaths = discoveredPaths.union(repoFolderPaths)
+        let repoFolders = SettingsService.shared.repoFolders
+        let discoveryService = self.discoveryService
+
+        let allLatestPaths = await Task.detached(priority: .utility) {
+            let discoveredPaths = Set(discoveryService.discoverProjects().map(\.path))
+            let repoFolderPaths = Set(repoFolders.flatMap { ProjectListViewModel.discoverGitRepositories(in: $0) })
+            return discoveredPaths.union(repoFolderPaths)
+        }.value
 
         if allLatestPaths != currentPaths {
             // Project list changed — do a full reload to pick up additions/removals
@@ -440,9 +522,11 @@ class ProjectListViewModel: ObservableObject {
                 async let hasChanges = checkForUncommittedChanges(at: path)
                 async let activity = getCommitActivity(at: path)
                 async let lastActivity = getLastCommitDate(at: path)
+                async let worktreeInfos = loadWorktreeInfo(for: path)
                 sections[sectionIndex].projects[projectIndex].hasUncommittedChanges = await hasChanges
                 sections[sectionIndex].projects[projectIndex].commitActivity = await activity
                 sections[sectionIndex].projects[projectIndex].lastActivityDate = await lastActivity
+                sections[sectionIndex].projects[projectIndex].worktrees = await worktreeInfos
             }
         }
         // Re-sort sections after refresh if in recent mode

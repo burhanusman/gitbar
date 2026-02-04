@@ -1,7 +1,7 @@
 import Foundation
 
 /// Service for discovering Claude Code and Codex projects
-struct ClaudeProjectDiscoveryService {
+struct ClaudeProjectDiscoveryService: @unchecked Sendable {
 
     /// Represents a discovered project
     struct ClaudeProject {
