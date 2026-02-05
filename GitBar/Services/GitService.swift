@@ -336,11 +336,66 @@ actor GitService {
         return parseWorktreeListOutput(output)
     }
 
-    /// Checks if a path is a valid Git repository
+    /// Checks if a path is a valid Git repository (handles both regular repos and worktrees)
     func isGitRepository(at path: String) -> Bool {
         let gitDir = (path as NSString).appendingPathComponent(".git")
-        var isDirectory: ObjCBool = false
-        return fileManager.fileExists(atPath: gitDir, isDirectory: &isDirectory)
+        // .git can be a directory (normal repo) or a file (worktree)
+        return fileManager.fileExists(atPath: gitDir)
+    }
+
+    /// Resolves a worktree path to the main repository path using git rev-parse --git-common-dir
+    func resolveMainRepoPath(at path: String) async throws -> String {
+        let output = try await runGitCommand(["rev-parse", "--git-common-dir"], at: path)
+        let commonDir = output.trimmingCharacters(in: .whitespacesAndNewlines)
+        // If the common dir is ".git", the path is already the main repo
+        if commonDir == ".git" {
+            return path
+        }
+        // Otherwise, resolve the common dir to get the main repo path
+        // The common dir is an absolute path like /path/to/repo/.git
+        let url = URL(fileURLWithPath: commonDir).standardized
+        // Go up one level from .git to get the repo root
+        return url.deletingLastPathComponent().path
+    }
+
+    /// Creates a new worktree
+    func createWorktree(at repoPath: String, newPath: String, branch: String, createBranch: Bool) async throws {
+        try validateGitRepository(at: repoPath)
+        var args = ["worktree", "add"]
+        if createBranch {
+            args.append(contentsOf: ["-b", branch, newPath])
+        } else {
+            args.append(contentsOf: [newPath, branch])
+        }
+        _ = try await runGitCommand(args, at: repoPath)
+    }
+
+    /// Removes a worktree
+    func removeWorktree(at repoPath: String, worktreePath: String, force: Bool = false) async throws {
+        try validateGitRepository(at: repoPath)
+        var args = ["worktree", "remove"]
+        if force { args.append("--force") }
+        args.append(worktreePath)
+        _ = try await runGitCommand(args, at: repoPath)
+    }
+
+    /// Prunes stale worktree references
+    func pruneWorktrees(at repoPath: String) async throws {
+        try validateGitRepository(at: repoPath)
+        _ = try await runGitCommand(["worktree", "prune"], at: repoPath)
+    }
+
+    /// Gets remote branch names
+    func getRemoteBranches(at path: String) async throws -> [String] {
+        try validateGitRepository(at: path)
+        let output = try await runGitCommand(
+            ["for-each-ref", "--format=%(refname:short)", "refs/remotes/origin"],
+            at: path
+        )
+        return output
+            .components(separatedBy: .newlines)
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty && $0 != "origin/HEAD" }
     }
 
     /// Stages a file using git add

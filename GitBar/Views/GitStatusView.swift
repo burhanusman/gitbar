@@ -4,6 +4,7 @@ import AppKit
 /// Main view showing current branch, remote tracking status, and changed files
 struct GitStatusView: View {
     let project: Project
+    var worktreePath: String?
     @StateObject private var viewModel = GitStatusViewModel()
 
     @State private var fileToDiscard: String?
@@ -16,6 +17,12 @@ struct GitStatusView: View {
     @State private var diffContent: String = ""
     @State private var isLoadingDiff = false
     @State private var fileToEdit: String?
+    @State private var showCreateWorktree = false
+
+    /// The effective path to use for git operations (worktree or project root)
+    private var effectivePath: String {
+        worktreePath ?? project.path
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -23,6 +30,23 @@ struct GitStatusView: View {
                 .padding(.horizontal, Theme.space6)
                 .padding(.vertical, Theme.space4)
                 .background(Theme.surfaceElevated)
+
+            // Worktree picker (only shown when project has multiple worktrees)
+            if viewModel.worktrees.count > 1 {
+                WorktreePicker(
+                    worktrees: viewModel.worktrees,
+                    activePath: viewModel.activeWorktreePath ?? effectivePath,
+                    onSelect: { path in
+                        viewModel.switchToWorktree(at: path)
+                    },
+                    onCreate: {
+                        showCreateWorktree = true
+                    }
+                )
+                .padding(.horizontal, Theme.space6)
+                .padding(.vertical, Theme.space2)
+                .background(Theme.surfaceElevated)
+            }
 
             Divider()
                 .background(Theme.border)
@@ -40,15 +64,18 @@ struct GitStatusView: View {
         }
         .background(Theme.background)
         .onAppear {
-            viewModel.loadStatus(for: project.path)
+            viewModel.loadStatus(for: effectivePath)
             viewModel.startAutoRefresh()
         }
         .onDisappear {
             viewModel.stopAutoRefresh()
         }
-        .onChange(of: project.path) { newPath in
-            viewModel.loadStatus(for: newPath)
+        .onChange(of: project.path) { _ in
+            viewModel.loadStatus(for: effectivePath)
             viewModel.startAutoRefresh()
+        }
+        .onChange(of: worktreePath) { newPath in
+            viewModel.loadStatus(for: newPath ?? project.path)
         }
         .alert("Discard changes?", isPresented: Binding<Bool>(
             get: { fileToDiscard != nil || showDiscardAllConfirmation },
@@ -97,7 +124,7 @@ struct GitStatusView: View {
             DiffViewer(filePath: file.path, diff: diffContent, onEdit: {
                 // Delay to let the DiffViewer sheet dismiss first
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                    fileToEdit = (project.path as NSString).appendingPathComponent(file.path)
+                    fileToEdit = (effectivePath as NSString).appendingPathComponent(file.path)
                 }
             })
         }
@@ -106,11 +133,16 @@ struct GitStatusView: View {
             set: { if !$0 { fileToEdit = nil } }
         )) {
             if let path = fileToEdit {
-                FileEditorView(filePath: path, repoPath: project.path)
+                FileEditorView(filePath: path, repoPath: effectivePath)
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: .fileDidSave)) { _ in
             viewModel.refresh()
+        }
+        .sheet(isPresented: $showCreateWorktree) {
+            CreateWorktreeSheet(repoPath: project.path) {
+                viewModel.refresh()
+            }
         }
     }
 
@@ -787,6 +819,88 @@ struct CommitBox: View {
             RoundedRectangle(cornerRadius: Theme.radiusLarge)
                 .stroke(Theme.border, lineWidth: 1)
         )
+    }
+}
+
+// MARK: - Worktree Picker
+
+struct WorktreePicker: View {
+    let worktrees: [GitWorktree]
+    let activePath: String
+    let onSelect: (String) -> Void
+    let onCreate: () -> Void
+
+    var body: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: Theme.space2) {
+                ForEach(worktrees) { worktree in
+                    WorktreePill(
+                        worktree: worktree,
+                        isActive: worktree.path == activePath,
+                        action: { onSelect(worktree.path) }
+                    )
+                }
+
+                // Create button
+                Button(action: onCreate) {
+                    Image(systemName: "plus")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundColor(Theme.textTertiary)
+                        .frame(width: 24, height: 24)
+                        .background(Theme.surface)
+                        .cornerRadius(Theme.radiusSmall)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(ScaleButtonStyle())
+                .help("New worktree")
+                .pointingHandCursor()
+            }
+        }
+    }
+}
+
+struct WorktreePill: View {
+    let worktree: GitWorktree
+    let isActive: Bool
+    let action: () -> Void
+
+    @State private var isHovered = false
+
+    private var hasChanges: Bool {
+        // We check changes via the status loaded per-worktree
+        // For the pill, we just show the dot color
+        true // Simplified - the real status comes from GitStatusViewModel
+    }
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: Theme.space2) {
+                Circle()
+                    .fill(isActive ? Theme.accent : Theme.textMuted.opacity(0.4))
+                    .frame(width: 6, height: 6)
+
+                Text(worktree.branch ?? "detached")
+                    .font(.system(size: Theme.fontSM, weight: isActive ? .semibold : .medium))
+                    .foregroundColor(isActive ? Theme.accent : (isHovered ? Theme.textSecondary : Theme.textTertiary))
+                    .lineLimit(1)
+            }
+            .padding(.horizontal, Theme.space3)
+            .padding(.vertical, Theme.space2)
+            .background(
+                RoundedRectangle(cornerRadius: Theme.radiusSmall)
+                    .fill(isActive ? Theme.accentMuted : (isHovered ? Theme.surfaceHover : Theme.surface))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: Theme.radiusSmall)
+                    .stroke(isActive ? Theme.accent.opacity(0.3) : Theme.borderSubtle, lineWidth: 1)
+            )
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .onHover { isHovered = $0 }
+        .animation(.easeOut(duration: Theme.animationFast), value: isHovered)
+        .animation(.easeOut(duration: Theme.animationFast), value: isActive)
+        .pointingHandCursor()
     }
 }
 

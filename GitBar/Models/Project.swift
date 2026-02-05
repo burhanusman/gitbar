@@ -29,6 +29,29 @@ struct CommitActivity: Equatable {
     static let empty = CommitActivity(dailyCounts: Array(repeating: 0, count: 30))
 }
 
+/// Represents a worktree associated with a project
+struct WorktreeInfo: Identifiable, Equatable {
+    let id: String
+    let path: String
+    let branch: String?
+    let head: String?
+    let isDetached: Bool
+    let isMain: Bool
+    var hasUncommittedChanges: Bool
+    var agentLabel: String?
+
+    init(path: String, branch: String?, head: String?, isDetached: Bool, isMain: Bool, hasUncommittedChanges: Bool = false, agentLabel: String? = nil) {
+        self.id = path
+        self.path = path
+        self.branch = branch
+        self.head = head
+        self.isDetached = isDetached
+        self.isMain = isMain
+        self.hasUncommittedChanges = hasUncommittedChanges
+        self.agentLabel = agentLabel
+    }
+}
+
 /// Represents a Git project displayed in the sidebar
 struct Project: Identifiable, Equatable {
     let id: String
@@ -38,8 +61,14 @@ struct Project: Identifiable, Equatable {
     var hasUncommittedChanges: Bool
     var commitActivity: CommitActivity
     var lastActivityDate: Date?
+    var worktrees: [WorktreeInfo]
+    var activeWorktreePath: String?
 
-    init(name: String, path: String, source: ProjectSource = .folder, hasUncommittedChanges: Bool = false, commitActivity: CommitActivity = .empty, lastActivityDate: Date? = nil) {
+    var hasWorktrees: Bool {
+        worktrees.count > 1
+    }
+
+    init(name: String, path: String, source: ProjectSource = .folder, hasUncommittedChanges: Bool = false, commitActivity: CommitActivity = .empty, lastActivityDate: Date? = nil, worktrees: [WorktreeInfo] = [], activeWorktreePath: String? = nil) {
         self.id = path
         self.name = name
         self.path = path
@@ -47,6 +76,8 @@ struct Project: Identifiable, Equatable {
         self.hasUncommittedChanges = hasUncommittedChanges
         self.commitActivity = commitActivity
         self.lastActivityDate = lastActivityDate
+        self.worktrees = worktrees
+        self.activeWorktreePath = activeWorktreePath
     }
 
     /// Creates a Project from a ClaudeProject (works for both Claude and Codex)
@@ -58,5 +89,7 @@ struct Project: Identifiable, Equatable {
         self.hasUncommittedChanges = hasUncommittedChanges
         self.commitActivity = commitActivity
         self.lastActivityDate = lastActivityDate
+        self.worktrees = []
+        self.activeWorktreePath = nil
     }
 }

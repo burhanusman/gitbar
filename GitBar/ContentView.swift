@@ -34,6 +34,8 @@ struct ContentView: View {
                         Theme.background.ignoresSafeArea()
 
                         if let selectedProject = projectListViewModel.selectedProject {
+                            let activePath = projectListViewModel.selectedWorktreePath ?? selectedProject.activeWorktreePath
+
                             VStack(spacing: 0) {
                                 // Tab switcher
                                 DetailTabBar(selectedTab: $selectedTab)
@@ -41,13 +43,13 @@ struct ContentView: View {
                                 // Content based on selected tab
                                 switch selectedTab {
                                 case .changes:
-                                    GitStatusView(project: selectedProject)
+                                    GitStatusView(project: selectedProject, worktreePath: activePath)
                                 case .history:
-                                    GitTreeView(project: selectedProject)
+                                    GitTreeView(project: selectedProject, worktreePath: activePath)
                                 case .files:
-                                    FileBrowserView(project: selectedProject)
+                                    FileBrowserView(project: selectedProject, worktreePath: activePath)
                                 case .mdFiles:
-                                    MarkdownBrowserView(project: selectedProject)
+                                    MarkdownBrowserView(project: selectedProject, worktreePath: activePath)
                                 }
                             }
                         } else {

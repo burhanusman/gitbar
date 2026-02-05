@@ -3,7 +3,12 @@ import SwiftUI
 /// Main view for browsing files in the repository
 struct FileBrowserView: View {
     let project: Project
+    var worktreePath: String? = nil
     @StateObject private var viewModel = FileBrowserViewModel()
+
+    private var effectivePath: String {
+        worktreePath ?? project.path
+    }
     @State private var selectedFileForEditing: FileNode?
     @State private var gitStatusViewModel: GitStatusViewModel?
 
@@ -31,13 +36,16 @@ struct FileBrowserView: View {
         }
         .background(Theme.background)
         .onAppear {
-            viewModel.loadDirectory(at: project.path)
+            viewModel.loadDirectory(at: effectivePath)
         }
-        .onChange(of: project.path) { newPath in
-            viewModel.loadDirectory(at: newPath)
+        .onChange(of: project.path) { _ in
+            viewModel.loadDirectory(at: effectivePath)
+        }
+        .onChange(of: worktreePath) { _ in
+            viewModel.loadDirectory(at: effectivePath)
         }
         .sheet(item: $selectedFileForEditing) { file in
-            FileEditorView(filePath: file.path, repoPath: project.path)
+            FileEditorView(filePath: file.path, repoPath: effectivePath)
         }
     }
 

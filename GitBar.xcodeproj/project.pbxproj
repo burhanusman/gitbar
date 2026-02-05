@@ -39,6 +39,8 @@
 		C1000001229A0001000C0001 /* SyntaxHighlightService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1000002229A0001000C0001 /* SyntaxHighlightService.swift */; };
 		C1000003229A0001000C0001 /* MarkdownParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1000004229A0001000C0001 /* MarkdownParser.swift */; };
 		C1000005229A0001000C0001 /* MarkdownPreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1000006229A0001000C0001 /* MarkdownPreviewView.swift */; };
+		E1000001229A0001000E0001 /* CreateWorktreeSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1000002229A0001000E0001 /* CreateWorktreeSheet.swift */; };
+		E1000003229A0001000E0001 /* CreateWorktreeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1000004229A0001000E0001 /* CreateWorktreeViewModel.swift */; };
 	/* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -76,6 +78,8 @@
 		C1000002229A0001000C0001 /* SyntaxHighlightService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyntaxHighlightService.swift; sourceTree = "<group>"; };
 		C1000004229A0001000C0001 /* MarkdownParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownParser.swift; sourceTree = "<group>"; };
 		C1000006229A0001000C0001 /* MarkdownPreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownPreviewView.swift; sourceTree = "<group>"; };
+		E1000002229A0001000E0001 /* CreateWorktreeSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateWorktreeSheet.swift; sourceTree = "<group>"; };
+		E1000004229A0001000E0001 /* CreateWorktreeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateWorktreeViewModel.swift; sourceTree = "<group>"; };
 	/* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -136,6 +140,7 @@
 				B100001A229A0001000B0001 /* MarkdownBrowserView.swift */,
 				B100000E229A0001000B0001 /* FileEditorView.swift */,
 				C1000006229A0001000C0001 /* MarkdownPreviewView.swift */,
+				E1000002229A0001000E0001 /* CreateWorktreeSheet.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -159,6 +164,7 @@
 				B1000006229A0001000B0001 /* FileBrowserViewModel.swift */,
 				B100001C229A0001000B0001 /* MarkdownBrowserViewModel.swift */,
 				B1000008229A0001000B0001 /* FileEditorViewModel.swift */,
+				E1000004229A0001000E0001 /* CreateWorktreeViewModel.swift */,
 			);
 			path = ViewModels;
 			sourceTree = "<group>";
@@ -299,6 +305,8 @@ A1000003229A0001000A0001 /* ContentView.swift in Sources */,
 				C1000001229A0001000C0001 /* SyntaxHighlightService.swift in Sources */,
 				C1000003229A0001000C0001 /* MarkdownParser.swift in Sources */,
 				C1000005229A0001000C0001 /* MarkdownPreviewView.swift in Sources */,
+				E1000001229A0001000E0001 /* CreateWorktreeSheet.swift in Sources */,
+				E1000003229A0001000E0001 /* CreateWorktreeViewModel.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -55,6 +55,8 @@ struct Theme {
     static let warningMuted = Color(hex: "#EAB308").opacity(0.15)
     static let error = Color(hex: "#EF4444")
     static let errorMuted = Color(hex: "#EF4444").opacity(0.15)
+    static let purple = Color(hex: "#BF5AF2")
+    static let purpleMuted = Color(hex: "#BF5AF2").opacity(0.15)
 
     // Text hierarchy
     static let textPrimary = Color(hex: "#F1F5F9")

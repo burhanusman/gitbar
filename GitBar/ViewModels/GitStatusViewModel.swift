@@ -17,6 +17,7 @@ class GitStatusViewModel: ObservableObject {
     @Published var isPulling = false
     @Published var syncResult: SyncResult?
     @Published var isAutoRefreshEnabled = true
+    @Published var activeWorktreePath: String?
 
     enum CommitResult {
         case success
@@ -139,6 +140,7 @@ class GitStatusViewModel: ObservableObject {
     }
 
     func switchToWorktree(at path: String) {
+        activeWorktreePath = path
         loadStatus(for: path)
     }
 

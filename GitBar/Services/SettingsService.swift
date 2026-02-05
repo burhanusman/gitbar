@@ -34,6 +34,8 @@ final class SettingsService {
     private let repoFoldersKey = "repoFolders"
     private let lastSelectedProjectPathKey = "lastSelectedProjectPath"
     private let projectSortModeKey = "projectSortMode"
+    private let worktreeAgentLabelsKey = "worktreeAgentLabels"
+    private let lastSelectedWorktreePathKey = "lastSelectedWorktreePath"
     private let defaults = UserDefaults.standard
 
     private init() {}
@@ -109,6 +111,40 @@ final class SettingsService {
         var folders = repoFolders
         folders.removeAll { $0 == normalized }
         repoFolders = folders
+    }
+
+    // MARK: - Worktree Settings
+
+    /// Agent labels keyed by worktree path
+    var worktreeAgentLabels: [String: String] {
+        get {
+            defaults.dictionary(forKey: worktreeAgentLabelsKey) as? [String: String] ?? [:]
+        }
+        set {
+            defaults.set(newValue, forKey: worktreeAgentLabelsKey)
+        }
+    }
+
+    /// Sets an agent label for a worktree path
+    func setAgentLabel(_ label: String?, forWorktreePath path: String) {
+        var labels = worktreeAgentLabels
+        labels[path] = label
+        worktreeAgentLabels = labels
+    }
+
+    /// Gets the agent label for a worktree path
+    func agentLabel(forWorktreePath path: String) -> String? {
+        worktreeAgentLabels[path]
+    }
+
+    /// Last selected worktree path (for restoring selection on app launch)
+    var lastSelectedWorktreePath: String? {
+        get {
+            defaults.string(forKey: lastSelectedWorktreePathKey)
+        }
+        set {
+            defaults.set(newValue, forKey: lastSelectedWorktreePathKey)
+        }
     }
 
     /// Updates the SMAppService login item registration

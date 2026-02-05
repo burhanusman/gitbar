@@ -3,7 +3,12 @@ import SwiftUI
 /// View for browsing markdown files in a repository
 struct MarkdownBrowserView: View {
     let project: Project
+    var worktreePath: String? = nil
     @StateObject private var viewModel = MarkdownBrowserViewModel()
+
+    private var effectivePath: String {
+        worktreePath ?? project.path
+    }
     @State private var selectedFileForEditing: FileNode?
 
     var body: some View {
@@ -30,13 +35,16 @@ struct MarkdownBrowserView: View {
         }
         .background(Theme.background)
         .onAppear {
-            viewModel.loadMarkdownFiles(at: project.path)
+            viewModel.loadMarkdownFiles(at: effectivePath)
         }
-        .onChange(of: project.path) { newPath in
-            viewModel.loadMarkdownFiles(at: newPath)
+        .onChange(of: project.path) { _ in
+            viewModel.loadMarkdownFiles(at: effectivePath)
+        }
+        .onChange(of: worktreePath) { _ in
+            viewModel.loadMarkdownFiles(at: effectivePath)
         }
         .sheet(item: $selectedFileForEditing) { file in
-            FileEditorView(filePath: file.path, repoPath: project.path, initialMode: .preview)
+            FileEditorView(filePath: file.path, repoPath: effectivePath, initialMode: .preview)
         }
     }
 

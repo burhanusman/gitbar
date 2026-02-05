@@ -4,7 +4,12 @@ import AppKit
 /// Git Tree visualization showing commit history with graph
 struct GitTreeView: View {
     let project: Project
+    var worktreePath: String? = nil
     @StateObject private var viewModel = GitTreeViewModel()
+
+    private var effectivePath: String {
+        worktreePath ?? project.path
+    }
     @State private var showCopiedFeedback = false
     @State private var copiedCommitId: String?
 
@@ -36,10 +41,13 @@ struct GitTreeView: View {
         }
         .background(Theme.background)
         .onAppear {
-            viewModel.loadCommits(for: project.path)
+            viewModel.loadCommits(for: effectivePath)
         }
-        .onChange(of: project.path) { newPath in
-            viewModel.loadCommits(for: newPath)
+        .onChange(of: project.path) { _ in
+            viewModel.loadCommits(for: effectivePath)
+        }
+        .onChange(of: worktreePath) { _ in
+            viewModel.loadCommits(for: effectivePath)
         }
     }
 
