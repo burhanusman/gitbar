@@ -6,6 +6,7 @@ enum DetailTab: String, CaseIterable {
     case history = "History"
     case files = "Files"
     case mdFiles = ".md Files"
+    case tickets = "Tickets"
 }
 
 struct ContentView: View {
@@ -41,15 +42,24 @@ struct ContentView: View {
                                 DetailTabBar(selectedTab: $selectedTab)
 
                                 // Content based on selected tab
+                                // Use .id() to force view recreation when project/worktree changes, ensuring fresh view model state
+                                let viewId = "\(selectedProject.id)-\(activePath ?? "")"
                                 switch selectedTab {
                                 case .changes:
                                     GitStatusView(project: selectedProject, worktreePath: activePath)
+                                        .id(viewId)
                                 case .history:
                                     GitTreeView(project: selectedProject, worktreePath: activePath)
+                                        .id(viewId)
                                 case .files:
                                     FileBrowserView(project: selectedProject, worktreePath: activePath)
+                                        .id(viewId)
                                 case .mdFiles:
                                     MarkdownBrowserView(project: selectedProject, worktreePath: activePath)
+                                        .id(viewId)
+                                case .tickets:
+                                    TicketsView(project: selectedProject, worktreePath: activePath)
+                                        .id(viewId)
                                 }
                             }
                         } else {
@@ -195,28 +205,30 @@ struct DetailTabBar: View {
             return "folder"
         case .mdFiles:
             return "doc.richtext"
+        case .tickets:
+            return "ticket"
         }
     }
 
     var body: some View {
-        HStack(spacing: Theme.space1) {
-            ForEach(DetailTab.allCases, id: \.self) { tab in
-                TabButton(
-                    title: tab.rawValue,
-                    icon: iconForTab(tab),
-                    isSelected: selectedTab == tab,
-                    action: {
-                        withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
-                            selectedTab = tab
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 2) {
+                ForEach(DetailTab.allCases, id: \.self) { tab in
+                    TabButton(
+                        title: tab.rawValue,
+                        icon: iconForTab(tab),
+                        isSelected: selectedTab == tab,
+                        action: {
+                            withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
+                                selectedTab = tab
+                            }
                         }
-                    }
-                )
+                    )
+                }
             }
-
-            Spacer()
+            .padding(.horizontal, Theme.space3)
+            .padding(.vertical, Theme.space2)
         }
-        .padding(.horizontal, Theme.space4)
-        .padding(.vertical, Theme.space2)
         .background(Theme.surfaceElevated)
     }
 }
@@ -231,16 +243,18 @@ struct TabButton: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: Theme.space2) {
+            HStack(spacing: 4) {
                 Image(systemName: icon)
-                    .font(.system(size: 11, weight: isSelected ? .semibold : .medium))
+                    .font(.system(size: 10, weight: isSelected ? .semibold : .medium))
 
                 Text(title)
-                    .font(.system(size: Theme.fontSM, weight: isSelected ? .semibold : .medium))
+                    .font(.system(size: Theme.fontXS, weight: isSelected ? .semibold : .medium))
+                    .lineLimit(1)
+                    .fixedSize(horizontal: true, vertical: false)
             }
             .foregroundColor(isSelected ? Theme.accent : (isHovered ? Theme.textSecondary : Theme.textTertiary))
-            .padding(.horizontal, Theme.space3)
-            .padding(.vertical, Theme.space2)
+            .padding(.horizontal, Theme.space2)
+            .padding(.vertical, 6)
             .background(
                 RoundedRectangle(cornerRadius: Theme.radiusSmall)
                     .fill(isSelected ? Theme.accentMuted : (isHovered ? Theme.surfaceHover : .clear))

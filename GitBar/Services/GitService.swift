@@ -428,6 +428,12 @@ actor GitService {
         _ = try await runGitCommand(["pull"], at: repoPath)
     }
 
+    /// Fetches changes from the remote repository
+    func fetch(at repoPath: String) async throws {
+        try validateGitRepository(at: repoPath)
+        _ = try await runGitCommand(["fetch", "--all", "--prune"], at: repoPath)
+    }
+
     /// Restores a file (discards changes) using git restore
     func restoreFile(_ filePath: String, at repoPath: String) async throws {
         try validateGitRepository(at: repoPath)
@@ -435,8 +441,19 @@ actor GitService {
     }
 
     /// Gets the diff for a file
-    func getDiff(for filePath: String, at repoPath: String, staged: Bool = false) async throws -> String {
+    func getDiff(for filePath: String, at repoPath: String, staged: Bool = false, isUntracked: Bool = false) async throws -> String {
         try validateGitRepository(at: repoPath)
+
+        // For untracked files, use --no-index to show full file as additions
+        if isUntracked {
+            let fullPath = (repoPath as NSString).appendingPathComponent(filePath)
+            // git diff --no-index /dev/null <file> shows file as all additions
+            let args = ["diff", "--no-index", "/dev/null", fullPath]
+            // This command returns exit code 1 when there are differences (which is expected)
+            // so we need to handle that specially
+            return try await runGitCommandAllowingNonZero(args, at: repoPath, allowedExitCodes: [0, 1])
+        }
+
         var args = ["diff"]
         if staged {
             args.append("--cached")
@@ -599,6 +616,40 @@ actor GitService {
             process.waitUntilExit()
 
             if process.terminationStatus != 0 {
+                let errorData = errorPipe.fileHandleForReading.readDataToEndOfFile()
+                let errorMessage = String(data: errorData, encoding: .utf8) ?? "Unknown error"
+                continuation.resume(throwing: GitError.commandFailed(errorMessage.trimmingCharacters(in: .whitespacesAndNewlines)))
+                return
+            }
+
+            let outputData = outputPipe.fileHandleForReading.readDataToEndOfFile()
+            let output = String(data: outputData, encoding: .utf8) ?? ""
+            continuation.resume(returning: output)
+        }
+    }
+
+    /// Runs a Git command allowing specific non-zero exit codes (for commands like diff --no-index)
+    private func runGitCommandAllowingNonZero(_ arguments: [String], at path: String, allowedExitCodes: Set<Int32>) async throws -> String {
+        return try await withCheckedThrowingContinuation { continuation in
+            let process = Process()
+            process.executableURL = URL(fileURLWithPath: gitPath)
+            process.arguments = ["-C", path] + arguments
+
+            let outputPipe = Pipe()
+            let errorPipe = Pipe()
+            process.standardOutput = outputPipe
+            process.standardError = errorPipe
+
+            do {
+                try process.run()
+            } catch {
+                continuation.resume(throwing: GitError.commandFailed(error.localizedDescription))
+                return
+            }
+
+            process.waitUntilExit()
+
+            if !allowedExitCodes.contains(process.terminationStatus) {
                 let errorData = errorPipe.fileHandleForReading.readDataToEndOfFile()
                 let errorMessage = String(data: errorData, encoding: .utf8) ?? "Unknown error"
                 continuation.resume(throwing: GitError.commandFailed(errorMessage.trimmingCharacters(in: .whitespacesAndNewlines)))

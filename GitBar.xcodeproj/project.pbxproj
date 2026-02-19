@@ -41,6 +41,12 @@
 		C1000005229A0001000C0001 /* MarkdownPreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1000006229A0001000C0001 /* MarkdownPreviewView.swift */; };
 		E1000001229A0001000E0001 /* CreateWorktreeSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1000002229A0001000E0001 /* CreateWorktreeSheet.swift */; };
 		E1000003229A0001000E0001 /* CreateWorktreeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1000004229A0001000E0001 /* CreateWorktreeViewModel.swift */; };
+		F1000001229A0001000F0001 /* Ticket.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1000002229A0001000F0001 /* Ticket.swift */; };
+		F1000003229A0001000F0001 /* TicketService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1000004229A0001000F0001 /* TicketService.swift */; };
+		F1000005229A0001000F0001 /* TicketsBrowserViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1000006229A0001000F0001 /* TicketsBrowserViewModel.swift */; };
+		F1000007229A0001000F0001 /* TicketsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1000008229A0001000F0001 /* TicketsView.swift */; };
+		F1000009229A0001000F0001 /* TicketEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F100000A229A0001000F0001 /* TicketEditorView.swift */; };
+		F100000B229A0001000F0001 /* TicketRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F100000C229A0001000F0001 /* TicketRowView.swift */; };
 	/* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -80,6 +86,12 @@
 		C1000006229A0001000C0001 /* MarkdownPreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownPreviewView.swift; sourceTree = "<group>"; };
 		E1000002229A0001000E0001 /* CreateWorktreeSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateWorktreeSheet.swift; sourceTree = "<group>"; };
 		E1000004229A0001000E0001 /* CreateWorktreeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateWorktreeViewModel.swift; sourceTree = "<group>"; };
+		F1000002229A0001000F0001 /* Ticket.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Ticket.swift; sourceTree = "<group>"; };
+		F1000004229A0001000F0001 /* TicketService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TicketService.swift; sourceTree = "<group>"; };
+		F1000006229A0001000F0001 /* TicketsBrowserViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TicketsBrowserViewModel.swift; sourceTree = "<group>"; };
+		F1000008229A0001000F0001 /* TicketsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TicketsView.swift; sourceTree = "<group>"; };
+		F100000A229A0001000F0001 /* TicketEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TicketEditorView.swift; sourceTree = "<group>"; };
+		F100000C229A0001000F0001 /* TicketRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TicketRowView.swift; sourceTree = "<group>"; };
 	/* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -141,6 +153,9 @@
 				B100000E229A0001000B0001 /* FileEditorView.swift */,
 				C1000006229A0001000C0001 /* MarkdownPreviewView.swift */,
 				E1000002229A0001000E0001 /* CreateWorktreeSheet.swift */,
+				F1000008229A0001000F0001 /* TicketsView.swift */,
+				F100000A229A0001000F0001 /* TicketEditorView.swift */,
+				F100000C229A0001000F0001 /* TicketRowView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -150,6 +165,7 @@
 			children = (
 				A100000B229A0001000A0001 /* Project.swift */,
 				B1000002229A0001000B0001 /* FileNode.swift */,
+				F1000002229A0001000F0001 /* Ticket.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -165,6 +181,7 @@
 				B100001C229A0001000B0001 /* MarkdownBrowserViewModel.swift */,
 				B1000008229A0001000B0001 /* FileEditorViewModel.swift */,
 				E1000004229A0001000E0001 /* CreateWorktreeViewModel.swift */,
+				F1000006229A0001000F0001 /* TicketsBrowserViewModel.swift */,
 			);
 			path = ViewModels;
 			sourceTree = "<group>";
@@ -180,6 +197,7 @@
 				B1000004229A0001000B0001 /* FileService.swift */,
 				C1000002229A0001000C0001 /* SyntaxHighlightService.swift */,
 				C1000004229A0001000C0001 /* MarkdownParser.swift */,
+				F1000004229A0001000F0001 /* TicketService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -307,6 +325,12 @@ A1000003229A0001000A0001 /* ContentView.swift in Sources */,
 				C1000005229A0001000C0001 /* MarkdownPreviewView.swift in Sources */,
 				E1000001229A0001000E0001 /* CreateWorktreeSheet.swift in Sources */,
 				E1000003229A0001000E0001 /* CreateWorktreeViewModel.swift in Sources */,
+				F1000001229A0001000F0001 /* Ticket.swift in Sources */,
+				F1000003229A0001000F0001 /* TicketService.swift in Sources */,
+				F1000005229A0001000F0001 /* TicketsBrowserViewModel.swift in Sources */,
+				F1000007229A0001000F0001 /* TicketsView.swift in Sources */,
+				F1000009229A0001000F0001 /* TicketEditorView.swift in Sources */,
+				F100000B229A0001000F0001 /* TicketRowView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

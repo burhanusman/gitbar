@@ -15,6 +15,7 @@ class GitStatusViewModel: ObservableObject {
     @Published var commitResult: CommitResult?
     @Published var isPushing = false
     @Published var isPulling = false
+    @Published var isFetching = false
     @Published var syncResult: SyncResult?
     @Published var isAutoRefreshEnabled = true
     @Published var activeWorktreePath: String?
@@ -27,6 +28,7 @@ class GitStatusViewModel: ObservableObject {
     enum SyncResult {
         case pushSuccess
         case pullSuccess
+        case fetchSuccess
         case failure(Error)
     }
 
@@ -189,10 +191,15 @@ class GitStatusViewModel: ObservableObject {
         return aheadBehind.ahead > 0 && !isPushing && !isPulling
     }
 
-    /// Whether the pull button should be enabled (behind remote)
+    /// Whether the pull button should be enabled (behind remote or can always pull)
     var canPull: Bool {
+        !isPushing && !isPulling && !isFetching
+    }
+
+    /// Whether there are changes to pull (behind remote)
+    var hasPendingPull: Bool {
         guard let aheadBehind = gitStatus?.aheadBehind else { return false }
-        return aheadBehind.behind > 0 && !isPushing && !isPulling
+        return aheadBehind.behind > 0
     }
 
     /// Commits staged changes with the current commit message
@@ -228,9 +235,9 @@ class GitStatusViewModel: ObservableObject {
     }
 
     /// Gets the diff for a file
-    func getDiff(for filePath: String, staged: Bool = false) async throws -> String {
+    func getDiff(for filePath: String, staged: Bool = false, isUntracked: Bool = false) async throws -> String {
         guard let path = projectPath else { throw GitError.notAGitRepository }
-        return try await gitService.getDiff(for: filePath, at: path, staged: staged)
+        return try await gitService.getDiff(for: filePath, at: path, staged: staged, isUntracked: isUntracked)
     }
 
     /// Pushes commits to remote
@@ -256,7 +263,7 @@ class GitStatusViewModel: ObservableObject {
     /// Pulls changes from remote
     func pull() {
         guard let path = projectPath else { return }
-        guard canPull else { return }
+        guard !isPulling && !isFetching else { return }
 
         isPulling = true
         syncResult = nil
@@ -270,6 +277,26 @@ class GitStatusViewModel: ObservableObject {
                 self.syncResult = .failure(error)
             }
             self.isPulling = false
+        }
+    }
+
+    /// Fetches changes from remote (updates remote tracking branches)
+    func fetch() {
+        guard let path = projectPath else { return }
+        guard !isFetching && !isPulling && !isPushing else { return }
+
+        isFetching = true
+        syncResult = nil
+
+        Task {
+            do {
+                try await gitService.fetch(at: path)
+                self.syncResult = .fetchSuccess
+                refresh()
+            } catch {
+                self.syncResult = .failure(error)
+            }
+            self.isFetching = false
         }
     }
 

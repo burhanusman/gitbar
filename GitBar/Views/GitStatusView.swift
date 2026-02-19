@@ -170,24 +170,8 @@ struct GitStatusView: View {
 
             Spacer()
 
-            // Actions
-            HStack(spacing: Theme.space2) {
-                ActionButton(
-                    icon: "arrow.down",
-                    label: "Pull",
-                    isLoading: viewModel.isPulling,
-                    isDisabled: !viewModel.canPull,
-                    action: { viewModel.pull() }
-                )
-
-                ActionButton(
-                    icon: "arrow.up",
-                    label: "Push",
-                    isLoading: viewModel.isPushing,
-                    isDisabled: !viewModel.canPush,
-                    action: { viewModel.push() }
-                )
-            }
+            // Actions - Sync menu
+            syncMenu
         }
         .animation(.easeOut(duration: Theme.animationFast), value: isBranchHovered)
         .animation(.easeOut(duration: Theme.animationFast), value: showCopiedFeedback)
@@ -275,6 +259,59 @@ struct GitStatusView: View {
         }
     }
 
+    // MARK: - Sync Menu
+
+    private var syncMenu: some View {
+        HStack(spacing: Theme.space2) {
+            // Fetch button
+            Button(action: { viewModel.fetch() }) {
+                ZStack {
+                    if viewModel.isFetching {
+                        ProgressView()
+                            .scaleEffect(0.5)
+                            .frame(width: 14, height: 14)
+                    } else {
+                        Image(systemName: "arrow.triangle.2.circlepath")
+                            .font(.system(size: 12, weight: .semibold))
+                    }
+                }
+                .frame(width: 32, height: 32)
+                .foregroundColor(viewModel.isFetching ? Theme.textMuted : Theme.textSecondary)
+                .background(Theme.surface)
+                .cornerRadius(Theme.radius)
+                .overlay(
+                    RoundedRectangle(cornerRadius: Theme.radius)
+                        .stroke(Theme.border, lineWidth: 1)
+                )
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .disabled(viewModel.isFetching || viewModel.isPulling || viewModel.isPushing)
+            .help("Fetch from remote")
+            .pointingHandCursor()
+
+            // Pull button with indicator
+            ActionButton(
+                icon: "arrow.down",
+                label: "Pull",
+                isLoading: viewModel.isPulling,
+                isDisabled: !viewModel.canPull,
+                showBadge: viewModel.hasPendingPull,
+                action: { viewModel.pull() }
+            )
+
+            // Push button with indicator
+            ActionButton(
+                icon: "arrow.up",
+                label: "Push",
+                isLoading: viewModel.isPushing,
+                isDisabled: !viewModel.canPush,
+                showBadge: viewModel.canPush,
+                action: { viewModel.push() }
+            )
+        }
+    }
+
     private func showDiff(for file: GitFileChange) {
         guard !isLoadingDiff else { return }
 
@@ -286,7 +323,8 @@ struct GitStatusView: View {
             do {
                 let diff = try await viewModel.getDiff(
                     for: file.path,
-                    staged: file.isStaged
+                    staged: file.isStaged,
+                    isUntracked: file.status == .untracked
                 )
                 await MainActor.run {
                     self.diffContent = diff
@@ -314,7 +352,7 @@ struct GitStatusView: View {
                         files: viewModel.stagedFiles,
                         accentColor: Theme.success,
                         onUnstage: { viewModel.unstageFile($0) },
-                        onEdit: { fileToEdit = (project.path as NSString).appendingPathComponent($0) },
+                        onEdit: { fileToEdit = (effectivePath as NSString).appendingPathComponent($0) },
                         onUnstageAll: { viewModel.unstageAll() },
                         onFileClick: { showDiff(for: $0) }
                     )
@@ -329,7 +367,7 @@ struct GitStatusView: View {
                         accentColor: Theme.warning,
                         onStage: { viewModel.stageFile($0) },
                         onDiscard: { fileToDiscard = $0 },
-                        onEdit: { fileToEdit = (project.path as NSString).appendingPathComponent($0) },
+                        onEdit: { fileToEdit = (effectivePath as NSString).appendingPathComponent($0) },
                         onStageAll: { viewModel.stageAll() },
                         onDiscardAll: { showDiscardAllConfirmation = true },
                         onFileClick: { showDiff(for: $0) }
@@ -344,7 +382,7 @@ struct GitStatusView: View {
                         files: viewModel.untrackedFiles,
                         accentColor: Theme.textTertiary,
                         onStage: { viewModel.stageFile($0) },
-                        onEdit: { fileToEdit = (project.path as NSString).appendingPathComponent($0) },
+                        onEdit: { fileToEdit = (effectivePath as NSString).appendingPathComponent($0) },
                         onStageAll: { viewModel.stageAll() },
                         onFileClick: { showDiff(for: $0) }
                     )
@@ -436,6 +474,7 @@ struct ActionButton: View {
     let label: String
     let isLoading: Bool
     let isDisabled: Bool
+    var showBadge: Bool = false
     let action: () -> Void
 
     @State private var isHovered = false
@@ -460,6 +499,15 @@ struct ActionButton: View {
                 RoundedRectangle(cornerRadius: Theme.radius)
                     .stroke(borderColor, lineWidth: 1)
             )
+            .overlay(alignment: .topTrailing) {
+                // Badge indicator for pending changes
+                if showBadge && !isLoading {
+                    Circle()
+                        .fill(Theme.accent)
+                        .frame(width: 8, height: 8)
+                        .offset(x: 2, y: -2)
+                }
+            }
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -472,7 +520,7 @@ struct ActionButton: View {
 
     private var foregroundColor: Color {
         if isDisabled { return Theme.textMuted }
-        if isHovered { return .white }
+        if showBadge || isHovered { return isHovered ? .white : Theme.accent }
         return Theme.textSecondary
     }
 
@@ -484,6 +532,7 @@ struct ActionButton: View {
 
     private var borderColor: Color {
         if isDisabled { return Theme.borderSubtle }
+        if showBadge { return Theme.accent.opacity(0.5) }
         if isHovered { return Theme.accent }
         return Theme.border
     }
