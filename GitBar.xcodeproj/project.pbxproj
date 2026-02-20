@@ -47,6 +47,7 @@
 		F1000007229A0001000F0001 /* TicketsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1000008229A0001000F0001 /* TicketsView.swift */; };
 		F1000009229A0001000F0001 /* TicketEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F100000A229A0001000F0001 /* TicketEditorView.swift */; };
 		F100000B229A0001000F0001 /* TicketRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F100000C229A0001000F0001 /* TicketRowView.swift */; };
+		G1000001229A0001000G0001 /* ClaudeDetectionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = G1000002229A0001000G0001 /* ClaudeDetectionService.swift */; };
 	/* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -92,6 +93,7 @@
 		F1000008229A0001000F0001 /* TicketsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TicketsView.swift; sourceTree = "<group>"; };
 		F100000A229A0001000F0001 /* TicketEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TicketEditorView.swift; sourceTree = "<group>"; };
 		F100000C229A0001000F0001 /* TicketRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TicketRowView.swift; sourceTree = "<group>"; };
+		G1000002229A0001000G0001 /* ClaudeDetectionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaudeDetectionService.swift; sourceTree = "<group>"; };
 	/* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -190,6 +192,7 @@
 			isa = PBXGroup;
 			children = (
 				A1000009229A0001000A0001 /* ClaudeProjectDiscoveryService.swift */,
+				G1000002229A0001000G0001 /* ClaudeDetectionService.swift */,
 				A1000011229A0001000A0002 /* GitService.swift */,
 				A1000017229A0001000A0005 /* SettingsService.swift */,
 				A100001F229A0001000A0009 /* SparkleUpdateService.swift */,
@@ -331,6 +334,7 @@ A1000003229A0001000A0001 /* ContentView.swift in Sources */,
 				F1000007229A0001000F0001 /* TicketsView.swift in Sources */,
 				F1000009229A0001000F0001 /* TicketEditorView.swift in Sources */,
 				F100000B229A0001000F0001 /* TicketRowView.swift in Sources */,
+				G1000001229A0001000G0001 /* ClaudeDetectionService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

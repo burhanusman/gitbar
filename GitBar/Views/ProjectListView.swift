@@ -452,6 +452,11 @@ struct ProjectRow: View {
                     .foregroundColor(textColor)
                     .lineLimit(1)
 
+                // Claude activity badge
+                if project.isClaudeActive {
+                    ClaudeActivityBadge()
+                }
+
                 Spacer()
 
                 // Worktree count badge + chevron (only when project has worktrees)
@@ -661,6 +666,41 @@ struct ScaleButtonStyle: ButtonStyle {
         configuration.label
             .scaleEffect(configuration.isPressed ? 0.92 : 1.0)
             .animation(.easeOut(duration: 0.1), value: configuration.isPressed)
+    }
+}
+
+// MARK: - Claude Activity Badge
+
+struct ClaudeActivityBadge: View {
+    @State private var isPulsing = false
+
+    /// Amber/orange color for active state
+    private let activeColor = Color(hex: "#F59E0B")
+
+    var body: some View {
+        HStack(spacing: 3) {
+            Circle()
+                .fill(activeColor)
+                .frame(width: 5, height: 5)
+                .shadow(color: activeColor.opacity(isPulsing ? 0.6 : 0.3), radius: isPulsing ? 4 : 2)
+
+            Image(systemName: "brain.head.profile")
+                .font(.system(size: 9, weight: .medium))
+                .foregroundColor(activeColor)
+        }
+        .padding(.horizontal, 5)
+        .padding(.vertical, 3)
+        .background(activeColor.opacity(0.12))
+        .cornerRadius(4)
+        .onAppear {
+            withAnimation(
+                .easeInOut(duration: 1.2)
+                .repeatForever(autoreverses: true)
+            ) {
+                isPulsing = true
+            }
+        }
+        .help("Claude Code is active on this project")
     }
 }
 

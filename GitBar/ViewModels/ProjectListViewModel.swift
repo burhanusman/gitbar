@@ -21,17 +21,24 @@ class ProjectListViewModel: ObservableObject {
 
     private let discoveryService: ClaudeProjectDiscoveryService
     private let gitService: GitService
+    private let claudeDetectionService: ClaudeDetectionService
     private var autoRefreshTask: Task<Void, Never>?
+    private var claudeDetectionTask: Task<Void, Never>?
     private var loadProjectsTask: Task<Void, Never>?
     private var cancellables: Set<AnyCancellable> = []
 
     /// Refresh interval for all project indicators (60 seconds)
     private let autoRefreshInterval: TimeInterval = 60
 
+    /// Refresh interval for Claude activity detection (30 seconds)
+    private let claudeDetectionInterval: TimeInterval = 30
+
     init(discoveryService: ClaudeProjectDiscoveryService = ClaudeProjectDiscoveryService(),
-         gitService: GitService = GitService()) {
+         gitService: GitService = GitService(),
+         claudeDetectionService: ClaudeDetectionService = ClaudeDetectionService()) {
         self.discoveryService = discoveryService
         self.gitService = gitService
+        self.claudeDetectionService = claudeDetectionService
 
         NotificationCenter.default.publisher(for: .repoFoldersDidChange)
             .receive(on: RunLoop.main)
@@ -486,12 +493,54 @@ class ProjectListViewModel: ObservableObject {
                 await refreshStatusSilently()
             }
         }
+
+        // Start Claude activity detection on a separate timer
+        startClaudeDetection()
     }
 
     /// Stops the auto-refresh timer
     func stopAutoRefresh() {
         autoRefreshTask?.cancel()
         autoRefreshTask = nil
+        stopClaudeDetection()
+    }
+
+    // MARK: - Claude Activity Detection
+
+    /// Starts the Claude activity detection timer
+    private func startClaudeDetection() {
+        stopClaudeDetection()
+
+        // Immediately check on start
+        Task {
+            await refreshClaudeActivity()
+        }
+
+        claudeDetectionTask = Task {
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: UInt64(claudeDetectionInterval * 1_000_000_000))
+                guard !Task.isCancelled else { break }
+                await refreshClaudeActivity()
+            }
+        }
+    }
+
+    /// Stops the Claude activity detection timer
+    private func stopClaudeDetection() {
+        claudeDetectionTask?.cancel()
+        claudeDetectionTask = nil
+    }
+
+    /// Refreshes Claude activity status for all projects
+    func refreshClaudeActivity() async {
+        let activeProjects = await claudeDetectionService.getActiveClaudeProjects()
+
+        for sectionIndex in sections.indices {
+            for projectIndex in sections[sectionIndex].projects.indices {
+                let path = sections[sectionIndex].projects[projectIndex].path
+                sections[sectionIndex].projects[projectIndex].isClaudeActive = activeProjects.contains(path)
+            }
+        }
     }
 
     /// Refreshes status for all projects without disrupting user interaction.
@@ -537,6 +586,7 @@ class ProjectListViewModel: ObservableObject {
 
     deinit {
         autoRefreshTask?.cancel()
+        claudeDetectionTask?.cancel()
         loadProjectsTask?.cancel()
     }
 }

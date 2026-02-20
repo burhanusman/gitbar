@@ -63,12 +63,13 @@ struct Project: Identifiable, Equatable {
     var lastActivityDate: Date?
     var worktrees: [WorktreeInfo]
     var activeWorktreePath: String?
+    var isClaudeActive: Bool
 
     var hasWorktrees: Bool {
         worktrees.count > 1
     }
 
-    init(name: String, path: String, source: ProjectSource = .folder, hasUncommittedChanges: Bool = false, commitActivity: CommitActivity = .empty, lastActivityDate: Date? = nil, worktrees: [WorktreeInfo] = [], activeWorktreePath: String? = nil) {
+    init(name: String, path: String, source: ProjectSource = .folder, hasUncommittedChanges: Bool = false, commitActivity: CommitActivity = .empty, lastActivityDate: Date? = nil, worktrees: [WorktreeInfo] = [], activeWorktreePath: String? = nil, isClaudeActive: Bool = false) {
         self.id = path
         self.name = name
         self.path = path
@@ -78,10 +79,11 @@ struct Project: Identifiable, Equatable {
         self.lastActivityDate = lastActivityDate
         self.worktrees = worktrees
         self.activeWorktreePath = activeWorktreePath
+        self.isClaudeActive = isClaudeActive
     }
 
     /// Creates a Project from a ClaudeProject (works for both Claude and Codex)
-    init(from claudeProject: ClaudeProjectDiscoveryService.ClaudeProject, hasUncommittedChanges: Bool = false, commitActivity: CommitActivity = .empty, lastActivityDate: Date? = nil) {
+    init(from claudeProject: ClaudeProjectDiscoveryService.ClaudeProject, hasUncommittedChanges: Bool = false, commitActivity: CommitActivity = .empty, lastActivityDate: Date? = nil, isClaudeActive: Bool = false) {
         self.id = claudeProject.path
         self.name = claudeProject.name
         self.path = claudeProject.path
@@ -91,5 +93,6 @@ struct Project: Identifiable, Equatable {
         self.lastActivityDate = lastActivityDate
         self.worktrees = []
         self.activeWorktreePath = nil
+        self.isClaudeActive = isClaudeActive
     }
 }
