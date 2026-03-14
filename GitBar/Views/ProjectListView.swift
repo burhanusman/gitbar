@@ -150,6 +150,7 @@ struct ProjectListView: View {
             TextField("Search...", text: $searchText)
                 .textFieldStyle(.plain)
                 .font(.system(size: Theme.fontBase))
+                .foregroundColor(Theme.textPrimary)
                 .focused($isSearchFocused)
 
             if !searchText.isEmpty {

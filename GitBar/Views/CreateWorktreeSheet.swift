@@ -59,6 +59,7 @@ struct CreateWorktreeSheet: View {
                     TextField("feature/my-branch", text: $viewModel.branchName)
                         .textFieldStyle(.plain)
                         .font(.system(size: Theme.fontBase))
+                        .foregroundColor(Theme.textPrimary)
                         .padding(.horizontal, Theme.space3)
                         .padding(.vertical, Theme.space3)
                         .background(Theme.surface)

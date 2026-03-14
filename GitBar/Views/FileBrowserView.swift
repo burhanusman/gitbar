@@ -63,6 +63,22 @@ struct FileBrowserView: View {
 
             Spacer()
 
+            // Toggle hidden files button
+            Button(action: {
+                viewModel.toggleHiddenFiles()
+            }) {
+                Image(systemName: viewModel.showHiddenFiles ? "eye" : "eye.slash")
+                    .font(.system(size: Theme.fontSM, weight: .medium))
+                    .foregroundColor(viewModel.showHiddenFiles ? Theme.accent : Theme.textMuted)
+                    .frame(width: 24, height: 24)
+                    .background(Theme.surface)
+                    .cornerRadius(Theme.radiusSmall)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(ScaleButtonStyle())
+            .help(viewModel.showHiddenFiles ? "Hide dotfiles" : "Show dotfiles")
+            .pointingHandCursor()
+
             // Refresh button
             Button(action: {
                 viewModel.refresh()

@@ -210,6 +210,90 @@ struct SettingsView: View {
                         }
                     }
 
+                    // API Keys Section
+                    sectionContainer(title: "API KEYS") {
+                        VStack(spacing: 0) {
+                            // Header with description
+                            HStack {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("OpenAI API Key")
+                                        .font(.system(size: 13, weight: .medium))
+                                        .foregroundColor(Theme.textPrimary)
+                                    Text("Required for voice tickets and AI commit messages")
+                                        .font(.system(size: 12))
+                                        .foregroundColor(Theme.textTertiary)
+                                }
+                                Spacer()
+                            }
+                            .padding(16)
+
+                            Divider().overlay(Theme.border)
+
+                            if viewModel.isAPIKeySaved {
+                                // Key is saved - show status and remove button
+                                HStack {
+                                    HStack(spacing: 8) {
+                                        Image(systemName: "checkmark.circle.fill")
+                                            .font(.system(size: 14))
+                                            .foregroundColor(Theme.success)
+                                        Text("API key saved securely in Keychain")
+                                            .font(.system(size: 13))
+                                            .foregroundColor(Theme.textSecondary)
+                                    }
+
+                                    Spacer()
+
+                                    Button(action: { viewModel.removeOpenAIAPIKey() }) {
+                                        Text("Remove")
+                                            .font(.system(size: 12, weight: .medium))
+                                            .foregroundColor(Theme.error)
+                                    }
+                                    .buttonStyle(.plain)
+                                    .pointingHandCursor()
+                                }
+                                .padding(16)
+                            } else {
+                                // Key not saved - show input field
+                                VStack(spacing: 12) {
+                                    SecureField("sk-...", text: $viewModel.openAIAPIKey)
+                                        .textFieldStyle(.plain)
+                                        .font(.system(size: 13))
+                                        .padding(12)
+                                        .background(Theme.surfaceHover)
+                                        .cornerRadius(6)
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 6)
+                                                .stroke(Theme.border, lineWidth: 1)
+                                        )
+
+                                    HStack {
+                                        if let error = viewModel.apiKeyError {
+                                            Text(error)
+                                                .font(.system(size: 11))
+                                                .foregroundColor(Theme.error)
+                                        }
+
+                                        Spacer()
+
+                                        Button(action: { viewModel.saveOpenAIAPIKey() }) {
+                                            Text("Save Key")
+                                                .font(.system(size: 12, weight: .semibold))
+                                                .foregroundColor(.white)
+                                                .padding(.horizontal, 12)
+                                                .padding(.vertical, 6)
+                                                .background(viewModel.openAIAPIKey.isEmpty ? Theme.accent.opacity(0.5) : Theme.accent)
+                                                .cornerRadius(6)
+                                        }
+                                        .buttonStyle(.plain)
+                                        .disabled(viewModel.openAIAPIKey.isEmpty)
+                                        .pointingHandCursor()
+                                    }
+                                }
+                                .padding(16)
+                            }
+                        }
+                    }
+
                     // About Section
                     sectionContainer(title: "ABOUT") {
                         VStack(spacing: 0) {

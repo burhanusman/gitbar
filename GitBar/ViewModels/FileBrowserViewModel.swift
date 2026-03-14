@@ -12,6 +12,7 @@ class FileBrowserViewModel: ObservableObject {
     @Published var selectedFile: FileNode?
     @Published var isLoading = false
     @Published var error: Error?
+    @Published var showHiddenFiles = true
 
     private let fileService = FileService()
     private var repoPath: String?
@@ -27,7 +28,7 @@ class FileBrowserViewModel: ObservableObject {
         Task {
             do {
                 logger.debug("📁 listDirectory calling FileService...")
-                let nodes = try await fileService.listDirectory(at: path)
+                let nodes = try await fileService.listDirectory(at: path, includeHidden: showHiddenFiles)
                 logger.debug("📁 listDirectory returned \(nodes.count) nodes")
                 self.rootNode = FileNode(
                     name: (path as NSString).lastPathComponent,
@@ -49,6 +50,12 @@ class FileBrowserViewModel: ObservableObject {
     func refresh() {
         guard let path = repoPath else { return }
         loadDirectory(at: path)
+    }
+
+    /// Toggles visibility of hidden files and refreshes
+    func toggleHiddenFiles() {
+        showHiddenFiles.toggle()
+        refresh()
     }
 
     /// Toggles the expansion state of a directory node
@@ -80,7 +87,7 @@ class FileBrowserViewModel: ObservableObject {
     private func loadChildren(for path: String) {
         Task {
             do {
-                let children = try await fileService.listDirectory(at: path)
+                let children = try await fileService.listDirectory(at: path, includeHidden: showHiddenFiles)
                 await updateChildren(for: path, with: children)
             } catch {
                 self.error = error

@@ -179,19 +179,34 @@ struct GitStatusView: View {
 
     private var branchMenu: some View {
         Menu {
-            if viewModel.branches.isEmpty {
-                Text("No local branches")
-                    .foregroundColor(Theme.textTertiary)
-            } else {
-                ForEach(viewModel.branches, id: \.self) { branch in
-                    Button(action: { viewModel.checkoutBranch(branch) }) {
-                        if branch == viewModel.gitStatus?.currentBranch {
-                            Label(branch, systemImage: "checkmark")
-                        } else {
-                            Text(branch)
+            // Local branches section
+            Section("Local") {
+                if viewModel.branches.isEmpty {
+                    Text("No local branches")
+                        .foregroundColor(Theme.textTertiary)
+                } else {
+                    ForEach(viewModel.branches, id: \.self) { branch in
+                        Button(action: { viewModel.checkoutBranch(branch) }) {
+                            if branch == viewModel.gitStatus?.currentBranch {
+                                Label(branch, systemImage: "checkmark")
+                            } else {
+                                Text(branch)
+                            }
                         }
+                        .disabled(viewModel.isSwitchingBranch)
                     }
-                    .disabled(viewModel.isSwitchingBranch)
+                }
+            }
+
+            // Remote branches section (only branches not yet checked out locally)
+            if !viewModel.remoteBranches.isEmpty {
+                Section("Remote") {
+                    ForEach(viewModel.remoteBranches, id: \.self) { branch in
+                        Button(action: { viewModel.checkoutRemoteBranch(branch) }) {
+                            Label(branch, systemImage: "arrow.down.circle")
+                        }
+                        .disabled(viewModel.isSwitchingBranch)
+                    }
                 }
             }
 
@@ -393,7 +408,10 @@ struct GitStatusView: View {
                     message: $viewModel.commitMessage,
                     isCommitting: viewModel.isCommitting,
                     canCommit: viewModel.canCommit,
-                    commitAction: { viewModel.commit() }
+                    commitAction: { viewModel.commit() },
+                    hasStagedChanges: !viewModel.stagedFiles.isEmpty,
+                    generateAction: { await viewModel.generateCommitMessage() },
+                    projectPath: effectivePath
                 )
                 .padding(.top, Theme.space2)
             }
@@ -794,8 +812,23 @@ struct CommitBox: View {
     let isCommitting: Bool
     let canCommit: Bool
     let commitAction: () -> Void
+    let hasStagedChanges: Bool
+    let generateAction: () async -> Void
+    let projectPath: String
 
     @FocusState private var isFocused: Bool
+    @State private var isGenerating = false
+    @State private var generationError: String?
+    @StateObject private var audioService = AudioRecordingService()
+    @State private var isTranscribing = false
+
+    private var canGenerate: Bool {
+        hasStagedChanges && !isGenerating && !isCommitting && KeychainService.shared.hasOpenAIAPIKey
+    }
+
+    private var canUseVoice: Bool {
+        !isTranscribing && !isCommitting && KeychainService.shared.hasOpenAIAPIKey
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: Theme.space3) {
@@ -808,21 +841,57 @@ struct CommitBox: View {
 
                 Spacer()
 
-                // Keyboard hint
-                Text("↵")
-                    .font(.system(size: Theme.fontXS, weight: .medium))
-                    .foregroundColor(Theme.textMuted)
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(Theme.surface)
-                    .cornerRadius(4)
+                // AI generation status
+                if isGenerating {
+                    HStack(spacing: 4) {
+                        ProgressView()
+                            .scaleEffect(0.5)
+                        Text("Generating...")
+                            .font(.system(size: Theme.fontXS))
+                            .foregroundColor(Theme.textMuted)
+                    }
+                } else if isTranscribing {
+                    HStack(spacing: 4) {
+                        ProgressView()
+                            .scaleEffect(0.5)
+                        Text("Transcribing...")
+                            .font(.system(size: Theme.fontXS))
+                            .foregroundColor(Theme.textMuted)
+                    }
+                } else if audioService.isRecording {
+                    HStack(spacing: 4) {
+                        Circle()
+                            .fill(Theme.error)
+                            .frame(width: 6, height: 6)
+                        Text(audioService.formattedDuration)
+                            .font(.system(size: Theme.fontXS, weight: .medium).monospacedDigit())
+                            .foregroundColor(Theme.textMuted)
+                    }
+                } else {
+                    // Keyboard hint
+                    Text("↵")
+                        .font(.system(size: Theme.fontXS, weight: .medium))
+                        .foregroundColor(Theme.textMuted)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Theme.surface)
+                        .cornerRadius(4)
+                }
+            }
+
+            // Error message
+            if let error = generationError {
+                Text(error)
+                    .font(.system(size: Theme.fontXS))
+                    .foregroundColor(Theme.error)
             }
 
             // Input row
-            HStack(spacing: Theme.space3) {
+            HStack(spacing: Theme.space2) {
                 TextField("Commit message...", text: $message)
                     .textFieldStyle(.plain)
                     .font(.system(size: Theme.fontBase))
+                    .foregroundColor(Theme.textPrimary)
                     .padding(.horizontal, Theme.space3)
                     .padding(.vertical, Theme.space3)
                     .background(Theme.surface)
@@ -835,6 +904,42 @@ struct CommitBox: View {
                     .onSubmit {
                         if canCommit { commitAction() }
                     }
+
+                // AI Generate button
+                Button(action: generateCommitMessage) {
+                    Image(systemName: "wand.and.stars")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(canGenerate ? Theme.accent : Theme.textMuted)
+                        .frame(width: 36, height: 36)
+                        .background(canGenerate ? Theme.accentMuted : Theme.surface)
+                        .cornerRadius(Theme.radius)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: Theme.radius)
+                                .stroke(canGenerate ? Theme.accent.opacity(0.3) : Theme.border, lineWidth: 1)
+                        )
+                }
+                .buttonStyle(ScaleButtonStyle())
+                .disabled(!canGenerate)
+                .help(canGenerate ? "Generate commit message with AI" : (KeychainService.shared.hasOpenAIAPIKey ? "Stage files first" : "Add OpenAI API key in Settings"))
+                .pointingHandCursor()
+
+                // Voice button
+                Button(action: toggleVoiceInput) {
+                    Image(systemName: audioService.isRecording ? "stop.fill" : "mic.fill")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(audioService.isRecording ? Theme.error : (canUseVoice ? Theme.accent : Theme.textMuted))
+                        .frame(width: 36, height: 36)
+                        .background(audioService.isRecording ? Theme.error.opacity(0.1) : (canUseVoice ? Theme.accentMuted : Theme.surface))
+                        .cornerRadius(Theme.radius)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: Theme.radius)
+                                .stroke(audioService.isRecording ? Theme.error.opacity(0.3) : (canUseVoice ? Theme.accent.opacity(0.3) : Theme.border), lineWidth: 1)
+                        )
+                }
+                .buttonStyle(ScaleButtonStyle())
+                .disabled(!canUseVoice && !audioService.isRecording)
+                .help(audioService.isRecording ? "Stop and transcribe" : (canUseVoice ? "Voice commit message" : "Add OpenAI API key in Settings"))
+                .pointingHandCursor()
 
                 Button(action: commitAction) {
                     Group {
@@ -868,6 +973,65 @@ struct CommitBox: View {
             RoundedRectangle(cornerRadius: Theme.radiusLarge)
                 .stroke(Theme.border, lineWidth: 1)
         )
+    }
+
+    // MARK: - AI Generation
+
+    private func generateCommitMessage() {
+        guard canGenerate else { return }
+        isGenerating = true
+        generationError = nil
+
+        Task {
+            await generateAction()
+            isGenerating = false
+        }
+    }
+
+    // MARK: - Voice Input
+
+    private func toggleVoiceInput() {
+        if audioService.isRecording {
+            stopAndTranscribe()
+        } else {
+            startRecording()
+        }
+    }
+
+    private func startRecording() {
+        Task {
+            let hasPermission = await audioService.requestMicrophonePermission()
+            guard hasPermission else {
+                generationError = "Microphone permission denied"
+                return
+            }
+
+            do {
+                try audioService.startRecording()
+            } catch {
+                generationError = error.localizedDescription
+            }
+        }
+    }
+
+    private func stopAndTranscribe() {
+        guard let audioData = audioService.stopRecording() else {
+            generationError = "No audio recorded"
+            return
+        }
+
+        isTranscribing = true
+        generationError = nil
+
+        Task {
+            do {
+                let transcription = try await OpenAIService.shared.transcribe(audioData: audioData)
+                message = transcription.trimmingCharacters(in: .whitespacesAndNewlines)
+            } catch {
+                generationError = error.localizedDescription
+            }
+            isTranscribing = false
+        }
     }
 }
 

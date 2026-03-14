@@ -7,6 +7,12 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0CDA4E1AFD5D16ED59AFEE66 /* ProjectStatsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB5E76F5F40856DC0B96D8E3 /* ProjectStatsView.swift */; };
+		19CAE582FC1A866DCB35B5E8 /* ProjectStatsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D86F7BDDE1C25AACAD05DE72 /* ProjectStatsViewModel.swift */; };
+		3EA91A0705C580153E7929BD /* OpenAIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 694CBA854D56A91272B50434 /* OpenAIService.swift */; };
+		50ABF2FCFBE86DCA80E8EF8B /* KeychainService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DD84701DB02ED8ADA2EEE54 /* KeychainService.swift */; };
+		51FF6A06D9E83DD96BA40660 /* AudioRecordingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4861E451F6C4F652A5801F28 /* AudioRecordingService.swift */; };
+		8568EFE90CB64C688F422773 /* DiffViewer.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFCB2ED3A58D4B1FA26D8880 /* DiffViewer.swift */; };
 		A1000001229A0001000A0001 /* GitBarApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000002229A0001000A0001 /* GitBarApp.swift */; };
 		A1000003229A0001000A0001 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000004229A0001000A0001 /* ContentView.swift */; };
 		A1000005229A0001000A0001 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A1000006229A0001000A0001 /* Assets.xcassets */; };
@@ -26,16 +32,15 @@
 		A1000023229A0001000A000B /* MomentumBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000024229A0001000A000B /* MomentumBar.swift */; };
 		A1000025229A0001000A000C /* GitTreeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000026229A0001000A000C /* GitTreeView.swift */; };
 		A1000027229A0001000A000D /* GitTreeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000028229A0001000A000D /* GitTreeViewModel.swift */; };
-		8568EFE90CB64C688F422773 /* DiffViewer.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFCB2ED3A58D4B1FA26D8880 /* DiffViewer.swift */; };
 		B1000001229A0001000B0001 /* FileNode.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000002229A0001000B0001 /* FileNode.swift */; };
 		B1000003229A0001000B0001 /* FileService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000004229A0001000B0001 /* FileService.swift */; };
 		B1000005229A0001000B0001 /* FileBrowserViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000006229A0001000B0001 /* FileBrowserViewModel.swift */; };
 		B1000007229A0001000B0001 /* FileEditorViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000008229A0001000B0001 /* FileEditorViewModel.swift */; };
 		B1000009229A0001000B0001 /* FileTreeRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000A229A0001000B0001 /* FileTreeRow.swift */; };
 		B100000B229A0001000B0001 /* FileBrowserView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000C229A0001000B0001 /* FileBrowserView.swift */; };
+		B100000D229A0001000B0001 /* FileEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000E229A0001000B0001 /* FileEditorView.swift */; };
 		B100001B229A0001000B0001 /* MarkdownBrowserView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100001A229A0001000B0001 /* MarkdownBrowserView.swift */; };
 		B100001D229A0001000B0001 /* MarkdownBrowserViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100001C229A0001000B0001 /* MarkdownBrowserViewModel.swift */; };
-		B100000D229A0001000B0001 /* FileEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000E229A0001000B0001 /* FileEditorView.swift */; };
 		C1000001229A0001000C0001 /* SyntaxHighlightService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1000002229A0001000C0001 /* SyntaxHighlightService.swift */; };
 		C1000003229A0001000C0001 /* MarkdownParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1000004229A0001000C0001 /* MarkdownParser.swift */; };
 		C1000005229A0001000C0001 /* MarkdownPreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1000006229A0001000C0001 /* MarkdownPreviewView.swift */; };
@@ -48,9 +53,12 @@
 		F1000009229A0001000F0001 /* TicketEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F100000A229A0001000F0001 /* TicketEditorView.swift */; };
 		F100000B229A0001000F0001 /* TicketRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F100000C229A0001000F0001 /* TicketRowView.swift */; };
 		G1000001229A0001000G0001 /* ClaudeDetectionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = G1000002229A0001000G0001 /* ClaudeDetectionService.swift */; };
-	/* End PBXBuildFile section */
+/* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		4861E451F6C4F652A5801F28 /* AudioRecordingService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AudioRecordingService.swift; sourceTree = "<group>"; };
+		4DD84701DB02ED8ADA2EEE54 /* KeychainService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = KeychainService.swift; sourceTree = "<group>"; };
+		694CBA854D56A91272B50434 /* OpenAIService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OpenAIService.swift; sourceTree = "<group>"; };
 		A1000000229A0001000A0001 /* GitBar.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = GitBar.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A1000002229A0001000A0001 /* GitBarApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitBarApp.swift; sourceTree = "<group>"; };
 		A1000004229A0001000A0001 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -72,19 +80,20 @@
 		A1000024229A0001000A000B /* MomentumBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MomentumBar.swift; sourceTree = "<group>"; };
 		A1000026229A0001000A000C /* GitTreeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitTreeView.swift; sourceTree = "<group>"; };
 		A1000028229A0001000A000D /* GitTreeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitTreeViewModel.swift; sourceTree = "<group>"; };
-		FFCB2ED3A58D4B1FA26D8880 /* DiffViewer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiffViewer.swift; sourceTree = "<group>"; };
 		B1000002229A0001000B0001 /* FileNode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileNode.swift; sourceTree = "<group>"; };
 		B1000004229A0001000B0001 /* FileService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileService.swift; sourceTree = "<group>"; };
 		B1000006229A0001000B0001 /* FileBrowserViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileBrowserViewModel.swift; sourceTree = "<group>"; };
-		B100001C229A0001000B0001 /* MarkdownBrowserViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownBrowserViewModel.swift; sourceTree = "<group>"; };
 		B1000008229A0001000B0001 /* FileEditorViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileEditorViewModel.swift; sourceTree = "<group>"; };
 		B100000A229A0001000B0001 /* FileTreeRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileTreeRow.swift; sourceTree = "<group>"; };
 		B100000C229A0001000B0001 /* FileBrowserView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileBrowserView.swift; sourceTree = "<group>"; };
-		B100001A229A0001000B0001 /* MarkdownBrowserView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownBrowserView.swift; sourceTree = "<group>"; };
 		B100000E229A0001000B0001 /* FileEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileEditorView.swift; sourceTree = "<group>"; };
+		B100001A229A0001000B0001 /* MarkdownBrowserView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownBrowserView.swift; sourceTree = "<group>"; };
+		B100001C229A0001000B0001 /* MarkdownBrowserViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownBrowserViewModel.swift; sourceTree = "<group>"; };
 		C1000002229A0001000C0001 /* SyntaxHighlightService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyntaxHighlightService.swift; sourceTree = "<group>"; };
 		C1000004229A0001000C0001 /* MarkdownParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownParser.swift; sourceTree = "<group>"; };
 		C1000006229A0001000C0001 /* MarkdownPreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownPreviewView.swift; sourceTree = "<group>"; };
+		CB5E76F5F40856DC0B96D8E3 /* ProjectStatsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProjectStatsView.swift; sourceTree = "<group>"; };
+		D86F7BDDE1C25AACAD05DE72 /* ProjectStatsViewModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProjectStatsViewModel.swift; sourceTree = "<group>"; };
 		E1000002229A0001000E0001 /* CreateWorktreeSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateWorktreeSheet.swift; sourceTree = "<group>"; };
 		E1000004229A0001000E0001 /* CreateWorktreeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateWorktreeViewModel.swift; sourceTree = "<group>"; };
 		F1000002229A0001000F0001 /* Ticket.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Ticket.swift; sourceTree = "<group>"; };
@@ -93,8 +102,9 @@
 		F1000008229A0001000F0001 /* TicketsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TicketsView.swift; sourceTree = "<group>"; };
 		F100000A229A0001000F0001 /* TicketEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TicketEditorView.swift; sourceTree = "<group>"; };
 		F100000C229A0001000F0001 /* TicketRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TicketRowView.swift; sourceTree = "<group>"; };
+		FFCB2ED3A58D4B1FA26D8880 /* DiffViewer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiffViewer.swift; sourceTree = "<group>"; };
 		G1000002229A0001000G0001 /* ClaudeDetectionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaudeDetectionService.swift; sourceTree = "<group>"; };
-	/* End PBXFileReference section */
+/* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		A10000F0229A0001000A0001 /* Frameworks */ = {
@@ -158,6 +168,7 @@
 				F1000008229A0001000F0001 /* TicketsView.swift */,
 				F100000A229A0001000F0001 /* TicketEditorView.swift */,
 				F100000C229A0001000F0001 /* TicketRowView.swift */,
+				CB5E76F5F40856DC0B96D8E3 /* ProjectStatsView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -184,6 +195,7 @@
 				B1000008229A0001000B0001 /* FileEditorViewModel.swift */,
 				E1000004229A0001000E0001 /* CreateWorktreeViewModel.swift */,
 				F1000006229A0001000F0001 /* TicketsBrowserViewModel.swift */,
+				D86F7BDDE1C25AACAD05DE72 /* ProjectStatsViewModel.swift */,
 			);
 			path = ViewModels;
 			sourceTree = "<group>";
@@ -201,6 +213,9 @@
 				C1000002229A0001000C0001 /* SyntaxHighlightService.swift */,
 				C1000004229A0001000C0001 /* MarkdownParser.swift */,
 				F1000004229A0001000F0001 /* TicketService.swift */,
+				4DD84701DB02ED8ADA2EEE54 /* KeychainService.swift */,
+				694CBA854D56A91272B50434 /* OpenAIService.swift */,
+				4861E451F6C4F652A5801F28 /* AudioRecordingService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -295,8 +310,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-								8568EFE90CB64C688F422773 /* DiffViewer.swift in Sources */,
-A1000003229A0001000A0001 /* ContentView.swift in Sources */,
+				8568EFE90CB64C688F422773 /* DiffViewer.swift in Sources */,
+				A1000003229A0001000A0001 /* ContentView.swift in Sources */,
 				A1000001229A0001000A0001 /* GitBarApp.swift in Sources */,
 				A1000007229A0001000A0001 /* ClaudeProjectDiscoveryService.swift in Sources */,
 				A1000010229A0001000A0002 /* GitService.swift in Sources */,
@@ -335,6 +350,11 @@ A1000003229A0001000A0001 /* ContentView.swift in Sources */,
 				F1000009229A0001000F0001 /* TicketEditorView.swift in Sources */,
 				F100000B229A0001000F0001 /* TicketRowView.swift in Sources */,
 				G1000001229A0001000G0001 /* ClaudeDetectionService.swift in Sources */,
+				50ABF2FCFBE86DCA80E8EF8B /* KeychainService.swift in Sources */,
+				3EA91A0705C580153E7929BD /* OpenAIService.swift in Sources */,
+				51FF6A06D9E83DD96BA40660 /* AudioRecordingService.swift in Sources */,
+				0CDA4E1AFD5D16ED59AFEE66 /* ProjectStatsView.swift in Sources */,
+				19CAE582FC1A866DCB35B5E8 /* ProjectStatsViewModel.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -482,7 +502,7 @@ A1000003229A0001000A0001 /* ContentView.swift in Sources */,
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 1.2.0;
+				MARKETING_VERSION = 1.3.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.gitbar.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -514,7 +534,7 @@ A1000003229A0001000A0001 /* ContentView.swift in Sources */,
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 1.2.0;
+				MARKETING_VERSION = 1.3.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.gitbar.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";

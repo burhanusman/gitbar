@@ -7,6 +7,7 @@ enum DetailTab: String, CaseIterable {
     case files = "Files"
     case mdFiles = ".md Files"
     case tickets = "Tickets"
+    case stats = "Stats"
 }
 
 struct ContentView: View {
@@ -59,6 +60,9 @@ struct ContentView: View {
                                         .id(viewId)
                                 case .tickets:
                                     TicketsView(project: selectedProject, worktreePath: activePath)
+                                        .id(viewId)
+                                case .stats:
+                                    ProjectStatsView(project: selectedProject, worktreePath: activePath)
                                         .id(viewId)
                                 }
                             }
@@ -207,6 +211,8 @@ struct DetailTabBar: View {
             return "doc.richtext"
         case .tickets:
             return "ticket"
+        case .stats:
+            return "chart.bar.xaxis"
         }
     }
 

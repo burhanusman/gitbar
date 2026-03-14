@@ -45,8 +45,8 @@ struct ClaudeDetectionService: @unchecked Sendable {
         }
     }
 
-    /// Scans the Claude projects directory for recently modified folders
-    /// - Returns: Set of project paths that have been modified within the activity threshold
+    /// Scans the Claude projects directory for recently active sessions
+    /// - Returns: Set of project paths that have session files modified within the activity threshold
     private func getRecentlyActiveProjects() -> Set<String> {
         let claudeProjectsPath = getClaudeProjectsPath()
 
@@ -59,17 +59,13 @@ struct ClaudeDetectionService: @unchecked Sendable {
         var activeProjects: Set<String> = []
 
         for folderName in contents {
+            // Skip hidden files/folders
+            guard !folderName.hasPrefix(".") else { continue }
+
             let folderPath = "\(claudeProjectsPath)/\(folderName)"
 
-            // Check if the folder was modified recently
-            guard let attributes = try? fileManager.attributesOfItem(atPath: folderPath),
-                  let modificationDate = attributes[.modificationDate] as? Date else {
-                continue
-            }
-
-            // Check if modified within threshold
-            let timeSinceModification = now.timeIntervalSince(modificationDate)
-            guard timeSinceModification <= activityThreshold else {
+            // Check if any session file (.jsonl) inside was modified recently
+            guard hasRecentlyModifiedSessionFile(in: folderPath, now: now) else {
                 continue
             }
 
@@ -85,6 +81,31 @@ struct ClaudeDetectionService: @unchecked Sendable {
         return activeProjects
     }
 
+    /// Checks if a project folder contains any recently modified session files
+    private func hasRecentlyModifiedSessionFile(in folderPath: String, now: Date) -> Bool {
+        guard let contents = try? fileManager.contentsOfDirectory(atPath: folderPath) else {
+            return false
+        }
+
+        for fileName in contents {
+            // Session files are .jsonl files
+            guard fileName.hasSuffix(".jsonl") else { continue }
+
+            let filePath = "\(folderPath)/\(fileName)"
+            guard let attributes = try? fileManager.attributesOfItem(atPath: filePath),
+                  let modificationDate = attributes[.modificationDate] as? Date else {
+                continue
+            }
+
+            let timeSinceModification = now.timeIntervalSince(modificationDate)
+            if timeSinceModification <= activityThreshold {
+                return true
+            }
+        }
+
+        return false
+    }
+
     /// Gets the path to the Claude projects directory
     private func getClaudeProjectsPath() -> String {
         let homeDirectory = fileManager.homeDirectoryForCurrentUser.path
@@ -92,16 +113,27 @@ struct ClaudeDetectionService: @unchecked Sendable {
     }
 
     /// Decodes a Claude projects folder name to an actual file path
-    /// Folder names use dashes instead of slashes: -Users-name-path becomes /Users/name/path
+    /// Encoding scheme:
+    /// - `/` becomes `-`
+    /// - `-` becomes `--` (escaped)
+    /// Example: `-Users-burhan-my--project` → `/Users/burhan/my-project`
     private func decodeFolderName(_ folderName: String) -> String {
         guard folderName.hasPrefix("-") else {
             return folderName
         }
 
+        // Use a placeholder for escaped dashes, then convert
+        let placeholder = "\u{0000}"
         var path = folderName
-        path.removeFirst()
-        path = "/" + path.replacingOccurrences(of: "-", with: "/")
+        path.removeFirst() // Remove leading dash
 
-        return path
+        // First, replace escaped dashes (--) with placeholder
+        path = path.replacingOccurrences(of: "--", with: placeholder)
+        // Then replace single dashes with slashes
+        path = path.replacingOccurrences(of: "-", with: "/")
+        // Finally, restore escaped dashes
+        path = path.replacingOccurrences(of: placeholder, with: "-")
+
+        return "/" + path
     }
 }

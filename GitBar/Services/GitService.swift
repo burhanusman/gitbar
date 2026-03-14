@@ -329,6 +329,13 @@ actor GitService {
         _ = try await runGitCommand(["checkout", "-b", branch], at: path)
     }
 
+    /// Checks out a remote branch, creating a local tracking branch
+    func checkoutRemoteBranch(_ branch: String, at path: String) async throws {
+        try validateGitRepository(at: path)
+        // git checkout -b <branch> origin/<branch> creates local branch tracking remote
+        _ = try await runGitCommand(["checkout", "-b", branch, "origin/\(branch)"], at: path)
+    }
+
     /// Lists worktrees for a repository
     func getWorktrees(at path: String) async throws -> [GitWorktree] {
         try validateGitRepository(at: path)
@@ -462,6 +469,12 @@ actor GitService {
         return try await runGitCommand(args, at: repoPath)
     }
 
+    /// Gets the combined diff for all staged changes
+    func getStagedDiff(at repoPath: String) async throws -> String {
+        try validateGitRepository(at: repoPath)
+        return try await runGitCommand(["diff", "--cached"], at: repoPath)
+    }
+
     /// Stages all changes using git add .
     func stageAllFiles(at repoPath: String) async throws {
         try validateGitRepository(at: repoPath)
@@ -539,6 +552,27 @@ actor GitService {
             tips[parts[0]] = parts[1]
         }
         return tips
+    }
+
+    /// Gets line stats (insertions/deletions) for the last N days
+    func getLineStats(at path: String, days: Int = 30) async throws -> String {
+        try validateGitRepository(at: path)
+        let sinceDate = Calendar.current.date(byAdding: .day, value: -days, to: Date())!
+        let dateFormatter = ISO8601DateFormatter()
+        dateFormatter.formatOptions = [.withFullDate]
+
+        return try await runGitCommand([
+            "log",
+            "--since=\(dateFormatter.string(from: sinceDate))",
+            "--shortstat",
+            "--format="
+        ], at: path)
+    }
+
+    /// Lists all tracked files in the repository
+    func listTrackedFiles(at path: String) async throws -> String {
+        try validateGitRepository(at: path)
+        return try await runGitCommand(["ls-files"], at: path)
     }
 
     /// Gets commit activity for the last N days (returns commit count per day)

@@ -26,10 +26,22 @@ final class SettingsViewModel: ObservableObject {
 
     @Published private(set) var repoFolders: [String]
 
+    // MARK: - OpenAI API Key
+
+    @Published var openAIAPIKey: String = ""
+    @Published var isAPIKeySaved: Bool = false
+    @Published var apiKeyError: String?
+
     private let sparkleService = SparkleUpdateService.shared
+    private let keychainService = KeychainService.shared
 
     var isCheckingForUpdates: Bool {
         sparkleService.isCheckingForUpdates
+    }
+
+    /// Whether any OpenAI features are available (API key is set)
+    var hasOpenAIKey: Bool {
+        keychainService.hasOpenAIAPIKey
     }
 
     init() {
@@ -42,6 +54,43 @@ final class SettingsViewModel: ObservableObject {
         // Initialize from Sparkle
         self.checkForUpdatesAutomatically = sparkleService.automaticallyChecksForUpdates
         self.lastUpdateCheck = sparkleService.lastUpdateCheckDate
+
+        // Load API key status (don't show the actual key for security)
+        self.isAPIKeySaved = keychainService.hasOpenAIAPIKey
+    }
+
+    /// Saves the OpenAI API key to Keychain
+    func saveOpenAIAPIKey() {
+        let trimmedKey = openAIAPIKey.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedKey.isEmpty else {
+            apiKeyError = "API key cannot be empty"
+            return
+        }
+
+        guard trimmedKey.hasPrefix("sk-") else {
+            apiKeyError = "Invalid API key format (should start with sk-)"
+            return
+        }
+
+        do {
+            try keychainService.saveOpenAIAPIKey(trimmedKey)
+            isAPIKeySaved = true
+            openAIAPIKey = "" // Clear the input for security
+            apiKeyError = nil
+        } catch {
+            apiKeyError = "Failed to save API key: \(error.localizedDescription)"
+        }
+    }
+
+    /// Removes the OpenAI API key from Keychain
+    func removeOpenAIAPIKey() {
+        do {
+            try keychainService.deleteOpenAIAPIKey()
+            isAPIKeySaved = false
+            apiKeyError = nil
+        } catch {
+            apiKeyError = "Failed to remove API key: \(error.localizedDescription)"
+        }
     }
 
     func addRepoFolder(_ path: String) {

@@ -28,6 +28,10 @@ struct TicketEditorView: View {
     @State private var error: Error?
     @State private var isLoadingImages = false
 
+    // Voice recording state
+    @StateObject private var audioService = AudioRecordingService()
+    @State private var isTranscribing = false
+
     private var isEditing: Bool {
         existingTicket != nil
     }
@@ -70,6 +74,7 @@ struct TicketEditorView: View {
                         TextField("What needs to be done?", text: $title)
                             .textFieldStyle(.plain)
                             .font(.system(size: Theme.fontBase))
+                            .foregroundColor(Theme.textPrimary)
                             .padding(Theme.space3)
                             .background(Theme.surface)
                             .cornerRadius(Theme.radiusSmall)
@@ -87,6 +92,7 @@ struct TicketEditorView: View {
 
                         TextEditor(text: $description)
                             .font(.system(size: Theme.fontBase))
+                            .foregroundColor(Theme.textPrimary)
                             .scrollContentBackground(.hidden)
                             .padding(Theme.space3)
                             .background(Theme.surface)
@@ -151,6 +157,62 @@ struct TicketEditorView: View {
                             .buttonStyle(.plain)
                             .help("Paste image from clipboard (⌘V)")
                             .pointingHandCursor()
+                        }
+
+                        // Voice input section
+                        VStack(alignment: .leading, spacing: Theme.space2) {
+                            HStack {
+                                Text("Voice Input")
+                                    .font(.system(size: Theme.fontSM, weight: .medium))
+                                    .foregroundColor(Theme.textSecondary)
+
+                                Spacer()
+
+                                if isTranscribing {
+                                    HStack(spacing: 6) {
+                                        ProgressView()
+                                            .scaleEffect(0.6)
+                                        Text("Transcribing...")
+                                            .font(.system(size: Theme.fontXS))
+                                            .foregroundColor(Theme.textMuted)
+                                    }
+                                } else if audioService.isRecording {
+                                    HStack(spacing: 6) {
+                                        Circle()
+                                            .fill(Theme.error)
+                                            .frame(width: 8, height: 8)
+                                        Text(audioService.formattedDuration)
+                                            .font(.system(size: Theme.fontXS, weight: .medium).monospacedDigit())
+                                            .foregroundColor(Theme.textSecondary)
+                                    }
+                                }
+                            }
+
+                            Button(action: toggleVoiceRecording) {
+                                HStack(spacing: 8) {
+                                    Image(systemName: audioService.isRecording ? "stop.fill" : "mic.fill")
+                                        .font(.system(size: 14, weight: .medium))
+                                    Text(audioService.isRecording ? "Stop Recording" : "Record Voice Note")
+                                        .font(.system(size: Theme.fontSM, weight: .medium))
+                                }
+                                .foregroundColor(audioService.isRecording ? Theme.error : Theme.accent)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 10)
+                                .background(audioService.isRecording ? Theme.error.opacity(0.1) : Theme.accentMuted)
+                                .cornerRadius(Theme.radiusSmall)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: Theme.radiusSmall)
+                                        .stroke(audioService.isRecording ? Theme.error.opacity(0.3) : Theme.accent.opacity(0.3), lineWidth: 1)
+                                )
+                            }
+                            .buttonStyle(.plain)
+                            .disabled(isTranscribing)
+                            .help(audioService.isRecording ? "Stop recording and transcribe" : "Record voice to create ticket content")
+                            .pointingHandCursor()
+
+                            Text("Voice recording will be transcribed to fill title and description")
+                                .font(.system(size: 9))
+                                .foregroundColor(Theme.textMuted)
                         }
 
                         if pendingImages.isEmpty {
@@ -473,6 +535,84 @@ struct TicketEditorView: View {
         // Track existing images for deletion
         if let ticketImage = pending.ticketImage {
             imagesToDelete.append(ticketImage)
+        }
+    }
+
+    // MARK: - Voice Recording
+
+    private func toggleVoiceRecording() {
+        if audioService.isRecording {
+            stopRecordingAndTranscribe()
+        } else {
+            startRecording()
+        }
+    }
+
+    private func startRecording() {
+        Task {
+            // Request permission if needed
+            let hasPermission = await audioService.requestMicrophonePermission()
+            guard hasPermission else {
+                error = AudioRecordingError.microphonePermissionDenied
+                return
+            }
+
+            do {
+                try audioService.startRecording()
+            } catch {
+                self.error = error
+            }
+        }
+    }
+
+    private func stopRecordingAndTranscribe() {
+        guard let audioData = audioService.stopRecording() else {
+            error = AudioRecordingError.noRecordingInProgress
+            return
+        }
+
+        isTranscribing = true
+        error = nil
+
+        Task {
+            do {
+                let transcription = try await OpenAIService.shared.transcribe(audioData: audioData)
+                parseTranscription(transcription)
+            } catch {
+                self.error = error
+            }
+            isTranscribing = false
+        }
+    }
+
+    private func parseTranscription(_ text: String) {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        // Try to split into title and description
+        // First sentence becomes title, rest becomes description
+        let sentenceEnders = CharacterSet(charactersIn: ".!?")
+        if let firstSentenceEnd = trimmed.rangeOfCharacter(from: sentenceEnders) {
+            let potentialTitle = String(trimmed[..<firstSentenceEnd.upperBound])
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            let potentialDescription = String(trimmed[firstSentenceEnd.upperBound...])
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+
+            // Only split if title is reasonable length (under 100 chars)
+            if potentialTitle.count <= 100 && !potentialDescription.isEmpty {
+                title = potentialTitle
+                description = potentialDescription
+                return
+            }
+        }
+
+        // If no good split found, put everything in title if short, else in description
+        if trimmed.count <= 100 {
+            title = trimmed
+        } else {
+            // Use first 100 chars as title, rest as description
+            let titleEnd = trimmed.index(trimmed.startIndex, offsetBy: min(100, trimmed.count))
+            title = String(trimmed[..<titleEnd]).trimmingCharacters(in: .whitespacesAndNewlines)
+            description = String(trimmed[titleEnd...]).trimmingCharacters(in: .whitespacesAndNewlines)
         }
     }
 }

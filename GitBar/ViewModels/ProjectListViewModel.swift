@@ -30,8 +30,8 @@ class ProjectListViewModel: ObservableObject {
     /// Refresh interval for all project indicators (60 seconds)
     private let autoRefreshInterval: TimeInterval = 60
 
-    /// Refresh interval for Claude activity detection (30 seconds)
-    private let claudeDetectionInterval: TimeInterval = 30
+    /// Refresh interval for Claude activity detection (10 seconds)
+    private let claudeDetectionInterval: TimeInterval = 10
 
     init(discoveryService: ClaudeProjectDiscoveryService = ClaudeProjectDiscoveryService(),
          gitService: GitService = GitService(),

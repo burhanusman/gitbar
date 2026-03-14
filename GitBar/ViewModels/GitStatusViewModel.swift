@@ -8,6 +8,7 @@ class GitStatusViewModel: ObservableObject {
     @Published var isLoading = false
     @Published var error: Error?
     @Published var branches: [String] = []
+    @Published var remoteBranches: [String] = []
     @Published var worktrees: [GitWorktree] = []
     @Published var isSwitchingBranch = false
     @Published var commitMessage = ""
@@ -52,14 +53,21 @@ class GitStatusViewModel: ObservableObject {
         Task {
             do {
                 async let status = gitService.getStatus(at: path)
-                async let branches = gitService.getLocalBranches(at: path)
+                async let localBranches = gitService.getLocalBranches(at: path)
+                async let remoteBranches = gitService.getRemoteBranches(at: path)
                 async let worktrees = gitService.getWorktrees(at: path)
 
-                let (resolvedStatus, resolvedBranches, resolvedWorktrees) = try await (status, branches, worktrees)
+                let (resolvedStatus, resolvedLocalBranches, resolvedRemoteBranches, resolvedWorktrees) = try await (status, localBranches, remoteBranches, worktrees)
                 self.gitStatus = resolvedStatus
-                self.branches = resolvedBranches.sorted {
+                self.branches = resolvedLocalBranches.sorted {
                     $0.localizedCaseInsensitiveCompare($1) == .orderedAscending
                 }
+                // Filter out remote branches that already have local tracking branches
+                let localBranchSet = Set(resolvedLocalBranches)
+                self.remoteBranches = resolvedRemoteBranches
+                    .map { $0.replacingOccurrences(of: "origin/", with: "") }
+                    .filter { !localBranchSet.contains($0) }
+                    .sorted { $0.localizedCaseInsensitiveCompare($1) == .orderedAscending }
                 self.worktrees = resolvedWorktrees.sorted {
                     $0.path.localizedStandardCompare($1.path) == .orderedAscending
                 }
@@ -88,24 +96,57 @@ class GitStatusViewModel: ObservableObject {
         Task {
             do {
                 try await gitService.checkoutBranch(branch, at: path)
-
-                async let status = gitService.getStatus(at: path)
-                async let branches = gitService.getLocalBranches(at: path)
-                async let worktrees = gitService.getWorktrees(at: path)
-
-                let (resolvedStatus, resolvedBranches, resolvedWorktrees) = try await (status, branches, worktrees)
-                self.gitStatus = resolvedStatus
-                self.branches = resolvedBranches.sorted {
-                    $0.localizedCaseInsensitiveCompare($1) == .orderedAscending
-                }
-                self.worktrees = resolvedWorktrees.sorted {
-                    $0.path.localizedStandardCompare($1.path) == .orderedAscending
-                }
+                await reloadBranchesAndStatus(at: path)
             } catch {
                 self.error = error
             }
-
             self.isSwitchingBranch = false
+        }
+    }
+
+    /// Checks out a remote branch, creating a local tracking branch
+    func checkoutRemoteBranch(_ branch: String) {
+        guard let path = projectPath else { return }
+        guard !isSwitchingBranch else { return }
+
+        isSwitchingBranch = true
+        error = nil
+
+        Task {
+            do {
+                // Create local branch tracking the remote
+                try await gitService.checkoutRemoteBranch(branch, at: path)
+                await reloadBranchesAndStatus(at: path)
+            } catch {
+                self.error = error
+            }
+            self.isSwitchingBranch = false
+        }
+    }
+
+    /// Reloads branches and status after a checkout
+    private func reloadBranchesAndStatus(at path: String) async {
+        do {
+            async let status = gitService.getStatus(at: path)
+            async let localBranches = gitService.getLocalBranches(at: path)
+            async let remoteBranches = gitService.getRemoteBranches(at: path)
+            async let worktrees = gitService.getWorktrees(at: path)
+
+            let (resolvedStatus, resolvedLocalBranches, resolvedRemoteBranches, resolvedWorktrees) = try await (status, localBranches, remoteBranches, worktrees)
+            self.gitStatus = resolvedStatus
+            self.branches = resolvedLocalBranches.sorted {
+                $0.localizedCaseInsensitiveCompare($1) == .orderedAscending
+            }
+            let localBranchSet = Set(resolvedLocalBranches)
+            self.remoteBranches = resolvedRemoteBranches
+                .map { $0.replacingOccurrences(of: "origin/", with: "") }
+                .filter { !localBranchSet.contains($0) }
+                .sorted { $0.localizedCaseInsensitiveCompare($1) == .orderedAscending }
+            self.worktrees = resolvedWorktrees.sorted {
+                $0.path.localizedStandardCompare($1.path) == .orderedAscending
+            }
+        } catch {
+            self.error = error
         }
     }
 
@@ -227,6 +268,21 @@ class GitStatusViewModel: ObservableObject {
     /// Clears the commit result feedback
     func clearCommitResult() {
         commitResult = nil
+    }
+
+    /// Generates a commit message using AI based on staged changes
+    func generateCommitMessage() async {
+        guard let path = projectPath else { return }
+        guard !stagedFiles.isEmpty else { return }
+
+        do {
+            let diff = try await gitService.getStagedDiff(at: path)
+            let message = try await OpenAIService.shared.generateCommitMessage(diff: diff)
+            self.commitMessage = message
+        } catch {
+            // Error is shown in the CommitBox via generationError
+            self.error = error
+        }
     }
 
     /// Clears the sync result feedback

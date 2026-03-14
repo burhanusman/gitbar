@@ -121,8 +121,8 @@ struct ActivityCell: View {
 
     private var cellColor: Color {
         if count == 0 {
-            // Use a visible dark gray that contrasts with the sidebar background
-            return Color(hex: "#2A2F3A")
+            // Use a lighter gray that contrasts well with the dark sidebar background
+            return Color(hex: "#3D4451")
         }
         let baseColor = Color(hex: "#22C55E")
         return baseColor.opacity(0.3 + (intensity * 0.7))
