@@ -59,7 +59,7 @@ In CI/headless environments (where AppleScript can be unreliable), this script a
 1. Generates DMG background image if needed
 2. Extracts version from app's Info.plist
 3. Creates DMG with filename: `GitBar-v{VERSION}.dmg`
-4. Configures window size and icon positions
+4. Configures 900x400 window size and icon positions
 5. Adds Applications folder symlink
 6. Verifies DMG integrity
 

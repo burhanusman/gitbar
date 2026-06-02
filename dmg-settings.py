@@ -27,20 +27,20 @@ symlinks = {'Applications': '/Applications'}
 # Volume icon
 icon = os.path.join(dmg_resources, 'AppIcon.icns')
 
-# Background image (retina: 1320x800, display: 660x400)
+# Background image (retina: 1800x800, display: 900x400)
 background = os.path.join(dmg_resources, 'background.png')
 
 # Window position on screen
-window_rect = ((200, 120), (660, 400))
+window_rect = ((200, 120), (900, 400))
 
 # Icon size
 icon_size = 100
 
-# Icon positions (based on 660x400 window)
-# Centered layout: window center is 330
+# Icon positions (based on 900x400 window)
+# Centered layout: window center is 450
 icon_locations = {
-    'GitBar.app': (180, 200),
-    'Applications': (480, 200),
+    'GitBar.app': (270, 200),
+    'Applications': (630, 200),
 }
 
 # Hide file extensions

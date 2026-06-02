@@ -5,11 +5,11 @@ import Foundation
 
 // DMG background image generator for GitBar
 // Creates multi-resolution background for Retina display support
-// - 1x: 660x400 (for non-Retina)
-// - 2x: 1320x800 (for Retina)
+// - 1x: 900x400 (for non-Retina)
+// - 2x: 1800x800 (for Retina)
 // - Bundled into TIFF for automatic selection by Finder
 
-let baseWidth: CGFloat = 660
+let baseWidth: CGFloat = 900
 let baseHeight: CGFloat = 400
 
 // Brand colors from CLAUDE.md
@@ -77,8 +77,8 @@ func generateBackground(scale: Int) -> NSBitmapImageRep? {
     gradient?.draw(in: NSRect(origin: .zero, size: NSSize(width: baseWidth, height: baseHeight)), angle: 90)
 
     // Icon positions from create-dmg.sh (y is from bottom in create-dmg, same in CoreGraphics)
-    let leftIconX: CGFloat = 165
-    let rightIconX: CGFloat = 495
+    let leftIconX: CGFloat = 270
+    let rightIconX: CGFloat = 630
     let iconY: CGFloat = 200
 
     // Draw title "Install GitBar" at top
@@ -146,7 +146,7 @@ guard let rep2x = generateBackground(scale: 2) else {
 let path1x = "dmg-resources/background.png"
 if let pngData1x = rep1x.representation(using: .png, properties: [:]) {
     try? pngData1x.write(to: URL(fileURLWithPath: path1x))
-    print("✅ Created: \(path1x) (660x400 @ 72 DPI)")
+    print("✅ Created: \(path1x) (900x400 @ 72 DPI)")
 } else {
     print("❌ Failed to save 1x background")
     exit(1)
@@ -156,7 +156,7 @@ if let pngData1x = rep1x.representation(using: .png, properties: [:]) {
 let path2x = "dmg-resources/background@2x.png"
 if let pngData2x = rep2x.representation(using: .png, properties: [:]) {
     try? pngData2x.write(to: URL(fileURLWithPath: path2x))
-    print("✅ Created: \(path2x) (1320x800 @ 144 DPI)")
+    print("✅ Created: \(path2x) (1800x800 @ 144 DPI)")
 } else {
     print("❌ Failed to save 2x background")
     exit(1)

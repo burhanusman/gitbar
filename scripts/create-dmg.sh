@@ -86,11 +86,11 @@ create-dmg \
   $VOLICON_ARG \
   --background "$BACKGROUND_FILE" \
   --window-pos 200 120 \
-  --window-size 660 400 \
+  --window-size 900 400 \
   --icon-size 100 \
-  --icon "$APP_NAME.app" 165 200 \
+  --icon "$APP_NAME.app" 270 200 \
   --hide-extension "$APP_NAME.app" \
-  --app-drop-link 495 200 \
+  --app-drop-link 630 200 \
   "$DMG_PATH" \
   "$APP_PATH"
 

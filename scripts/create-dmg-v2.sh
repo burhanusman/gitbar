@@ -59,8 +59,8 @@ rm -f "$DMG_PATH"
 if [ ! -f "$DMG_RESOURCES/background.png" ]; then
     echo "🎨 Generating DMG background image..."
     cd "$PROJECT_DIR"
-    if [ -f "scripts/generate_retro_background.swift" ]; then
-        swift scripts/generate_retro_background.swift
+    if [ -f "generate_dmg_background.swift" ]; then
+        ./generate_dmg_background.swift
     fi
 fi
 

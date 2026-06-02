@@ -109,13 +109,13 @@ This script:
 
 ### Background Image
 
-The DMG background is generated programmatically at `dmg-resources/background.png` (retina 1320x800px, displayed as 660x400px):
+The DMG background is generated programmatically at `dmg-resources/background.png` (retina 1800x800px, displayed as 900x400px):
 
 ```bash
-./scripts/generate_retro_background.swift
+./generate_dmg_background.swift
 ```
 
-To customize, edit `scripts/generate_retro_background.swift` and regenerate.
+To customize, edit `generate_dmg_background.swift` and regenerate.
 
 ### Layout Configuration
 
@@ -126,10 +126,10 @@ create-dmg \
   --volname "GitBar" \
   --background "dmg-resources/background.png" \
   --window-pos 200 120 \
-  --window-size 660 400 \
+  --window-size 900 400 \
   --icon-size 100 \
-  --icon "GitBar.app" 165 200 \        # App icon position
-  --app-drop-link 495 200 \            # Applications folder position
+  --icon "GitBar.app" 270 200 \        # App icon position
+  --app-drop-link 630 200 \            # Applications folder position
   --hide-extension "GitBar.app" \
   "$DMG_PATH" \
   "$APP_PATH"
@@ -156,7 +156,7 @@ DMG filename automatically includes version from `Info.plist`:
    - GitBar app icon is visible
    - Applications folder shortcut is present
    - Arrow indicates drag direction
-   - Window is properly sized (660x400)
+   - Window is properly sized (900x400)
 
 3. Test installation:
    - Drag GitBar.app to Applications folder
