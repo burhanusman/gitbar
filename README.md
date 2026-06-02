@@ -105,6 +105,21 @@ open GitBar.xcodeproj
 xcodebuild -project GitBar.xcodeproj -scheme GitBar build
 ```
 
+### Quick Local Install
+
+For development, build, install, and launch the app in one command:
+
+```bash
+./scripts/dev-install.sh
+```
+
+To run it from any terminal directory, symlink it into a directory on your PATH:
+
+```bash
+ln -sfn /path/to/gitbar/scripts/dev-install.sh ~/.local/bin/gitbar-dev
+gitbar-dev
+```
+
 ## Requirements
 
 - macOS 13.0 (Ventura) or later

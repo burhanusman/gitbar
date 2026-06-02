@@ -76,6 +76,31 @@ In CI/headless environments (where AppleScript can be unreliable), this script a
 
 ---
 
+### dev-install.sh
+
+Builds a local app, installs it, and opens GitBar.
+
+**Usage:**
+```bash
+./scripts/dev-install.sh
+```
+
+Defaults to `/Applications/GitBar.app` when writable, otherwise `~/Applications/GitBar.app`.
+
+**Overrides:**
+```bash
+GITBAR_INSTALL_DIR="$HOME/Applications" ./scripts/dev-install.sh
+GITBAR_CONFIGURATION=Release ./scripts/dev-install.sh
+```
+
+**Global command:**
+```bash
+ln -sfn /path/to/gitbar/scripts/dev-install.sh ~/.local/bin/gitbar-dev
+gitbar-dev
+```
+
+---
+
 ### create-dmg-v2.sh
 
 Creates DMG installers using `dmgbuild` (AppleScript-free), for reliable CI builds.
