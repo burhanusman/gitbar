@@ -21,6 +21,7 @@ GitBar lives in your macOS menubar and provides instant visibility into the git 
 - **Menubar Integration**: Lightweight menubar app with no Dock icon
 - **Project Auto-Discovery**: Automatically finds Claude Code and Codex projects
 - **Real-time Git Status**: Shows branch name, ahead/behind commits, and working directory status
+- **Local Tickets**: Track per-repository tickets with optional image attachments
 - **Manual Folder Support**: Add any git repository folder for monitoring
 - **Auto-Updates**: Built-in Sparkle framework for seamless updates
 - **Native macOS**: Written in SwiftUI for optimal performance
@@ -66,6 +67,10 @@ The project list shows all discovered and manually added projects:
 - **Claude Projects**: Discovered from Claude Code
 - **Codex Projects**: Discovered from Codex
 - **Folder Projects**: Manually added git repositories
+
+### Tickets
+
+Each project has a Tickets tab for repo-local tasks. Tickets are stored in `.gitbar/tickets.jsonl`, with optional image attachments under `.gitbar/images/<ticket-id>/`. See [GitBar Tickets Agent Setup](docs/gitbar-tickets-agent-setup.md) to use the same tickets from Codex or Claude Code.
 
 ## Configuration
 
@@ -119,6 +124,7 @@ By participating in this project, you agree to abide by our [Code of Conduct](CO
 ### For Developers
 - [Build Guide](BUILD.md) - Development setup
 - [Release Guide](BUILD_RELEASE.md) - Creating releases (automated & manual)
+- [GitBar Tickets Agent Setup](docs/gitbar-tickets-agent-setup.md) - Global Codex skill and repo-local ticket workflow
 - [GitHub Actions Setup](.github/RELEASE_SETUP.md) - Automated release configuration
 - [Manual Release Process](.github/MANUAL_RELEASE.md) - Step-by-step manual release
 - [DMG Distribution](DMG_DISTRIBUTION.md) - DMG creation details
