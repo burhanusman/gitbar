@@ -14,6 +14,7 @@ struct PendingImage: Identifiable {
 struct TicketEditorView: View {
     let existingTicket: Ticket?
     let onSave: (String, String, TicketStatus, [TicketImage]) async throws -> Void
+    let onCreateWithImages: ((String, String, TicketStatus, [NSImage]) async throws -> Void)?
     let onSaveImage: ((NSImage, Int) async throws -> TicketImage)?
     let onLoadImage: ((TicketImage, Int) async -> NSImage?)?
     let onDeleteImage: ((TicketImage, Int) async throws -> Void)?
@@ -43,12 +44,14 @@ struct TicketEditorView: View {
     init(
         existingTicket: Ticket? = nil,
         onSave: @escaping (String, String, TicketStatus, [TicketImage]) async throws -> Void,
+        onCreateWithImages: ((String, String, TicketStatus, [NSImage]) async throws -> Void)? = nil,
         onSaveImage: ((NSImage, Int) async throws -> TicketImage)? = nil,
         onLoadImage: ((TicketImage, Int) async -> NSImage?)? = nil,
         onDeleteImage: ((TicketImage, Int) async throws -> Void)? = nil
     ) {
         self.existingTicket = existingTicket
         self.onSave = onSave
+        self.onCreateWithImages = onCreateWithImages
         self.onSaveImage = onSaveImage
         self.onLoadImage = onLoadImage
         self.onDeleteImage = onDeleteImage
@@ -405,9 +408,10 @@ struct TicketEditorView: View {
                     }
 
                     try await onSave(trimmedTitle, trimmedDescription, status, finalImages)
+                } else if let onCreateWithImages = onCreateWithImages {
+                    let images = pendingImages.map(\.image)
+                    try await onCreateWithImages(trimmedTitle, trimmedDescription, status, images)
                 } else {
-                    // New ticket - images will be added after creation
-                    // For now, just create without images
                     try await onSave(trimmedTitle, trimmedDescription, status, [])
                 }
                 dismiss()

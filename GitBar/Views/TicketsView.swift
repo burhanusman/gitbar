@@ -59,6 +59,9 @@ struct TicketsView: View {
                 onSave: { title, description, status, images in
                     try await viewModel.createTicket(title: title, description: description, status: status, images: images)
                 },
+                onCreateWithImages: { title, description, status, images in
+                    try await viewModel.createTicket(title: title, description: description, status: status, attachedImages: images)
+                },
                 onSaveImage: { image, ticketId in
                     try await viewModel.saveImage(image, for: ticketId)
                 }

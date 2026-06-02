@@ -118,6 +118,34 @@ class TicketsBrowserViewModel: ObservableObject {
         self.tickets = loadedTickets
     }
 
+    /// Creates a new ticket and persists its image attachments before writing the ticket metadata
+    func createTicket(title: String, description: String, status: TicketStatus = .open, attachedImages: [NSImage]) async throws {
+        guard let path = projectPath else { return }
+
+        let existingTickets = try await ticketService.loadTickets(at: path)
+        let ticketId = (existingTickets.map { $0.id }.max() ?? 0) + 1
+        var savedImages: [TicketImage] = []
+
+        do {
+            for image in attachedImages {
+                let savedImage = try await ticketService.saveImage(image, for: ticketId, at: path)
+                savedImages.append(savedImage)
+            }
+
+            let ticket = Ticket.create(id: ticketId, title: title, description: description, status: status, images: savedImages)
+            try await ticketService.createTicket(ticket, at: path)
+
+            // Reload to get the updated list
+            let loadedTickets = try await ticketService.loadTickets(at: path)
+            self.tickets = loadedTickets
+        } catch {
+            if !savedImages.isEmpty {
+                try? await ticketService.deleteAllImages(for: ticketId, at: path)
+            }
+            throw error
+        }
+    }
+
     /// Saves an image for a ticket (before or after creation)
     func saveImage(_ image: NSImage, for ticketId: Int) async throws -> TicketImage {
         guard let path = projectPath else {
