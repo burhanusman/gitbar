@@ -1,10 +1,20 @@
 import SwiftUI
 
+private enum TicketViewMode: String, CaseIterable {
+    case list
+    case board
+
+    var title: String {
+        rawValue.capitalized
+    }
+}
+
 /// View for browsing and managing tickets in a project
 struct TicketsView: View {
     let project: Project
     var worktreePath: String? = nil
     @StateObject private var viewModel = TicketsBrowserViewModel()
+    @AppStorage("tickets.viewMode") private var viewMode: TicketViewMode = .list
 
     private var effectivePath: String {
         worktreePath ?? project.path
@@ -38,8 +48,11 @@ struct TicketsView: View {
                 loadingView
             } else if let error = viewModel.error {
                 errorView(error: error)
-            } else if viewModel.filteredTickets.isEmpty {
+            } else if viewModel.tickets.isEmpty
+                        || (viewMode == .list && viewModel.filteredTickets.isEmpty) {
                 emptyStateView
+            } else if viewMode == .board {
+                ticketBoardView
             } else {
                 ticketListView
             }
@@ -132,6 +145,8 @@ struct TicketsView: View {
 
             Spacer()
 
+            TicketViewSwitcher(selection: $viewMode)
+
             // Create button
             Button(action: { showingCreateSheet = true }) {
                 Image(systemName: "plus")
@@ -166,49 +181,63 @@ struct TicketsView: View {
 
     private var filterBar: some View {
         HStack(spacing: Theme.space3) {
-            // Status filters
-            HStack(spacing: Theme.space1) {
-                ForEach(TicketFilter.allCases, id: \.self) { filter in
-                    FilterButton(
-                        title: filter.rawValue,
-                        count: countForFilter(filter),
-                        isSelected: viewModel.filter == filter,
-                        action: { viewModel.filter = filter }
-                    )
+            if viewMode == .list {
+                // Status filters
+                HStack(spacing: Theme.space1) {
+                    ForEach(TicketFilter.allCases, id: \.self) { filter in
+                        FilterButton(
+                            title: filter.rawValue,
+                            count: countForFilter(filter),
+                            isSelected: viewModel.filter == filter,
+                            action: { viewModel.filter = filter }
+                        )
+                    }
                 }
+            } else {
+                HStack(spacing: 5) {
+                    Image(systemName: "arrow.left.arrow.right")
+                        .font(.system(size: 9, weight: .semibold))
+
+                    Text("Drag cards to move work")
+                        .font(.system(size: Theme.fontXS, weight: .medium))
+                }
+                .foregroundColor(Theme.textTertiary)
             }
 
             Spacer()
 
-            // Sort picker
-            Menu {
-                ForEach(TicketSort.allCases, id: \.self) { sort in
-                    Button(action: { viewModel.sort = sort }) {
-                        HStack {
-                            Text(sort.rawValue)
-                            if viewModel.sort == sort {
-                                Image(systemName: "checkmark")
-                            }
+            sortPicker
+        }
+    }
+
+    private var sortPicker: some View {
+        Menu {
+            ForEach(TicketSort.allCases, id: \.self) { sort in
+                Button(action: { viewModel.sort = sort }) {
+                    HStack {
+                        Text(sort.rawValue)
+                        if viewModel.sort == sort {
+                            Image(systemName: "checkmark")
                         }
                     }
                 }
-            } label: {
-                HStack(spacing: 4) {
-                    Image(systemName: "arrow.up.arrow.down")
-                        .font(.system(size: 10, weight: .medium))
-                    Text(viewModel.sort.rawValue)
-                        .font(.system(size: Theme.fontXS, weight: .medium))
-                }
-                .foregroundColor(Theme.textMuted)
-                .padding(.horizontal, Theme.space2)
-                .padding(.vertical, 4)
-                .background(Theme.surface)
-                .cornerRadius(4)
             }
-            .menuStyle(.borderlessButton)
-            .fixedSize()
-            .pointingHandCursor()
+        } label: {
+            HStack(spacing: 4) {
+                Image(systemName: "arrow.up.arrow.down")
+                    .font(.system(size: 10, weight: .medium))
+                Text(viewModel.sort.rawValue)
+                    .font(.system(size: Theme.fontXS, weight: .medium))
+            }
+            .foregroundColor(Theme.textMuted)
+            .padding(.horizontal, Theme.space2)
+            .padding(.vertical, 4)
+            .background(Theme.surface)
+            .cornerRadius(4)
         }
+        .menuStyle(.borderlessButton)
+        .fixedSize()
+        .pointingHandCursor()
     }
 
     private func countForFilter(_ filter: TicketFilter) -> Int? {
@@ -244,6 +273,44 @@ struct TicketsView: View {
                 }
             }
             .padding(.vertical, Theme.space2)
+        }
+    }
+
+    // MARK: - Ticket Board
+
+    private var ticketBoardView: some View {
+        GeometryReader { proxy in
+            let columnWidth = min(244, max(208, proxy.size.width * 0.58))
+
+            ScrollView(.horizontal, showsIndicators: true) {
+                HStack(alignment: .top, spacing: Theme.space3) {
+                    ForEach(TicketStatus.allCases, id: \.rawValue) { status in
+                        TicketBoardColumn(
+                            status: status,
+                            tickets: viewModel.sortedTickets.filter { $0.status == status },
+                            dependencySummary: viewModel.dependencySummary,
+                            onSelect: { selectedTicketForEditing = $0 },
+                            onMove: moveTicket
+                        )
+                        .frame(
+                            width: columnWidth,
+                            height: max(1, proxy.size.height - (Theme.space3 * 2))
+                        )
+                    }
+                }
+                .padding(Theme.space3)
+            }
+        }
+    }
+
+    private func moveTicket(_ ticketId: Int, to status: TicketStatus) {
+        guard let ticket = viewModel.tickets.first(where: { $0.id == ticketId }),
+              ticket.status != status else {
+            return
+        }
+
+        Task {
+            try? await viewModel.setStatus(status, for: ticket)
         }
     }
 
@@ -339,6 +406,247 @@ struct TicketsView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+}
+
+// MARK: - View Switcher
+
+private struct TicketViewSwitcher: View {
+    @Binding var selection: TicketViewMode
+
+    var body: some View {
+        HStack(spacing: 2) {
+            ForEach(TicketViewMode.allCases, id: \.rawValue) { mode in
+                Button(action: { selection = mode }) {
+                    Text(mode.title)
+                        .font(.system(size: Theme.fontXS, weight: .semibold))
+                        .foregroundColor(selection == mode ? Theme.textPrimary : Theme.textTertiary)
+                        .padding(.horizontal, 7)
+                        .frame(height: 24)
+                        .background(selection == mode ? Theme.surfaceActive : .clear)
+                        .cornerRadius(4)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .help("\(mode.title) view")
+                .pointingHandCursor()
+            }
+        }
+        .padding(2)
+        .background(Theme.surface)
+        .cornerRadius(Theme.radiusSmall)
+    }
+}
+
+// MARK: - Board Column
+
+private struct TicketBoardColumn: View {
+    let status: TicketStatus
+    let tickets: [Ticket]
+    let dependencySummary: (Ticket) -> TicketDependencySummary
+    let onSelect: (Ticket) -> Void
+    let onMove: (Int, TicketStatus) -> Void
+
+    @State private var isDropTargeted = false
+
+    var body: some View {
+        VStack(spacing: 0) {
+            HStack(spacing: Theme.space2) {
+                Image(systemName: status.icon)
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundColor(status.boardColor)
+
+                Text(status.displayName)
+                    .font(.system(size: Theme.fontSM, weight: .semibold))
+                    .foregroundColor(Theme.textSecondary)
+
+                Spacer()
+
+                Text("\(tickets.count)")
+                    .font(.system(size: Theme.fontXS, weight: .semibold, design: .monospaced))
+                    .foregroundColor(Theme.textTertiary)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(Theme.surface)
+                    .cornerRadius(4)
+            }
+            .padding(.horizontal, Theme.space3)
+            .frame(height: 38)
+
+            Divider()
+                .background(Theme.borderSubtle)
+
+            if tickets.isEmpty {
+                boardEmptyState
+            } else {
+                ScrollView(.vertical, showsIndicators: true) {
+                    LazyVStack(spacing: Theme.space2) {
+                        ForEach(tickets) { ticket in
+                            TicketBoardCard(
+                                ticket: ticket,
+                                dependencySummary: dependencySummary(ticket),
+                                onSelect: { onSelect(ticket) },
+                                onMove: { onMove(ticket.id, $0) }
+                            )
+                        }
+                    }
+                    .padding(Theme.space2)
+                }
+            }
+        }
+        .background(
+            isDropTargeted
+                ? status.boardColor.opacity(0.08)
+                : Theme.sidebarBackground.opacity(0.72)
+        )
+        .overlay {
+            RoundedRectangle(cornerRadius: Theme.radius)
+                .stroke(
+                    isDropTargeted ? status.boardColor.opacity(0.7) : Theme.border,
+                    lineWidth: isDropTargeted ? 1.5 : 1
+                )
+        }
+        .cornerRadius(Theme.radius)
+        .dropDestination(for: String.self) { identifiers, _ in
+            guard let ticketId = identifiers.compactMap({ Int($0) }).first else {
+                return false
+            }
+            onMove(ticketId, status)
+            return true
+        } isTargeted: {
+            isDropTargeted = $0
+        }
+    }
+
+    private var boardEmptyState: some View {
+        VStack(spacing: Theme.space2) {
+            Image(systemName: isDropTargeted ? "arrow.down.circle.fill" : "arrow.down.circle")
+                .font(.system(size: 18, weight: .medium))
+                .foregroundColor(isDropTargeted ? status.boardColor : Theme.textMuted)
+
+            Text(isDropTargeted ? "Move to \(status.displayName)" : "Drop tickets here")
+                .font(.system(size: Theme.fontXS, weight: .medium))
+                .foregroundColor(isDropTargeted ? Theme.textSecondary : Theme.textMuted)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(Theme.space4)
+    }
+}
+
+// MARK: - Board Card
+
+private struct TicketBoardCard: View {
+    let ticket: Ticket
+    let dependencySummary: TicketDependencySummary
+    let onSelect: () -> Void
+    let onMove: (TicketStatus) -> Void
+
+    @State private var isHovered = false
+
+    var body: some View {
+        Button(action: onSelect) {
+            VStack(alignment: .leading, spacing: Theme.space2) {
+                HStack(spacing: Theme.space2) {
+                    Text("#\(ticket.id)")
+                        .font(.system(size: Theme.fontXS, weight: .semibold, design: .monospaced))
+                        .foregroundColor(Theme.textTertiary)
+
+                    Spacer()
+
+                    Image(systemName: "line.3.horizontal")
+                        .font(.system(size: 9, weight: .semibold))
+                        .foregroundColor(isHovered ? Theme.textTertiary : Theme.textMuted.opacity(0.55))
+                }
+
+                Text(ticket.title)
+                    .font(.system(size: Theme.fontSM, weight: .medium))
+                    .foregroundColor(Theme.textPrimary)
+                    .multilineTextAlignment(.leading)
+                    .lineLimit(3)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                HStack(spacing: Theme.space2) {
+                    if dependencySummary.state != .none {
+                        TicketDependencyBadge(summary: dependencySummary, compact: true)
+                    }
+
+                    if !ticket.images.isEmpty {
+                        HStack(spacing: 3) {
+                            Image(systemName: "photo")
+                                .font(.system(size: 8, weight: .semibold))
+                            Text("\(ticket.images.count)")
+                                .font(.system(size: Theme.fontXS, weight: .medium))
+                        }
+                        .foregroundColor(Theme.textMuted)
+                    }
+
+                    Spacer()
+
+                    Text(relativeTime(from: ticket.updatedAt))
+                        .font(.system(size: Theme.fontXS))
+                        .foregroundColor(Theme.textMuted)
+                }
+            }
+            .padding(Theme.space3)
+            .background(isHovered ? Theme.surfaceHover : Theme.surface)
+            .overlay {
+                RoundedRectangle(cornerRadius: Theme.radiusSmall)
+                    .stroke(isHovered ? Theme.borderFocus : Theme.borderSubtle, lineWidth: 1)
+            }
+            .cornerRadius(Theme.radiusSmall)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .onHover { isHovered = $0 }
+        .draggable(String(ticket.id)) {
+            HStack(spacing: Theme.space2) {
+                Text("#\(ticket.id)")
+                    .font(.system(size: Theme.fontXS, weight: .semibold, design: .monospaced))
+                    .foregroundColor(Theme.textTertiary)
+                Text(ticket.title)
+                    .font(.system(size: Theme.fontSM, weight: .medium))
+                    .foregroundColor(Theme.textPrimary)
+                    .lineLimit(1)
+            }
+            .padding(.horizontal, Theme.space3)
+            .padding(.vertical, Theme.space2)
+            .frame(width: 200, alignment: .leading)
+            .background(Theme.surfaceElevated)
+            .cornerRadius(Theme.radiusSmall)
+        }
+        .contextMenu {
+            Text("Move to")
+
+            ForEach(TicketStatus.allCases, id: \.rawValue) { status in
+                Button {
+                    onMove(status)
+                } label: {
+                    Label(status.displayName, systemImage: status.icon)
+                }
+                .disabled(status == ticket.status)
+            }
+        }
+        .help("Open ticket #\(ticket.id). Drag to change status.")
+        .pointingHandCursor()
+    }
+
+    private func relativeTime(from date: Date) -> String {
+        let formatter = RelativeDateTimeFormatter()
+        formatter.unitsStyle = .abbreviated
+        return formatter.localizedString(for: date, relativeTo: Date())
+    }
+}
+
+private extension TicketStatus {
+    var boardColor: Color {
+        switch self {
+        case .open:
+            return Theme.accent
+        case .inProgress:
+            return Theme.warning
+        case .done:
+            return Theme.success
+        }
     }
 }
 

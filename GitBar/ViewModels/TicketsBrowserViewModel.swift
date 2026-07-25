@@ -76,6 +76,17 @@ class TicketsBrowserViewModel: ObservableObject {
             result = result.filter { $0.status == status }
         }
 
+        return sorted(result)
+    }
+
+    /// All tickets sorted for views, such as the board, that show every status.
+    var sortedTickets: [Ticket] {
+        sorted(tickets)
+    }
+
+    private func sorted(_ tickets: [Ticket]) -> [Ticket] {
+        var result = tickets
+
         // Apply sort
         switch sort {
         case .recent:
@@ -248,7 +259,30 @@ class TicketsBrowserViewModel: ObservableObject {
 
     /// Changes the status of a ticket
     func setStatus(_ status: TicketStatus, for ticket: Ticket) async throws {
+        guard let path = projectPath, ticket.status != status else { return }
+
         let updated = ticket.updated(status: status)
-        try await updateTicket(updated)
+        if let index = tickets.firstIndex(where: { $0.id == ticket.id }) {
+            tickets[index] = updated
+        }
+
+        do {
+            try await ticketService.updateTicket(updated, at: path)
+        } catch {
+            if let index = tickets.firstIndex(where: {
+                $0.id == ticket.id && $0.updatedAt == updated.updatedAt
+            }) {
+                tickets[index] = ticket
+            }
+            throw error
+        }
+
+        do {
+            tickets = try await ticketService.loadTickets(at: path)
+        } catch {
+            // The status write succeeded, so keep the optimistic state and let a
+            // later refresh reconcile the board if reloading fails.
+            logger.warning("Ticket \(ticket.id) moved, but refresh failed: \(error.localizedDescription)")
+        }
     }
 }

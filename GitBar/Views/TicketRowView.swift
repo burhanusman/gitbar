@@ -44,7 +44,7 @@ struct TicketRowView: View {
                         }
 
                         if dependencySummary.state != .none {
-                            DependencyBadge(summary: dependencySummary)
+                            TicketDependencyBadge(summary: dependencySummary)
                         }
 
                         // Relative time
@@ -119,8 +119,9 @@ struct TicketRowView: View {
 
 // MARK: - Dependency Badge
 
-private struct DependencyBadge: View {
+struct TicketDependencyBadge: View {
     let summary: TicketDependencySummary
+    var compact = false
 
     private var color: Color {
         switch summary.state {
@@ -149,6 +150,19 @@ private struct DependencyBadge: View {
     }
 
     private var label: String {
+        if compact {
+            switch summary.state {
+            case .none:
+                return ""
+            case .ready:
+                return "Ready"
+            case .blocked:
+                return "Blocked"
+            case .missing:
+                return "Missing"
+            }
+        }
+
         switch summary.state {
         case .none:
             return ""
