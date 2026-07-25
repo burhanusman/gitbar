@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "pkill -x GitBar 2>/dev/null; xcodebuild -project /Users/burhan/projects/gitbar/GitBar.xcodeproj -scheme GitBar -configuration Debug -derivedDataPath /Users/burhan/projects/gitbar/build/DerivedData build -quiet && open /Users/burhan/projects/gitbar/build/DerivedData/Build/Products/Debug/GitBar.app"
+          }
+        ]
+      }
+    ]
+  }
+}
