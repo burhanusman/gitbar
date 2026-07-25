@@ -261,13 +261,37 @@ To test update flow:
 
 ### Layout & Responsiveness
 **Test Checklist:**
-- [ ] Popover size is appropriate (400x500)
+- [ ] Popover size is appropriate (680x520)
 - [ ] Navigation split view works correctly
 - [ ] Sidebar resizes properly
 - [ ] Detail view fills available space
 - [ ] Scrolling works smoothly
 - [ ] No content clipping or overflow
 - [ ] Text truncates properly (middle truncation for paths)
+
+### Persistent Workspace Window
+**Test Checklist:**
+- [ ] "Open in Window" opens one resizable workspace window
+- [ ] Repeated "Open in Window" actions focus the existing workspace window instead of creating duplicates
+- [ ] Opening the workspace window closes the popover
+- [ ] The selected project, worktree, detail tab, and Tickets List/Board mode carry between the popover and workspace window
+- [ ] Changing shared workspace state in the window is reflected when the popover is reopened
+- [ ] The app remains a menu-bar utility with no Dock icon while the workspace window is open
+- [ ] The window opens at its default size and respects its minimum size
+- [ ] Resizing larger and smaller keeps the sidebar and detail content usable without clipping
+- [ ] Minimize and reopen restores and focuses the same window
+- [ ] Closing the window keeps GitBar running in the menu bar
+- [ ] Reopening after close restores the prior workspace state
+- [ ] Fullscreen entry and exit preserve layout and workspace state
+- [ ] Window size and position restore after relaunch
+- [ ] A frame saved on a disconnected monitor is moved onto an available screen
+
+### Tickets Kanban Responsiveness
+**Test Checklist:**
+- [ ] Below 780pt of detail width, compact columns remain horizontally scrollable
+- [ ] At 780pt and wider, Open, In Progress, and Done fit as three equal-width columns
+- [ ] On very wide windows and fullscreen displays, columns stop growing at approximately 420pt
+- [ ] Vertical scrolling, card selection, and drag-and-drop work at compact and wide sizes
 
 ### Animations & Transitions
 **Test Checklist:**

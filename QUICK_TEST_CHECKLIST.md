@@ -35,7 +35,9 @@
 - [ ] Hover states work on all buttons
 - [ ] Text is readable
 - [ ] No visual bugs
-- [ ] Popover size appropriate (400x500)
+- [ ] Popover size appropriate (680x520)
+- [ ] Expand action opens one resizable workspace window
+- [ ] Closing the workspace window leaves GitBar running
 
 ### Settings
 - [ ] Settings opens (gear icon)

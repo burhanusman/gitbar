@@ -18,11 +18,97 @@ enum DetailTab: String, CaseIterable {
     }
 }
 
+enum ContentSurface: Hashable {
+    case popover
+    case window
+}
+
+struct SettingsPresentationRequest: Equatable {
+    let id = UUID()
+    let surface: ContentSurface
+}
+
+/// Durable workspace state shared by the quick popover and persistent window.
+///
+/// Only one surface is intended to be interactive at a time, but tracking a
+/// set keeps refresh work correct during the brief handoff between surfaces.
+@MainActor
+final class WorkspaceSession: ObservableObject {
+    let projectListViewModel: ProjectListViewModel
+
+    @Published var selectedTab: DetailTab {
+        didSet {
+            SettingsService.shared.lastSelectedDetailTab = selectedTab.rawValue
+        }
+    }
+    @Published private(set) var settingsRequest: SettingsPresentationRequest?
+
+    private var activeSurfaces: Set<ContentSurface> = []
+    private var claimedSettingsRequestId: UUID?
+
+    init(projectListViewModel: ProjectListViewModel? = nil) {
+        self.projectListViewModel = projectListViewModel ?? ProjectListViewModel()
+        self.selectedTab = SettingsService.shared.lastSelectedDetailTab
+            .flatMap { DetailTab(rawValue: $0) } ?? .changes
+    }
+
+    func activate(_ surface: ContentSurface) {
+        let wasInactive = activeSurfaces.isEmpty
+        guard activeSurfaces.insert(surface).inserted else { return }
+
+        if wasInactive {
+            projectListViewModel.loadProjects()
+            projectListViewModel.startAutoRefresh()
+        }
+    }
+
+    func deactivate(_ surface: ContentSurface) {
+        guard activeSurfaces.remove(surface) != nil else { return }
+        if activeSurfaces.isEmpty {
+            projectListViewModel.stopAutoRefresh()
+        }
+    }
+
+    func requestSettings(on surface: ContentSurface) {
+        settingsRequest = SettingsPresentationRequest(surface: surface)
+    }
+
+    func claimSettingsPresentation(
+        _ request: SettingsPresentationRequest?,
+        on surface: ContentSurface
+    ) -> Bool {
+        guard let request,
+              request.surface == surface,
+              request.id != claimedSettingsRequestId else {
+            return false
+        }
+
+        claimedSettingsRequestId = request.id
+        return true
+    }
+}
+
 struct ContentView: View {
-    @StateObject private var projectListViewModel = ProjectListViewModel()
+    @ObservedObject private var session: WorkspaceSession
+    @ObservedObject private var projectListViewModel: ProjectListViewModel
+
+    private let surface: ContentSurface
+    private let onOpenWindow: () -> Void
+
     @State private var showSettings = false
     @State private var hasAppeared = false
-    @State private var selectedTab: DetailTab = .changes
+    @State private var columnVisibility: NavigationSplitViewVisibility = .all
+
+    init(
+        session: WorkspaceSession,
+        surface: ContentSurface,
+        onOpenWindow: @escaping () -> Void = {}
+    ) {
+        self._session = ObservedObject(wrappedValue: session)
+        self._projectListViewModel = ObservedObject(wrappedValue: session.projectListViewModel)
+        self.surface = surface
+        self.onOpenWindow = onOpenWindow
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -35,9 +121,13 @@ struct ContentView: View {
             ZStack {
                 Theme.background.ignoresSafeArea()
 
-                NavigationSplitView {
+                NavigationSplitView(columnVisibility: $columnVisibility) {
                     ProjectListView(viewModel: projectListViewModel)
-                        .navigationSplitViewColumnWidth(min: 200, ideal: 240, max: 300)
+                        .navigationSplitViewColumnWidth(
+                            min: surface == .window ? 220 : 200,
+                            ideal: surface == .window ? 280 : 240,
+                            max: surface == .window ? 360 : 300
+                        )
                         .background(Theme.sidebarBackground)
                 } detail: {
                     ZStack {
@@ -46,14 +136,16 @@ struct ContentView: View {
                         if let selectedProject = projectListViewModel.selectedProject {
                             let activePath = projectListViewModel.selectedWorktreePath ?? selectedProject.activeWorktreePath
                             let availableTabs = DetailTab.availableTabs(for: selectedProject)
-                            let activeTab = availableTabs.contains(selectedTab) ? selectedTab : .tickets
+                            let activeTab = availableTabs.contains(session.selectedTab)
+                                ? session.selectedTab
+                                : .tickets
 
                             VStack(spacing: 0) {
                                 // Tab switcher
                                 DetailTabBar(
                                     selectedTab: Binding(
                                         get: { activeTab },
-                                        set: { selectedTab = $0 }
+                                        set: { session.selectedTab = $0 }
                                     ),
                                     tabs: availableTabs
                                 )
@@ -96,11 +188,12 @@ struct ContentView: View {
         .sheet(isPresented: $showSettings) {
             SettingsView()
         }
-        .onReceive(NotificationCenter.default.publisher(for: .openSettings)) { _ in
-            showSettings = true
+        .onChange(of: session.settingsRequest) { request in
+            handleSettingsRequest(request)
         }
         .onAppear {
             hasAppeared = true
+            handleSettingsRequest(session.settingsRequest)
         }
         .onDisappear {
             hasAppeared = false
@@ -120,7 +213,39 @@ struct ContentView: View {
                     .foregroundColor(Theme.textPrimary)
             }
 
+            if surface == .window {
+                Button(action: toggleSidebar) {
+                    Image(systemName: "sidebar.left")
+                        .frame(width: 28, height: 28)
+                        .font(.system(size: Theme.fontBase, weight: .medium))
+                        .foregroundColor(
+                            columnVisibility == .detailOnly
+                                ? Theme.textTertiary
+                                : Theme.textSecondary
+                        )
+                        .background(Theme.surface.opacity(0.01))
+                        .cornerRadius(Theme.radiusSmall)
+                }
+                .buttonStyle(HeaderButtonStyle())
+                .help(columnVisibility == .detailOnly ? "Show Sidebar" : "Hide Sidebar")
+                .accessibilityLabel(columnVisibility == .detailOnly ? "Show Sidebar" : "Hide Sidebar")
+            }
+
             Spacer()
+
+            if surface == .popover {
+                Button(action: onOpenWindow) {
+                    Image(systemName: "arrow.up.left.and.arrow.down.right")
+                        .frame(width: 28, height: 28)
+                        .font(.system(size: Theme.fontBase, weight: .medium))
+                        .foregroundColor(Theme.textTertiary)
+                        .background(Theme.surface.opacity(0.01))
+                        .cornerRadius(Theme.radiusSmall)
+                }
+                .buttonStyle(HeaderButtonStyle())
+                .help("Open in Window")
+                .accessibilityLabel("Open GitBar in a window")
+            }
 
             // Settings button
             Button(action: { showSettings.toggle() }) {
@@ -133,10 +258,23 @@ struct ContentView: View {
             }
             .buttonStyle(HeaderButtonStyle())
             .help("Settings")
+            .accessibilityLabel("Settings")
         }
-        .padding(.horizontal, Theme.space4)
+        .padding(.leading, surface == .window ? 76 : Theme.space4)
+        .padding(.trailing, Theme.space4)
         .padding(.vertical, Theme.space3)
         .background(Theme.sidebarBackground)
+    }
+
+    private func toggleSidebar() {
+        withAnimation(.easeOut(duration: Theme.animationBase)) {
+            columnVisibility = columnVisibility == .detailOnly ? .all : .detailOnly
+        }
+    }
+
+    private func handleSettingsRequest(_ request: SettingsPresentationRequest?) {
+        guard session.claimSettingsPresentation(request, on: surface) else { return }
+        showSettings = true
     }
 }
 
@@ -293,5 +431,8 @@ struct TabButton: View {
 }
 
 #Preview {
-    ContentView()
+    ContentView(
+        session: WorkspaceSession(),
+        surface: .window
+    )
 }

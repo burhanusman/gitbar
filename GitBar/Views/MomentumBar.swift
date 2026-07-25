@@ -2,7 +2,6 @@ import SwiftUI
 
 /// Shared state to track which momentum bar is currently expanded
 class MomentumBarState: ObservableObject {
-    static let shared = MomentumBarState()
     @Published var expandedBarId: String?
 }
 
@@ -13,7 +12,7 @@ struct MomentumBar: View {
     let barId: String
     var nextBarId: String? = nil  // ID of the bar in the row below (if any)
 
-    @ObservedObject private var state = MomentumBarState.shared
+    @EnvironmentObject private var state: MomentumBarState
     @State private var isExpanded = false
 
     /// Whether this bar's collapsed view should be hidden (the bar below is expanded)
@@ -159,4 +158,5 @@ struct ActivityCell: View {
     .frame(width: 260)
     .padding(.vertical, 20)
     .background(Theme.sidebarBackground)
+    .environmentObject(MomentumBarState())
 }

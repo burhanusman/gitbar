@@ -106,6 +106,8 @@ class ProjectListViewModel: ObservableObject {
         let previousExpansion = Dictionary(uniqueKeysWithValues: sections.map { ($0.id, $0.isExpanded) })
         // Use current selection, or fall back to persisted last selection
         let previouslySelectedPath = selectedProject?.path ?? SettingsService.shared.lastSelectedProjectPath
+        let previouslySelectedWorktreePath =
+            selectedWorktreePath ?? SettingsService.shared.lastSelectedWorktreePath
         let repoFolders = SettingsService.shared.repoFolders
 
         // Capture references needed for background work
@@ -222,7 +224,43 @@ class ProjectListViewModel: ObservableObject {
 
             // Phase 2: Load git status in background and update projects as results come in
             await loadGitStatusForAllProjects()
+            guard !Task.isCancelled else { return }
+            restoreSelection(
+                projectPath: previouslySelectedPath,
+                worktreePath: previouslySelectedWorktreePath
+            )
         }
+    }
+
+    /// Restores the selected project from its refreshed model and, when it still
+    /// belongs to that project, the persisted worktree selection.
+    private func restoreSelection(projectPath: String?, worktreePath: String?) {
+        guard let projectPath,
+              let sectionIndex = sections.firstIndex(where: {
+                  $0.projects.contains(where: { $0.path == projectPath })
+              }),
+              let projectIndex = sections[sectionIndex].projects.firstIndex(where: {
+                  $0.path == projectPath
+              }) else {
+            selectedWorktreePath = nil
+            return
+        }
+
+        if let worktreePath,
+           let worktree = sections[sectionIndex].projects[projectIndex].worktrees.first(where: {
+               $0.path == worktreePath
+           }) {
+            sections[sectionIndex].projects[projectIndex].activeWorktreePath = worktree.path
+            selectedWorktreePath = worktree.path
+
+            if !worktree.isMain {
+                expandedWorktreeProjects.insert(sections[sectionIndex].projects[projectIndex].id)
+            }
+        } else {
+            selectedWorktreePath = nil
+        }
+
+        selectedProject = sections[sectionIndex].projects[projectIndex]
     }
 
     /// Loads git status for all projects in background and updates them incrementally

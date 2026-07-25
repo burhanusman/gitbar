@@ -280,10 +280,20 @@ struct TicketsView: View {
 
     private var ticketBoardView: some View {
         GeometryReader { proxy in
-            let columnWidth = min(244, max(208, proxy.size.width * 0.58))
+            let boardPadding = Theme.space3
+            let columnSpacing = Theme.space3
+            let compactColumnWidth = min(244, max(208, proxy.size.width * 0.58))
+            let availableColumnWidth = (
+                proxy.size.width
+                    - (boardPadding * 2)
+                    - (columnSpacing * CGFloat(TicketStatus.allCases.count - 1))
+            ) / CGFloat(TicketStatus.allCases.count)
+            let columnWidth = proxy.size.width >= 780
+                ? min(420, max(208, availableColumnWidth))
+                : compactColumnWidth
 
             ScrollView(.horizontal, showsIndicators: true) {
-                HStack(alignment: .top, spacing: Theme.space3) {
+                HStack(alignment: .top, spacing: columnSpacing) {
                     ForEach(TicketStatus.allCases, id: \.rawValue) { status in
                         TicketBoardColumn(
                             status: status,
@@ -298,7 +308,7 @@ struct TicketsView: View {
                         )
                     }
                 }
-                .padding(Theme.space3)
+                .padding(boardPadding)
             }
         }
     }

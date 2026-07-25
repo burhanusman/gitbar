@@ -15,7 +15,7 @@ GitBar exists but isn't production-ready. Users can't easily discover or install
 - **Not building**: Windows/Linux versions (macOS only for v1)
 - **Not building**: Advanced git features (rebase, merge conflict resolution, stash management)
 - **Not building**: Integration with GitHub/GitLab APIs (local git only)
-- **Not building**: Multiple window support (single popover only)
+- **Not building**: Multiple simultaneous workspace windows (GitBar provides one persistent, resizable workspace window alongside the menu-bar popover)
 - **Not seeking**: Active open-source contributors yet (transparent, but not community-driven)
 - **Not optimizing**: For giant repos (>10k files) - good enough performance is acceptable
 
@@ -27,7 +27,7 @@ GitBar exists but isn't production-ready. Users can't easily discover or install
 3. Copies Homebrew command: `brew install --cask gitbar`
 4. Terminal installs and launches GitBar
 5. App appears in menubar (branch icon)
-6. User clicks icon → popover opens
+6. User clicks icon → quick popover opens, with an option to open the persistent workspace window
 7. Auto-discovery finds all Claude/Codex projects
 8. User clicks a project → sees git status immediately
 

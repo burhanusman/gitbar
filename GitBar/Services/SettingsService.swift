@@ -36,6 +36,7 @@ final class SettingsService {
     private let projectSortModeKey = "projectSortMode"
     private let worktreeAgentLabelsKey = "worktreeAgentLabels"
     private let lastSelectedWorktreePathKey = "lastSelectedWorktreePath"
+    private let lastSelectedDetailTabKey = "lastSelectedDetailTab"
     private let defaults = UserDefaults.standard
 
     private init() {}
@@ -144,6 +145,16 @@ final class SettingsService {
         }
         set {
             defaults.set(newValue, forKey: lastSelectedWorktreePathKey)
+        }
+    }
+
+    /// Last selected detail tab, used to preserve workspace context between surfaces and launches.
+    var lastSelectedDetailTab: String? {
+        get {
+            defaults.string(forKey: lastSelectedDetailTabKey)
+        }
+        set {
+            defaults.set(newValue, forKey: lastSelectedDetailTabKey)
         }
     }
 

@@ -14,11 +14,12 @@
 
 ## Overview
 
-GitBar lives in your macOS menubar and provides instant visibility into the git status of your development projects. Whether you're working with Claude Code, Codex, or any git repository, GitBar keeps you informed about uncommitted changes, branch status, and sync state with your remote repositories.
+GitBar lives in your macOS menubar and provides instant visibility into the git status of your development projects. Use the quick popover for a glance or keep the resizable workspace window open for longer ticket, file, and Git sessions. Whether you're working with Claude Code, Codex, or any git repository, GitBar keeps you informed about uncommitted changes, branch status, and sync state with your remote repositories.
 
 ## Features
 
 - **Menubar Integration**: Lightweight menubar app with no Dock icon
+- **Resizable Workspace**: Expand the quick popover into one persistent, full-size window
 - **Project Auto-Discovery**: Automatically finds Claude Code and Codex projects
 - **Real-time Git Status**: Shows branch name, ahead/behind commits, and working directory status
 - **Local Tickets**: Track project tickets, dependencies, and optional image attachments
@@ -45,14 +46,21 @@ After installation, launch GitBar from Applications or Spotlight. Look for the g
 
 ## Usage
 
-GitBar is a menubar-only application with no Dock icon.
+GitBar remains a menu-bar application with no Dock icon. It provides both a compact popover and a persistent workspace window.
 
 ### Getting Started
 
 1. Launch GitBar (it will appear in your menubar)
-2. Click the menubar icon to open the project list
+2. Click the menubar icon to open the quick project popover
 3. Projects from Claude Code and Codex are automatically discovered
 4. Add custom folders using the "Add Folder" button
+
+### Workspace Window
+
+- Click the expand button in the popover or right-click the menu-bar icon and choose **Open GitBar Window**
+- Resize, minimize, zoom, or use the window in full screen like a standard macOS window
+- GitBar keeps one workspace window and restores its last size, position, project, worktree, and tab
+- Closing the window leaves GitBar running in the menu bar
 
 ### Menubar Icon
 

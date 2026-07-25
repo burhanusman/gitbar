@@ -7,8 +7,9 @@ struct ProjectListView: View {
     @State private var hoveredProjectId: String?
     @State private var searchText: String = ""
     @FocusState private var isSearchFocused: Bool
-    @State private var keyboardMonitor: Any?
+    @FocusState private var isProjectListFocused: Bool
     @State private var isSortButtonHovered: Bool = false
+    @StateObject private var momentumBarState = MomentumBarState()
 
     /// Filtered projects based on search text (also matches worktree branch names)
     private var filteredSections: [ProjectSection] {
@@ -91,51 +92,32 @@ struct ProjectListView: View {
                 .padding(.vertical, Theme.space2)
             }
             .background(Theme.sidebarBackground)
+            .focusable()
+            .focused($isProjectListFocused)
+            .onMoveCommand(perform: handleMoveCommand)
             .onAppear {
-                viewModel.loadProjects()
-                viewModel.startAutoRefresh()
-                setupKeyboardMonitor()
-            }
-            .onDisappear {
-                viewModel.stopAutoRefresh()
-                removeKeyboardMonitor()
+                isProjectListFocused = true
             }
         }
+        .environmentObject(momentumBarState)
     }
 
     // MARK: - Keyboard Navigation
 
-    private func setupKeyboardMonitor() {
-        keyboardMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
-            handleKeyEvent(event)
-        }
-    }
-
-    private func removeKeyboardMonitor() {
-        if let monitor = keyboardMonitor {
-            NSEvent.removeMonitor(monitor)
-            keyboardMonitor = nil
-        }
-    }
-
-    private func handleKeyEvent(_ event: NSEvent) -> NSEvent? {
-        // Only handle if not in a text field (other than our search field)
-        // Arrow keys: up = 126, down = 125
-        switch event.keyCode {
-        case 125: // Down arrow
+    private func handleMoveCommand(_ direction: MoveCommandDirection) {
+        switch direction {
+        case .down:
             withAnimation(.easeOut(duration: Theme.animationFast)) {
                 let sections = searchText.isEmpty ? nil : filteredSections
                 viewModel.selectNextProject(filteredSections: sections)
             }
-            return nil // Consume the event
-        case 126: // Up arrow
+        case .up:
             withAnimation(.easeOut(duration: Theme.animationFast)) {
                 let sections = searchText.isEmpty ? nil : filteredSections
                 viewModel.selectPreviousProject(filteredSections: sections)
             }
-            return nil // Consume the event
         default:
-            return event // Pass through other events
+            break
         }
     }
 
@@ -274,6 +256,7 @@ struct ProjectListView: View {
                 } : nil
             )
             .onTapGesture {
+                isProjectListFocused = true
                 withAnimation(.easeOut(duration: Theme.animationBase)) {
                     viewModel.selectProject(project)
                 }
@@ -313,6 +296,7 @@ struct ProjectListView: View {
                             isLast: worktree.id == project.worktrees.last?.id
                         )
                         .onTapGesture {
+                            isProjectListFocused = true
                             withAnimation(.easeOut(duration: Theme.animationBase)) {
                                 viewModel.selectWorktree(worktree, in: project)
                             }
