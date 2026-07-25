@@ -97,7 +97,8 @@ Setup:
 - [ ] "Add Folder" button is visible and functional
 - [ ] File picker opens when clicked
 - [ ] Can select any git repository folder
-- [ ] Non-git folders are rejected with clear error
+- [ ] Can select a non-git folder containing `.gitbar/tickets.jsonl`
+- [ ] Non-git ticket boards show Files, .md Files, and Tickets tabs only
 - [ ] Added projects appear under "Folders" section
 - [ ] No badge shown for manual folders
 - [ ] Projects persist after app restart

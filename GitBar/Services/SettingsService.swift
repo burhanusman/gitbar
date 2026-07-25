@@ -76,7 +76,7 @@ final class SettingsService {
         }
     }
 
-    /// User-selected parent folders to scan for Git repositories
+    /// User-selected folders to scan for Git repositories and GitBar ticket boards
     var repoFolders: [String] {
         get {
             (defaults.stringArray(forKey: repoFoldersKey) ?? [])

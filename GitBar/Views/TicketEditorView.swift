@@ -13,8 +13,9 @@ struct PendingImage: Identifiable {
 /// Sheet view for creating or editing a ticket
 struct TicketEditorView: View {
     let existingTicket: Ticket?
-    let onSave: (String, String, TicketStatus, [TicketImage]) async throws -> Void
-    let onCreateWithImages: ((String, String, TicketStatus, [NSImage]) async throws -> Void)?
+    let availableTickets: [Ticket]
+    let onSave: (String, String, TicketStatus, [TicketImage], [Int]) async throws -> Void
+    let onCreateWithImages: ((String, String, TicketStatus, [NSImage], [Int]) async throws -> Void)?
     let onSaveImage: ((NSImage, Int) async throws -> TicketImage)?
     let onLoadImage: ((TicketImage, Int) async -> NSImage?)?
     let onDeleteImage: ((TicketImage, Int) async throws -> Void)?
@@ -23,6 +24,7 @@ struct TicketEditorView: View {
     @State private var title: String = ""
     @State private var description: String = ""
     @State private var status: TicketStatus = .open
+    @State private var selectedDependencyIds: Set<Int> = []
     @State private var pendingImages: [PendingImage] = []
     @State private var imagesToDelete: [TicketImage] = []
     @State private var isSaving = false
@@ -43,13 +45,15 @@ struct TicketEditorView: View {
 
     init(
         existingTicket: Ticket? = nil,
-        onSave: @escaping (String, String, TicketStatus, [TicketImage]) async throws -> Void,
-        onCreateWithImages: ((String, String, TicketStatus, [NSImage]) async throws -> Void)? = nil,
+        availableTickets: [Ticket] = [],
+        onSave: @escaping (String, String, TicketStatus, [TicketImage], [Int]) async throws -> Void,
+        onCreateWithImages: ((String, String, TicketStatus, [NSImage], [Int]) async throws -> Void)? = nil,
         onSaveImage: ((NSImage, Int) async throws -> TicketImage)? = nil,
         onLoadImage: ((TicketImage, Int) async -> NSImage?)? = nil,
         onDeleteImage: ((TicketImage, Int) async throws -> Void)? = nil
     ) {
         self.existingTicket = existingTicket
+        self.availableTickets = availableTickets
         self.onSave = onSave
         self.onCreateWithImages = onCreateWithImages
         self.onSaveImage = onSaveImage
@@ -125,6 +129,8 @@ struct TicketEditorView: View {
                             }
                         }
                     }
+
+                    dependencySection
 
                     // Images section
                     VStack(alignment: .leading, spacing: Theme.space2) {
@@ -288,11 +294,135 @@ struct TicketEditorView: View {
                 title = ticket.title
                 description = ticket.description
                 status = ticket.status
+                selectedDependencyIds = Set(ticket.dependencies)
                 loadExistingImages()
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
             // Check for pasteable images when app becomes active
+        }
+    }
+
+    // MARK: - Dependencies
+
+    private var dependencySection: some View {
+        VStack(alignment: .leading, spacing: Theme.space2) {
+            HStack {
+                Text("Dependencies")
+                    .font(.system(size: Theme.fontSM, weight: .medium))
+                    .foregroundColor(Theme.textSecondary)
+
+                Spacer()
+
+                if !selectableDependencyTickets.isEmpty {
+                    Menu {
+                        ForEach(selectableDependencyTickets) { ticket in
+                            Button(action: { selectedDependencyIds.insert(ticket.id) }) {
+                                Label(
+                                    "#\(ticket.id) \(ticket.title)",
+                                    systemImage: ticket.status.icon
+                                )
+                            }
+                        }
+                    } label: {
+                        HStack(spacing: 4) {
+                            Image(systemName: "link.badge.plus")
+                                .font(.system(size: 10, weight: .semibold))
+                            Text("Add")
+                                .font(.system(size: Theme.fontXS, weight: .medium))
+                        }
+                        .foregroundColor(Theme.accent)
+                    }
+                    .menuStyle(.borderlessButton)
+                    .fixedSize()
+                    .pointingHandCursor()
+                }
+            }
+
+            if selectedDependencyIds.isEmpty {
+                Text("No dependencies — this ticket can start immediately")
+                    .font(.system(size: Theme.fontXS))
+                    .foregroundColor(Theme.textMuted)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.vertical, Theme.space2)
+            } else {
+                VStack(spacing: 0) {
+                    ForEach(selectedDependencyIds.sorted(), id: \.self) { dependencyId in
+                        dependencyRow(for: dependencyId)
+
+                        if dependencyId != selectedDependencyIds.sorted().last {
+                            Divider()
+                                .overlay(Theme.borderSubtle)
+                        }
+                    }
+                }
+                .background(Theme.surface)
+                .cornerRadius(Theme.radiusSmall)
+                .overlay(
+                    RoundedRectangle(cornerRadius: Theme.radiusSmall)
+                        .stroke(Theme.border, lineWidth: 1)
+                )
+            }
+
+            Text("A dependency is ready when its ticket is marked Done")
+                .font(.system(size: 9))
+                .foregroundColor(Theme.textMuted)
+        }
+    }
+
+    private var selectableDependencyTickets: [Ticket] {
+        availableTickets
+            .filter { !selectedDependencyIds.contains($0.id) && $0.id != existingTicket?.id }
+            .sorted { $0.id < $1.id }
+    }
+
+    @ViewBuilder
+    private func dependencyRow(for dependencyId: Int) -> some View {
+        let ticket = availableTickets.first { $0.id == dependencyId }
+        let color = dependencyColor(for: ticket)
+
+        HStack(spacing: Theme.space2) {
+            Image(systemName: ticket?.status.icon ?? "exclamationmark.triangle.fill")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundColor(color)
+                .frame(width: 16)
+
+            Text("#\(dependencyId)")
+                .font(.system(size: Theme.fontXS, weight: .semibold, design: .monospaced))
+                .foregroundColor(color)
+
+            Text(ticket?.title ?? "Ticket not found")
+                .font(.system(size: Theme.fontSM))
+                .foregroundColor(ticket == nil ? Theme.error : Theme.textSecondary)
+                .lineLimit(1)
+
+            Spacer()
+
+            Button(action: { selectedDependencyIds.remove(dependencyId) }) {
+                Image(systemName: "xmark")
+                    .font(.system(size: 9, weight: .semibold))
+                    .foregroundColor(Theme.textMuted)
+                    .frame(width: 20, height: 20)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .help("Remove dependency")
+            .pointingHandCursor()
+        }
+        .padding(.horizontal, Theme.space3)
+        .padding(.vertical, Theme.space2)
+    }
+
+    private func dependencyColor(for ticket: Ticket?) -> Color {
+        guard let ticket else { return Theme.error }
+
+        switch ticket.status {
+        case .open:
+            return Theme.accent
+        case .inProgress:
+            return Theme.warning
+        case .done:
+            return Theme.success
         }
     }
 
@@ -386,6 +516,7 @@ struct TicketEditorView: View {
             do {
                 let trimmedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
                 let trimmedDescription = description.trimmingCharacters(in: .whitespacesAndNewlines)
+                let dependencies = selectedDependencyIds.sorted()
 
                 // For existing tickets, handle images
                 if let ticketId = existingTicket?.id {
@@ -407,12 +538,12 @@ struct TicketEditorView: View {
                         try await onDeleteImage?(imageToDelete, ticketId)
                     }
 
-                    try await onSave(trimmedTitle, trimmedDescription, status, finalImages)
+                    try await onSave(trimmedTitle, trimmedDescription, status, finalImages, dependencies)
                 } else if let onCreateWithImages = onCreateWithImages {
                     let images = pendingImages.map(\.image)
-                    try await onCreateWithImages(trimmedTitle, trimmedDescription, status, images)
+                    try await onCreateWithImages(trimmedTitle, trimmedDescription, status, images, dependencies)
                 } else {
-                    try await onSave(trimmedTitle, trimmedDescription, status, [])
+                    try await onSave(trimmedTitle, trimmedDescription, status, [], dependencies)
                 }
                 dismiss()
             } catch {
@@ -703,12 +834,12 @@ private struct StatusPill: View {
 }
 
 #Preview("Create") {
-    TicketEditorView { _, _, _, _ in }
+    TicketEditorView { _, _, _, _, _ in }
 }
 
 #Preview("Edit") {
     TicketEditorView(
         existingTicket: Ticket.create(id: 1, title: "Fix login bug", description: "The form fails silently"),
-        onSave: { _, _, _, _ in }
+        onSave: { _, _, _, _, _ in }
     )
 }

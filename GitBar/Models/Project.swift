@@ -52,12 +52,13 @@ struct WorktreeInfo: Identifiable, Equatable {
     }
 }
 
-/// Represents a Git project displayed in the sidebar
+/// Represents a project displayed in the sidebar
 struct Project: Identifiable, Equatable {
     let id: String
     let name: String
     let path: String
     let source: ProjectSource
+    let isGitRepository: Bool
     var hasUncommittedChanges: Bool
     var commitActivity: CommitActivity
     var lastActivityDate: Date?
@@ -69,11 +70,12 @@ struct Project: Identifiable, Equatable {
         worktrees.count > 1
     }
 
-    init(name: String, path: String, source: ProjectSource = .folder, hasUncommittedChanges: Bool = false, commitActivity: CommitActivity = .empty, lastActivityDate: Date? = nil, worktrees: [WorktreeInfo] = [], activeWorktreePath: String? = nil, isClaudeActive: Bool = false) {
+    init(name: String, path: String, source: ProjectSource = .folder, isGitRepository: Bool = true, hasUncommittedChanges: Bool = false, commitActivity: CommitActivity = .empty, lastActivityDate: Date? = nil, worktrees: [WorktreeInfo] = [], activeWorktreePath: String? = nil, isClaudeActive: Bool = false) {
         self.id = path
         self.name = name
         self.path = path
         self.source = source
+        self.isGitRepository = isGitRepository
         self.hasUncommittedChanges = hasUncommittedChanges
         self.commitActivity = commitActivity
         self.lastActivityDate = lastActivityDate
@@ -88,6 +90,7 @@ struct Project: Identifiable, Equatable {
         self.name = claudeProject.name
         self.path = claudeProject.path
         self.source = claudeProject.source
+        self.isGitRepository = true
         self.hasUncommittedChanges = hasUncommittedChanges
         self.commitActivity = commitActivity
         self.lastActivityDate = lastActivityDate

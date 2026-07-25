@@ -27,6 +27,34 @@ enum TicketSort: String, CaseIterable {
     case created = "Created"
 }
 
+/// The current readiness of a ticket's dependencies.
+enum TicketDependencyState: Equatable {
+    case none
+    case ready
+    case blocked
+    case missing
+}
+
+/// Resolved dependency information used by ticket rows.
+struct TicketDependencySummary: Equatable {
+    let dependencyIds: [Int]
+    let incompleteIds: [Int]
+    let missingIds: [Int]
+
+    static let none = TicketDependencySummary(
+        dependencyIds: [],
+        incompleteIds: [],
+        missingIds: []
+    )
+
+    var state: TicketDependencyState {
+        guard !dependencyIds.isEmpty else { return .none }
+        if !missingIds.isEmpty { return .missing }
+        if !incompleteIds.isEmpty { return .blocked }
+        return .ready
+    }
+}
+
 /// ViewModel for browsing and managing tickets
 @MainActor
 class TicketsBrowserViewModel: ObservableObject {
@@ -74,6 +102,30 @@ class TicketsBrowserViewModel: ObservableObject {
         tickets.filter { $0.status == .done }.count
     }
 
+    /// Resolves a ticket's dependency IDs against the current ticket list.
+    func dependencySummary(for ticket: Ticket) -> TicketDependencySummary {
+        let ticketsById = Dictionary(uniqueKeysWithValues: tickets.map { ($0.id, $0) })
+        var incompleteIds: [Int] = []
+        var missingIds: [Int] = []
+
+        for dependencyId in ticket.dependencies {
+            guard let dependency = ticketsById[dependencyId] else {
+                missingIds.append(dependencyId)
+                continue
+            }
+
+            if dependency.status != .done {
+                incompleteIds.append(dependencyId)
+            }
+        }
+
+        return TicketDependencySummary(
+            dependencyIds: ticket.dependencies,
+            incompleteIds: incompleteIds,
+            missingIds: missingIds
+        )
+    }
+
     /// Loads tickets from the given project path
     func loadTickets(at path: String) {
         logger.info("Loading tickets for: \(path)")
@@ -107,10 +159,17 @@ class TicketsBrowserViewModel: ObservableObject {
     }
 
     /// Creates a new ticket
-    func createTicket(title: String, description: String, status: TicketStatus = .open, images: [TicketImage] = []) async throws {
+    func createTicket(title: String, description: String, status: TicketStatus = .open, images: [TicketImage] = [], dependencies: [Int] = []) async throws {
         guard let path = projectPath else { return }
 
-        let ticket = Ticket.create(id: nextTicketId, title: title, description: description, status: status, images: images)
+        let ticket = Ticket.create(
+            id: nextTicketId,
+            title: title,
+            description: description,
+            status: status,
+            images: images,
+            dependencies: dependencies
+        )
         try await ticketService.createTicket(ticket, at: path)
 
         // Reload to get the updated list
@@ -119,7 +178,7 @@ class TicketsBrowserViewModel: ObservableObject {
     }
 
     /// Creates a new ticket and persists its image attachments before writing the ticket metadata
-    func createTicket(title: String, description: String, status: TicketStatus = .open, attachedImages: [NSImage]) async throws {
+    func createTicket(title: String, description: String, status: TicketStatus = .open, attachedImages: [NSImage], dependencies: [Int] = []) async throws {
         guard let path = projectPath else { return }
 
         let existingTickets = try await ticketService.loadTickets(at: path)
@@ -132,7 +191,14 @@ class TicketsBrowserViewModel: ObservableObject {
                 savedImages.append(savedImage)
             }
 
-            let ticket = Ticket.create(id: ticketId, title: title, description: description, status: status, images: savedImages)
+            let ticket = Ticket.create(
+                id: ticketId,
+                title: title,
+                description: description,
+                status: status,
+                images: savedImages,
+                dependencies: dependencies
+            )
             try await ticketService.createTicket(ticket, at: path)
 
             // Reload to get the updated list

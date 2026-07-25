@@ -3,6 +3,7 @@ import SwiftUI
 /// A row displaying a single ticket
 struct TicketRowView: View {
     let ticket: Ticket
+    var dependencySummary: TicketDependencySummary = .none
     let onSelect: () -> Void
     let onStatusChange: (TicketStatus) -> Void
 
@@ -40,6 +41,10 @@ struct TicketRowView: View {
                                     .font(.system(size: Theme.fontXS, weight: .medium))
                             }
                             .foregroundColor(Theme.textMuted)
+                        }
+
+                        if dependencySummary.state != .none {
+                            DependencyBadge(summary: dependencySummary)
                         }
 
                         // Relative time
@@ -109,6 +114,88 @@ struct TicketRowView: View {
         let formatter = RelativeDateTimeFormatter()
         formatter.unitsStyle = .abbreviated
         return formatter.localizedString(for: date, relativeTo: Date())
+    }
+}
+
+// MARK: - Dependency Badge
+
+private struct DependencyBadge: View {
+    let summary: TicketDependencySummary
+
+    private var color: Color {
+        switch summary.state {
+        case .none:
+            return Theme.textMuted
+        case .ready:
+            return Theme.success
+        case .blocked:
+            return Theme.warning
+        case .missing:
+            return Theme.error
+        }
+    }
+
+    private var icon: String {
+        switch summary.state {
+        case .none:
+            return "link"
+        case .ready:
+            return "checkmark.circle.fill"
+        case .blocked:
+            return "pause.circle.fill"
+        case .missing:
+            return "exclamationmark.triangle.fill"
+        }
+    }
+
+    private var label: String {
+        switch summary.state {
+        case .none:
+            return ""
+        case .ready:
+            return "Ready · \(formattedIds(summary.dependencyIds))"
+        case .blocked:
+            return "Blocked by \(formattedIds(summary.incompleteIds))"
+        case .missing:
+            return "Missing \(formattedIds(summary.missingIds))"
+        }
+    }
+
+    private var helpText: String {
+        let dependencyList = summary.dependencyIds.map { "#\($0)" }.joined(separator: ", ")
+        switch summary.state {
+        case .none:
+            return "No dependencies"
+        case .ready:
+            return "All dependencies are done: \(dependencyList)"
+        case .blocked:
+            return "Waiting for \(summary.incompleteIds.map { "#\($0)" }.joined(separator: ", "))"
+        case .missing:
+            return "Referenced tickets could not be found: \(summary.missingIds.map { "#\($0)" }.joined(separator: ", "))"
+        }
+    }
+
+    var body: some View {
+        HStack(spacing: 3) {
+            Image(systemName: icon)
+                .font(.system(size: 8, weight: .semibold))
+
+            Text(label)
+                .font(.system(size: Theme.fontXS, weight: .medium))
+                .lineLimit(1)
+        }
+        .foregroundColor(color)
+        .padding(.horizontal, 5)
+        .padding(.vertical, 2)
+        .background(color.opacity(0.12))
+        .cornerRadius(4)
+        .help(helpText)
+    }
+
+    private func formattedIds(_ ids: [Int]) -> String {
+        let visibleIds = ids.prefix(2).map { "#\($0)" }.joined(separator: ", ")
+        let remainingCount = ids.count - min(ids.count, 2)
+        return remainingCount > 0 ? "\(visibleIds) +\(remainingCount)" : visibleIds
     }
 }
 

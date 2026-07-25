@@ -8,6 +8,14 @@ enum DetailTab: String, CaseIterable {
     case mdFiles = ".md Files"
     case tickets = "Tickets"
     case stats = "Stats"
+
+    static func availableTabs(for project: Project) -> [DetailTab] {
+        if project.isGitRepository {
+            return allCases
+        }
+
+        return [.files, .mdFiles, .tickets]
+    }
 }
 
 struct ContentView: View {
@@ -37,15 +45,23 @@ struct ContentView: View {
 
                         if let selectedProject = projectListViewModel.selectedProject {
                             let activePath = projectListViewModel.selectedWorktreePath ?? selectedProject.activeWorktreePath
+                            let availableTabs = DetailTab.availableTabs(for: selectedProject)
+                            let activeTab = availableTabs.contains(selectedTab) ? selectedTab : .tickets
 
                             VStack(spacing: 0) {
                                 // Tab switcher
-                                DetailTabBar(selectedTab: $selectedTab)
+                                DetailTabBar(
+                                    selectedTab: Binding(
+                                        get: { activeTab },
+                                        set: { selectedTab = $0 }
+                                    ),
+                                    tabs: availableTabs
+                                )
 
                                 // Content based on selected tab
                                 // Use .id() to force view recreation when project/worktree changes, ensuring fresh view model state
                                 let viewId = "\(selectedProject.id)-\(activePath ?? "")"
-                                switch selectedTab {
+                                switch activeTab {
                                 case .changes:
                                     GitStatusView(project: selectedProject, worktreePath: activePath)
                                         .id(viewId)
@@ -179,7 +195,7 @@ struct SelectProjectEmptyState: View {
                         .foregroundColor(Theme.textPrimary)
                 }
 
-                Text("Choose a repository from the sidebar")
+                Text("Choose a project from the sidebar")
                     .font(.system(size: Theme.fontBase))
                     .foregroundColor(Theme.textTertiary)
             }
@@ -198,6 +214,7 @@ struct SelectProjectEmptyState: View {
 
 struct DetailTabBar: View {
     @Binding var selectedTab: DetailTab
+    let tabs: [DetailTab]
 
     private func iconForTab(_ tab: DetailTab) -> String {
         switch tab {
@@ -219,7 +236,7 @@ struct DetailTabBar: View {
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 2) {
-                ForEach(DetailTab.allCases, id: \.self) { tab in
+                ForEach(tabs, id: \.self) { tab in
                     TabButton(
                         title: tab.rawValue,
                         icon: iconForTab(tab),

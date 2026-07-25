@@ -9,6 +9,12 @@ struct ProjectSection: Identifiable, Equatable {
     var projects: [Project]
 }
 
+/// A project found inside a user-selected folder source.
+private struct DiscoveredFolderProject {
+    let path: String
+    let isGitRepository: Bool
+}
+
 /// ViewModel for managing the project list sidebar
 @MainActor
 class ProjectListViewModel: ObservableObject {
@@ -166,12 +172,23 @@ class ProjectListViewModel: ObservableObject {
 
                 // User folders
                 for folderPath in repoFolders {
-                    let repoPaths = ProjectListViewModel.discoverGitRepositories(in: folderPath).filter { !allDiscoveredPaths.contains($0) }
+                    let folderProjects = ProjectListViewModel.discoverFolderProjects(in: folderPath)
+                        .filter { !allDiscoveredPaths.contains($0.path) }
                     var loadedFolderProjects: [Project] = []
 
-                    for repoPath in repoPaths {
-                        let repoName = URL(fileURLWithPath: repoPath).lastPathComponent
-                        loadedFolderProjects.append(Project(name: repoName, path: repoPath, source: .folder, hasUncommittedChanges: false, commitActivity: .empty, lastActivityDate: nil))
+                    for folderProject in folderProjects {
+                        let projectName = URL(fileURLWithPath: folderProject.path).lastPathComponent
+                        loadedFolderProjects.append(
+                            Project(
+                                name: projectName,
+                                path: folderProject.path,
+                                source: .folder,
+                                isGitRepository: folderProject.isGitRepository,
+                                hasUncommittedChanges: false,
+                                commitActivity: .empty,
+                                lastActivityDate: nil
+                            )
+                        )
                     }
 
                     let sectionId = "folder:\(folderPath)"
@@ -213,6 +230,13 @@ class ProjectListViewModel: ObservableObject {
         for sectionIndex in sections.indices {
             for projectIndex in sections[sectionIndex].projects.indices {
                 guard !Task.isCancelled else { return }
+                guard sections[sectionIndex].projects[projectIndex].isGitRepository else {
+                    sections[sectionIndex].projects[projectIndex].hasUncommittedChanges = false
+                    sections[sectionIndex].projects[projectIndex].commitActivity = .empty
+                    sections[sectionIndex].projects[projectIndex].lastActivityDate = nil
+                    sections[sectionIndex].projects[projectIndex].worktrees = []
+                    continue
+                }
                 let path = sections[sectionIndex].projects[projectIndex].path
 
                 // Load all git info concurrently for this project
@@ -390,7 +414,12 @@ class ProjectListViewModel: ObservableObject {
         return nil
     }
 
-    nonisolated private static func discoverGitRepositories(in folderPath: String, maxDepth: Int = 4) -> [String] {
+    /// Finds Git repositories and standalone GitBar ticket boards.
+    ///
+    /// A directory is a project when it contains either `.git` or
+    /// `.gitbar/tickets.jsonl`. This lets planning-only folders participate in
+    /// GitBar without forcing them to become repositories.
+    nonisolated private static func discoverFolderProjects(in folderPath: String, maxDepth: Int = 4) -> [DiscoveredFolderProject] {
         let fileManager = FileManager.default
         let rootURL = URL(fileURLWithPath: folderPath).standardizedFileURL
 
@@ -412,11 +441,15 @@ class ProjectListViewModel: ObservableObject {
             "dist"
         ]
 
-        var repos: Set<String> = []
+        var projectsByPath: [String: Bool] = [:]
 
-        // If the selected folder itself is a repo, include it.
-        if fileManager.fileExists(atPath: rootURL.appendingPathComponent(".git").path) {
-            repos.insert(rootURL.path)
+        // If the selected folder itself is a project, include it.
+        let rootIsGitRepository = fileManager.fileExists(atPath: rootURL.appendingPathComponent(".git").path)
+        let rootHasTicketBoard = fileManager.fileExists(
+            atPath: rootURL.appendingPathComponent(".gitbar/tickets.jsonl").path
+        )
+        if rootIsGitRepository || rootHasTicketBoard {
+            projectsByPath[rootURL.path] = rootIsGitRepository
         }
 
         let keys: Set<URLResourceKey> = [.isDirectoryKey, .nameKey, .isSymbolicLinkKey]
@@ -425,7 +458,9 @@ class ProjectListViewModel: ObservableObject {
             includingPropertiesForKeys: Array(keys),
             options: [.skipsHiddenFiles, .skipsPackageDescendants]
         ) else {
-            return repos.sorted { $0.localizedStandardCompare($1) == .orderedAscending }
+            return projectsByPath
+                .map { DiscoveredFolderProject(path: $0.key, isGitRepository: $0.value) }
+                .sorted { $0.path.localizedStandardCompare($1.path) == .orderedAscending }
         }
 
         let rootComponentsCount = rootURL.pathComponents.count
@@ -453,13 +488,24 @@ class ProjectListViewModel: ObservableObject {
                 continue
             }
 
-            if fileManager.fileExists(atPath: url.appendingPathComponent(".git").path) {
-                repos.insert(url.standardizedFileURL.path)
+            let standardizedURL = url.standardizedFileURL
+            let isGitRepository = fileManager.fileExists(atPath: standardizedURL.appendingPathComponent(".git").path)
+            let hasTicketBoard = fileManager.fileExists(
+                atPath: standardizedURL.appendingPathComponent(".gitbar/tickets.jsonl").path
+            )
+
+            if isGitRepository || hasTicketBoard {
+                projectsByPath[standardizedURL.path] = isGitRepository
+            }
+
+            if isGitRepository {
                 enumerator.skipDescendants()
             }
         }
 
-        return repos.sorted { $0.localizedStandardCompare($1) == .orderedAscending }
+        return projectsByPath
+            .map { DiscoveredFolderProject(path: $0.key, isGitRepository: $0.value) }
+            .sorted { $0.path.localizedStandardCompare($1.path) == .orderedAscending }
     }
 
     /// Refreshes the git status for all projects
@@ -467,6 +513,12 @@ class ProjectListViewModel: ObservableObject {
         Task {
             for sectionIndex in sections.indices {
                 for projectIndex in sections[sectionIndex].projects.indices {
+                    guard sections[sectionIndex].projects[projectIndex].isGitRepository else {
+                        sections[sectionIndex].projects[projectIndex].hasUncommittedChanges = false
+                        sections[sectionIndex].projects[projectIndex].commitActivity = .empty
+                        sections[sectionIndex].projects[projectIndex].worktrees = []
+                        continue
+                    }
                     let path = sections[sectionIndex].projects[projectIndex].path
                     async let hasChanges = checkForUncommittedChanges(at: path)
                     async let activity = getCommitActivity(at: path)
@@ -553,7 +605,9 @@ class ProjectListViewModel: ObservableObject {
 
         let allLatestPaths = await Task.detached(priority: .utility) {
             let discoveredPaths = Set(discoveryService.discoverProjects().map(\.path))
-            let repoFolderPaths = Set(repoFolders.flatMap { ProjectListViewModel.discoverGitRepositories(in: $0) })
+            let repoFolderPaths = Set(repoFolders.flatMap {
+                ProjectListViewModel.discoverFolderProjects(in: $0).map(\.path)
+            })
             return discoveredPaths.union(repoFolderPaths)
         }.value
 
@@ -567,6 +621,13 @@ class ProjectListViewModel: ObservableObject {
         for sectionIndex in sections.indices {
             for projectIndex in sections[sectionIndex].projects.indices {
                 guard !Task.isCancelled else { break }
+                guard sections[sectionIndex].projects[projectIndex].isGitRepository else {
+                    sections[sectionIndex].projects[projectIndex].hasUncommittedChanges = false
+                    sections[sectionIndex].projects[projectIndex].commitActivity = .empty
+                    sections[sectionIndex].projects[projectIndex].lastActivityDate = nil
+                    sections[sectionIndex].projects[projectIndex].worktrees = []
+                    continue
+                }
                 let path = sections[sectionIndex].projects[projectIndex].path
                 async let hasChanges = checkForUncommittedChanges(at: path)
                 async let activity = getCommitActivity(at: path)

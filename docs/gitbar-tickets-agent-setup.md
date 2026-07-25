@@ -1,14 +1,15 @@
 # GitBar Tickets Agent Setup
 
-GitBar Tickets are local project tickets stored directly in a repo. The GitBar app reads `.gitbar/tickets.jsonl` for the selected project, and image attachments live in `.gitbar/images/<ticket-id>/`.
+GitBar Tickets are local project tickets stored directly in a project folder. The GitBar app reads `.gitbar/tickets.jsonl` for the selected project, and image attachments live in `.gitbar/images/<ticket-id>/`.
 
-## Use In Any Repo
+## Use In Any Project
 
-1. Open or add the repo in GitBar.
+1. Open or add the project in GitBar. The folder may be a Git repository or a standalone folder containing `.gitbar/tickets.jsonl`.
 2. Open the Tickets tab.
 3. Create tickets in the app, or ask an agent with the GitBar Tickets skill to create them.
-4. Commit `.gitbar/tickets.jsonl` and `.gitbar/images/**` if tickets should travel with the repo.
-5. Add `.gitbar/` to that repo's `.gitignore` if tickets should stay local.
+4. Add dependency IDs to `dependencies`, for example `"dependencies":[1,2]`. GitBar shows the ticket as blocked until those tickets are done.
+5. Commit `.gitbar/tickets.jsonl` and `.gitbar/images/**` if tickets should travel with a Git repository.
+6. Add `.gitbar/` to that repository's `.gitignore` if tickets should stay local.
 
 ## Codex Global Skill
 
@@ -17,7 +18,7 @@ Install this skill once at `~/.codex/skills/gitbar-tickets/SKILL.md`. Then use `
 ````yaml
 ---
 name: gitbar-tickets
-description: Manage GitBar local project tickets stored in .gitbar/tickets.jsonl, including listing tickets, creating follow-up tasks, updating status, and handling image attachment metadata for any repository using the GitBar app.
+description: Manage GitBar local project tickets stored in .gitbar/tickets.jsonl, including dependencies, status, and image attachment metadata.
 ---
 
 # GitBar Tickets
@@ -26,12 +27,12 @@ Manage local tickets for the current project. Tickets are stored in `.gitbar/tic
 
 Each non-empty line is one JSON object:
 ```json
-{"id":1,"title":"Fix bug","description":"Details","status":"open","images":[],"created_at":"2026-01-01T00:00:00Z","updated_at":"2026-01-01T00:00:00Z"}
+{"id":1,"title":"Fix bug","description":"Details","status":"open","images":[],"dependencies":[],"created_at":"2026-01-01T00:00:00Z","updated_at":"2026-01-01T00:00:00Z"}
 ```
 
 Status values are `open`, `in_progress`, and `done`.
 
-When creating a ticket, append a new JSON line with the next integer ID, `images: []`, and ISO 8601 timestamps. When updating a ticket, prefer appending the updated ticket as a new JSON line; GitBar loads the latest entry for each ID. Keep image metadata in the `images` array and store image files under `.gitbar/images/<ticket-id>/`.
+When creating a ticket, append a new JSON line with the next integer ID, `images: []`, `dependencies: []`, and ISO 8601 timestamps. Dependency values are ticket IDs that must be done first. When updating a ticket, prefer appending the updated ticket as a new JSON line; GitBar loads the latest entry for each ID. Keep image metadata in the `images` array and store image files under `.gitbar/images/<ticket-id>/`.
 ````
 
 ## Claude Code

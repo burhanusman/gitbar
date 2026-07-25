@@ -70,7 +70,7 @@ struct SettingsView: View {
                                     Text("Folder sources")
                                         .font(.system(size: 13, weight: .medium))
                                         .foregroundColor(Theme.textPrimary)
-                                    Text("Scan these folders for git repositories")
+                                    Text("Scan for Git repositories and GitBar ticket boards")
                                         .font(.system(size: 12))
                                         .foregroundColor(Theme.textTertiary)
                                 }
@@ -376,7 +376,7 @@ struct SettingsView: View {
         panel.canChooseDirectories = true
         panel.allowsMultipleSelection = false
         panel.prompt = "Add"
-        panel.message = "Choose a folder to scan for git repositories."
+        panel.message = "Choose a project folder or a folder containing Git repositories and GitBar ticket boards"
 
         panel.begin { response in
             guard response == .OK, let url = panel.url else { return }

@@ -218,7 +218,7 @@ struct ProjectListView: View {
     }
 
     private var emptySourceView: some View {
-        Text("No repositories")
+        Text("No projects")
             .font(.system(size: Theme.fontSM))
             .foregroundColor(Theme.textMuted)
             .padding(.leading, Theme.space3)
@@ -374,7 +374,7 @@ struct ProjectListView: View {
         panel.canChooseDirectories = true
         panel.allowsMultipleSelection = false
         panel.prompt = "Add"
-        panel.message = "Choose a folder containing git repositories"
+        panel.message = "Choose a project folder or a folder containing Git repositories and GitBar ticket boards"
 
         panel.begin { response in
             guard response == .OK, let url = panel.url else { return }
@@ -467,9 +467,11 @@ struct ProjectRow: View {
             }
 
             // Momentum bar - commit activity visualization
-            HStack {
-                Spacer()
-                MomentumBar(activity: project.commitActivity, barId: project.id, nextBarId: nextBarId)
+            if project.isGitRepository {
+                HStack {
+                    Spacer()
+                    MomentumBar(activity: project.commitActivity, barId: project.id, nextBarId: nextBarId)
+                }
             }
         }
         .padding(.horizontal, Theme.space3)
@@ -512,13 +514,23 @@ struct ProjectRow: View {
 
     @ViewBuilder
     private var statusIndicator: some View {
-        Circle()
-            .fill(indicatorColor)
-            .frame(width: indicatorSize, height: indicatorSize)
-            .shadow(
-                color: project.hasUncommittedChanges ? Theme.accent.opacity(0.4) : .clear,
-                radius: project.hasUncommittedChanges ? 4 : 0
-            )
+        if project.isGitRepository {
+            Circle()
+                .fill(indicatorColor)
+                .frame(width: indicatorSize, height: indicatorSize)
+                .shadow(
+                    color: project.hasUncommittedChanges ? Theme.accent.opacity(0.4) : .clear,
+                    radius: project.hasUncommittedChanges ? 4 : 0
+                )
+        } else {
+            Image(systemName: "ticket")
+                .font(.system(size: 9, weight: .semibold))
+                .foregroundColor(Theme.purple)
+                .frame(width: 16, height: 16)
+                .background(Theme.purpleMuted)
+                .cornerRadius(4)
+                .help("Standalone GitBar ticket board")
+        }
     }
 
     private var indicatorColor: Color {

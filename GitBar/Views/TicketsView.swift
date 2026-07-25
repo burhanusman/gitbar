@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// View for browsing and managing tickets in a repository
+/// View for browsing and managing tickets in a project
 struct TicketsView: View {
     let project: Project
     var worktreePath: String? = nil
@@ -56,11 +56,24 @@ struct TicketsView: View {
         }
         .sheet(isPresented: $showingCreateSheet) {
             TicketEditorView(
-                onSave: { title, description, status, images in
-                    try await viewModel.createTicket(title: title, description: description, status: status, images: images)
+                availableTickets: viewModel.tickets,
+                onSave: { title, description, status, images, dependencies in
+                    try await viewModel.createTicket(
+                        title: title,
+                        description: description,
+                        status: status,
+                        images: images,
+                        dependencies: dependencies
+                    )
                 },
-                onCreateWithImages: { title, description, status, images in
-                    try await viewModel.createTicket(title: title, description: description, status: status, attachedImages: images)
+                onCreateWithImages: { title, description, status, images, dependencies in
+                    try await viewModel.createTicket(
+                        title: title,
+                        description: description,
+                        status: status,
+                        attachedImages: images,
+                        dependencies: dependencies
+                    )
                 },
                 onSaveImage: { image, ticketId in
                     try await viewModel.saveImage(image, for: ticketId)
@@ -70,8 +83,15 @@ struct TicketsView: View {
         .sheet(item: $selectedTicketForEditing) { ticket in
             TicketEditorView(
                 existingTicket: ticket,
-                onSave: { title, description, status, images in
-                    let updated = ticket.updated(title: title, description: description, status: status, images: images)
+                availableTickets: viewModel.tickets.filter { $0.id != ticket.id },
+                onSave: { title, description, status, images, dependencies in
+                    let updated = ticket.updated(
+                        title: title,
+                        description: description,
+                        status: status,
+                        images: images,
+                        dependencies: dependencies
+                    )
                     try await viewModel.updateTicket(updated)
                 },
                 onSaveImage: { image, ticketId in
@@ -208,6 +228,7 @@ struct TicketsView: View {
                 ForEach(Array(viewModel.filteredTickets.enumerated()), id: \.element.id) { index, ticket in
                     TicketRowView(
                         ticket: ticket,
+                        dependencySummary: viewModel.dependencySummary(for: ticket),
                         onSelect: { selectedTicketForEditing = ticket },
                         onStatusChange: { newStatus in
                             Task {

@@ -52,6 +52,7 @@ struct Ticket: Identifiable, Codable, Equatable {
     var description: String
     var status: TicketStatus
     var images: [TicketImage]
+    var dependencies: [Int]
     let createdAt: Date
     var updatedAt: Date
 
@@ -61,34 +62,57 @@ struct Ticket: Identifiable, Codable, Equatable {
         case description
         case status
         case images
+        case dependencies
+        case dependsOn = "depends_on"
         case createdAt = "created_at"
         case updatedAt = "updated_at"
     }
 
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        id = try container.decode(Int.self, forKey: .id)
+        let ticketId = try container.decode(Int.self, forKey: .id)
+        id = ticketId
         title = try container.decode(String.self, forKey: .title)
         description = try container.decode(String.self, forKey: .description)
         status = try container.decode(TicketStatus.self, forKey: .status)
         // Handle missing images field for backwards compatibility
         images = try container.decodeIfPresent([TicketImage].self, forKey: .images) ?? []
+        // `depends_on` was used by a few hand-authored boards before the schema
+        // was formalized. Read both forms, but always write `dependencies`.
+        let decodedDependencies =
+            try container.decodeIfPresent([Int].self, forKey: .dependencies)
+                ?? container.decodeIfPresent([Int].self, forKey: .dependsOn)
+                ?? []
+        dependencies = Self.normalizedDependencies(decodedDependencies.filter { $0 != ticketId })
         createdAt = try container.decode(Date.self, forKey: .createdAt)
         updatedAt = try container.decode(Date.self, forKey: .updatedAt)
     }
 
-    init(id: Int, title: String, description: String, status: TicketStatus, images: [TicketImage] = [], createdAt: Date, updatedAt: Date) {
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(title, forKey: .title)
+        try container.encode(description, forKey: .description)
+        try container.encode(status, forKey: .status)
+        try container.encode(images, forKey: .images)
+        try container.encode(dependencies, forKey: .dependencies)
+        try container.encode(createdAt, forKey: .createdAt)
+        try container.encode(updatedAt, forKey: .updatedAt)
+    }
+
+    init(id: Int, title: String, description: String, status: TicketStatus, images: [TicketImage] = [], dependencies: [Int] = [], createdAt: Date, updatedAt: Date) {
         self.id = id
         self.title = title
         self.description = description
         self.status = status
         self.images = images
+        self.dependencies = Self.normalizedDependencies(dependencies.filter { $0 != id })
         self.createdAt = createdAt
         self.updatedAt = updatedAt
     }
 
     /// Creates a new ticket with the given ID
-    static func create(id: Int, title: String, description: String, status: TicketStatus = .open, images: [TicketImage] = []) -> Ticket {
+    static func create(id: Int, title: String, description: String, status: TicketStatus = .open, images: [TicketImage] = [], dependencies: [Int] = []) -> Ticket {
         let now = Date()
         return Ticket(
             id: id,
@@ -96,21 +120,27 @@ struct Ticket: Identifiable, Codable, Equatable {
             description: description,
             status: status,
             images: images,
+            dependencies: dependencies,
             createdAt: now,
             updatedAt: now
         )
     }
 
     /// Creates an updated copy of the ticket
-    func updated(title: String? = nil, description: String? = nil, status: TicketStatus? = nil, images: [TicketImage]? = nil) -> Ticket {
+    func updated(title: String? = nil, description: String? = nil, status: TicketStatus? = nil, images: [TicketImage]? = nil, dependencies: [Int]? = nil) -> Ticket {
         Ticket(
             id: self.id,
             title: title ?? self.title,
             description: description ?? self.description,
             status: status ?? self.status,
             images: images ?? self.images,
+            dependencies: dependencies ?? self.dependencies,
             createdAt: self.createdAt,
             updatedAt: Date()
         )
+    }
+
+    private static func normalizedDependencies(_ dependencies: [Int]) -> [Int] {
+        Array(Set(dependencies.filter { $0 > 0 })).sorted()
     }
 }

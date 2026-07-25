@@ -21,8 +21,8 @@ GitBar lives in your macOS menubar and provides instant visibility into the git 
 - **Menubar Integration**: Lightweight menubar app with no Dock icon
 - **Project Auto-Discovery**: Automatically finds Claude Code and Codex projects
 - **Real-time Git Status**: Shows branch name, ahead/behind commits, and working directory status
-- **Local Tickets**: Track per-repository tickets with optional image attachments
-- **Manual Folder Support**: Add any git repository folder for monitoring
+- **Local Tickets**: Track project tickets, dependencies, and optional image attachments
+- **Manual Folder Support**: Add Git repositories or standalone GitBar ticket boards
 - **Auto-Updates**: Built-in Sparkle framework for seamless updates
 - **Native macOS**: Written in SwiftUI for optimal performance
 
@@ -66,11 +66,11 @@ The menubar icon displays the git status of your currently selected project:
 The project list shows all discovered and manually added projects:
 - **Claude Projects**: Discovered from Claude Code
 - **Codex Projects**: Discovered from Codex
-- **Folder Projects**: Manually added git repositories
+- **Folder Projects**: Manually added Git repositories and standalone ticket boards
 
 ### Tickets
 
-Each project has a Tickets tab for repo-local tasks. Tickets are stored in `.gitbar/tickets.jsonl`, with optional image attachments under `.gitbar/images/<ticket-id>/`. See [GitBar Tickets Agent Setup](docs/gitbar-tickets-agent-setup.md) to use the same tickets from Codex or Claude Code.
+Each project has a Tickets tab for project-local tasks. Tickets are stored in `.gitbar/tickets.jsonl`, with optional dependency IDs in `dependencies` and image attachments under `.gitbar/images/<ticket-id>/`. A folder containing this ticket file can be added to GitBar even when it is not a Git repository. See [GitBar Tickets Agent Setup](docs/gitbar-tickets-agent-setup.md) to use the same tickets from Codex or Claude Code.
 
 ## Configuration
 
@@ -83,7 +83,7 @@ GitBar uses Sparkle for automatic updates. Configure update preferences in Setti
 
 ### Customization
 
-- Add custom git repositories via "Add Folder"
+- Add Git repositories or standalone GitBar ticket boards via "Add Folder"
 - Remove projects you don't want to monitor
 - Toggle automatic update checks
 
